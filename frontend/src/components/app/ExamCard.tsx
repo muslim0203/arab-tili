@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Badge } from "./Badge";
 import { Button } from "@/components/ui/button";
 
 export interface ExamCardProps {
@@ -15,7 +14,7 @@ export interface ExamCardProps {
   className?: string;
 }
 
-function ExamCard({ id, title, description, meta, badge, href, ctaLabel = "Boshlash", className }: ExamCardProps) {
+function ExamCard({ title, description, meta, badge, href, ctaLabel = "Boshlash", className }: ExamCardProps) {
   return (
     <motion.article
       initial={{ opacity: 0, y: 12 }}

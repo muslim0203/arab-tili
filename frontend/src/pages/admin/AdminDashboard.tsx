@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/app/PageHeader";
 import { StatsCard } from "@/components/app/StatsCard";
 import { api } from "@/lib/api";
@@ -46,7 +45,7 @@ export function AdminDashboard() {
       <PageHeader title="Statistika" subtitle="Platforma bo'yicha asosiy ko'rsatkichlar" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {STAT_ITEMS.map((item, i) => (
+        {STAT_ITEMS.map((item) => (
           <StatsCard
             key={item.key}
             label={item.title}

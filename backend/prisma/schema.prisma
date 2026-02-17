@@ -6,26 +6,15 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum SubscriptionTier {
-  FREE
-  PREMIUM
-  INTENSIVE
-}
-
-enum QuestionType {
-  MULTIPLE_CHOICE
-  ESSAY
-  AUDIO_RESPONSE
-}
-
-enum AttemptStatus {
-  IN_PROGRESS
-  COMPLETED
-}
+// Enums removed for SQLite compatibility
+// SubscriptionTier: FREE, PREMIUM, INTENSIVE
+// QuestionType: MULTIPLE_CHOICE, ESSAY, AUDIO_RESPONSE
+// AttemptStatus: IN_PROGRESS, COMPLETED
+// PaymentStatus: PENDING, COMPLETED, FAILED
 
 // CEFR question bank (pre-generated, no AI at attempt time for listening/reading/language)
 model QuestionBank {
@@ -34,14 +23,14 @@ model QuestionBank {
   section       String   @map("section")
   taskType      String   @map("task_type")
   prompt        String   @map("prompt")
-  options       Json?    @map("options")
-  correctAnswer Json     @map("correct_answer")
+  options       String?  @map("options")
+  correctAnswer String   @map("correct_answer")
   transcript    String?  @map("transcript")
   passage       String?  @map("passage")
   audioUrl      String?  @map("audio_url")
-  rubric        Json?    @map("rubric")
+  rubric        String?  @map("rubric")
   difficulty    Int      @default(3) @map("difficulty")
-  tags          Json?    @map("tags")
+  tags          String?  @map("tags")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -51,18 +40,12 @@ model QuestionBank {
   @@map("question_bank")
 }
 
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-}
-
 model User {
   id                    String    @id @default(cuid())
   email                 String    @unique
   passwordHash          String    @map("password_hash")
   fullName              String    @map("full_name")
-  subscriptionTier      SubscriptionTier @default(FREE) @map("subscription_tier")
+  subscriptionTier      String    @default("FREE") @map("subscription_tier")
   subscriptionExpiresAt DateTime? @map("subscription_expires_at")
   languagePreference    String    @default("uz") @map("language_preference")
   lastLogin             DateTime? @map("last_login")
@@ -108,9 +91,9 @@ model ExamSection {
 model Question {
   id            String       @id @default(cuid())
   examSectionId String       @map("exam_section_id")
-  questionType  QuestionType @map("question_type")
+  questionType  String       @map("question_type")
   questionText  String       @map("question_text")
-  options       Json?        // For MCQ: ["A", "B", "C", "D"] or full text
+  options       String?      // For MCQ: ["A", "B", "C", "D"] or full text
   correctAnswer String?      @map("correct_answer")
   points        Int          @default(1)
   order         Int          @default(0)
@@ -164,13 +147,13 @@ model UserExamAttempt {
   level              String?       @map("level")
   startedAt          DateTime      @default(now()) @map("started_at")
   completedAt        DateTime?     @map("completed_at")
-  status             AttemptStatus @default(IN_PROGRESS)
+  status             String        @default("IN_PROGRESS")
   totalScore         Int?          @map("total_score")
   maxPossibleScore   Int?          @map("max_possible_score")
   percentage         Float?        @map("percentage")
   cefrLevelAchieved  String?       @map("cefr_level_achieved")
   cefrFeedback       String?       @map("cefr_feedback")
-  sectionScores      Json?         @map("section_scores")
+  sectionScores      String?       @map("section_scores")
   createdAt          DateTime      @default(now()) @map("created_at")
   updatedAt          DateTime      @updatedAt @map("updated_at")
 
@@ -189,13 +172,13 @@ model AttemptQuestion {
   order              Int            @default(0)
   section            String         @default("reading") @map("section")
   taskType           String         @default("mcq") @map("task_type")
-  questionType       QuestionType   @default(MULTIPLE_CHOICE) @map("question_type")
+  questionType       String         @default("MULTIPLE_CHOICE") @map("question_type")
   questionText       String         @map("question_text")
   transcript         String?        @map("transcript")
   passage            String?        @map("passage")
-  options            Json?
-  correctAnswer      Json?          @map("correct_answer")
-  rubric             Json?         @map("rubric")
+  options            String?
+  correctAnswer      String?        @map("correct_answer")
+  rubric             String?        @map("rubric")
   points             Int            @default(1) @map("points")
   maxScore           Int?           @map("max_score")
   wordLimit          Int?           @map("word_limit")
@@ -236,7 +219,7 @@ model UserProgress {
   id                  String   @id @default(cuid())
   userId              String   @unique @map("user_id")
   totalExamsTaken     Int      @default(0) @map("total_exams_taken")
-  skillScores         Json?    @map("skill_scores")
+  skillScores         String?  @map("skill_scores")
   currentStreakDays   Int      @default(0) @map("current_streak_days")
   currentCefrEstimate String?  @map("current_cefr_estimate")
   lastActivityAt      DateTime? @map("last_activity_at")
@@ -265,7 +248,7 @@ model Payment {
   userId            String        @map("user_id")
   amount            Int           // in tiyin/smallest unit (UZS)
   currency          String        @default("UZS")
-  status            PaymentStatus @default(PENDING)
+  status            String        @default("PENDING")
   planId            String?       @map("plan_id")
   paymentProviderId String?      @unique @map("payment_provider_id")
   paidAt            DateTime?     @map("paid_at")

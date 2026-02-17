@@ -4,6 +4,8 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Mail, FileText, Video } from "lucide-react";
+import { SEO } from "@/components/SEO";
+import { StructuredData, buildBreadcrumbSchema } from "@/components/StructuredData";
 
 export function YordamIndex() {
   const { i18n } = useTranslation();
@@ -16,6 +18,18 @@ export function YordamIndex() {
 
   return (
     <div className="min-h-screen bg-muted/30">
+      <SEO
+        title="Yordam markazi"
+        description="AttanalPro platformasidan foydalanish bo'yicha yordam, qo'llanmalar, video darsliklar va bog'lanish ma'lumotlari."
+        canonicalPath="/yordam"
+        lang={i18n.language}
+      />
+      <StructuredData
+        data={buildBreadcrumbSchema([
+          { name: "Bosh sahifa", url: "https://attanalpro.uz/" },
+          { name: "Yordam", url: "https://attanalpro.uz/yordam" },
+        ])}
+      />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>

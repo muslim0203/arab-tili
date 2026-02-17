@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
+import { SEO } from "@/components/SEO";
 
 const schema = z.object({
   fullName: z.string().min(1, "Ism kiritilishi shart"),
@@ -45,6 +46,7 @@ export function Register() {
 
   return (
     <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-muted/30 p-4">
+      <SEO title="Ro'yxatdan o'tish" description="Bepul ro'yxatdan o'ting va arab tili CEFR mock imtihoniga tayyorlaning. AttanalPro platformasi." canonicalPath="/register" />
       <Card className="w-full max-w-md rounded-xl border-border shadow-lg">
         <CardHeader>
           <CardTitle className="text-xl">Hisob yaratish</CardTitle>

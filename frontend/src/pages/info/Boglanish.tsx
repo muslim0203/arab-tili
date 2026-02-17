@@ -2,12 +2,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SiteHeader } from "@/components/SiteHeader";
 import { useTranslation } from "react-i18next";
 import { Mail, MessageCircle } from "lucide-react";
+import { SEO } from "@/components/SEO";
+import { StructuredData, buildBreadcrumbSchema } from "@/components/StructuredData";
 
 export function Boglanish() {
   const { i18n } = useTranslation();
 
   return (
     <div className="min-h-screen bg-muted/30">
+      <SEO
+        title="Bog'lanish"
+        description="AttanalPro bilan bog'lanish – savol, taklif va hamkorlik bo'yicha murojaat qiling. Email: support@attanalpro.uz"
+        canonicalPath="/yordam/boglanish"
+        lang={i18n.language}
+      />
+      <StructuredData
+        data={buildBreadcrumbSchema([
+          { name: "Bosh sahifa", url: "https://attanalpro.uz/" },
+          { name: "Yordam", url: "https://attanalpro.uz/yordam" },
+          { name: "Bog'lanish", url: "https://attanalpro.uz/yordam/boglanish" },
+        ])}
+      />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>

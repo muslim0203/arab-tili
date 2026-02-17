@@ -60,7 +60,7 @@ router.post("/create-payment", authenticateToken, async (req: AuthRequest, res: 
   res.json({
     paymentId: payment.id,
     amount: plan.amount,
-    currency: plan.currency,
+    currency: "UZS",
     redirectUrl,
   });
 });

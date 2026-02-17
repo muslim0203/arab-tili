@@ -8,11 +8,11 @@ export type RefreshPayload = { userId: string };
 export type ResetPayload = { email: string; purpose: "reset" };
 
 export function signAccess(payload: AccessPayload): string {
-  return jwt.sign(payload, jwtSecret, { expiresIn: jwtAccessExpiresIn });
+  return jwt.sign(payload, jwtSecret as jwt.Secret, { expiresIn: jwtAccessExpiresIn as any });
 }
 
 export function signRefresh(payload: RefreshPayload): string {
-  return jwt.sign(payload, jwtRefreshSecret, { expiresIn: jwtRefreshExpiresIn });
+  return jwt.sign(payload, jwtRefreshSecret as jwt.Secret, { expiresIn: jwtRefreshExpiresIn as any });
 }
 
 export function signPasswordResetToken(payload: ResetPayload): string {

@@ -112,21 +112,21 @@ router.get("/:id", authenticateToken, async (req: AuthRequest, res: Response) =>
 
   const questions = attempt.attemptQuestions.length > 0
     ? attempt.attemptQuestions.map((q) => ({
-        id: q.id,
-        order: q.order,
-        questionText: q.questionText,
-        questionType: q.questionType,
-        options: q.options,
-        points: q.points,
-        maxScore: q.maxScore ?? q.points,
-        section: q.section,
-        taskType: q.taskType,
-        transcript: q.transcript,
-        passage: q.passage,
-        audioUrl: q.audioUrl,
-        rubric: q.rubric,
-        wordLimit: q.wordLimit,
-      }))
+      id: q.id,
+      order: q.order,
+      questionText: q.questionText,
+      questionType: q.questionType,
+      options: q.options ? JSON.parse(q.options) : null,
+      points: q.points,
+      maxScore: q.maxScore ?? q.points,
+      section: q.section,
+      taskType: q.taskType,
+      transcript: q.transcript,
+      passage: q.passage,
+      audioUrl: q.audioUrl,
+      rubric: q.rubric ? JSON.parse(q.rubric) : null,
+      wordLimit: q.wordLimit,
+    }))
     : await getQuestionsFromPredefined(attemptId);
 
   const answersMap: Record<string, { answerText: string | null; audioUrl?: string | null }> = {};
@@ -219,7 +219,7 @@ router.post("/:id/speaking-audio", authenticateToken, upload.single("audio"), as
     include: { attemptQuestions: { where: { id: qId, section: "speaking" } } },
   });
   if (!attempt || attempt.status !== "IN_PROGRESS" || attempt.attemptQuestions.length === 0) {
-    fs.unlink(req.file.path, () => {});
+    fs.unlink(req.file.path, () => { });
     res.status(404).json({ message: "Attempt yoki speaking savoli topilmadi" });
     return;
   }
@@ -229,7 +229,7 @@ router.post("/:id/speaking-audio", authenticateToken, upload.single("audio"), as
   try {
     fs.renameSync(req.file.path, finalPath);
   } catch {
-    fs.unlink(req.file.path, () => {});
+    fs.unlink(req.file.path, () => { });
     res.status(500).json({ message: "Fayl saqlanmadi" });
     return;
   }
@@ -313,7 +313,7 @@ router.post("/:id/submit", authenticateToken, async (req: AuthRequest, res: Resp
       maxPossible += maxPts;
 
       if (q.section === "writing") {
-        const rubric = (q.rubric as Record<string, unknown>) ?? {};
+        const rubric = q.rubric ? (JSON.parse(q.rubric) as Record<string, unknown>) : {};
         const result = await gradeWriting(level, { prompt: q.questionText, rubric, maxScore: maxPts }, userText ?? "");
         totalScore += result.score;
         sectionScores[q.section] = (sectionScores[q.section] ?? { score: 0, max: 0 });
@@ -334,7 +334,7 @@ router.post("/:id/submit", authenticateToken, async (req: AuthRequest, res: Resp
           const transcribed = await transcribeAudio(localPath);
           if (transcribed) transcript = transcribed;
         }
-        const rubric = (q.rubric as Record<string, unknown>) ?? {};
+        const rubric = q.rubric ? (JSON.parse(q.rubric) as Record<string, unknown>) : {};
         const result = await gradeSpeaking(level, { prompt: q.questionText, rubric, maxScore: maxPts }, transcript);
         totalScore += result.score;
         sectionScores[q.section] = (sectionScores[q.section] ?? { score: 0, max: 0 });
@@ -480,7 +480,7 @@ router.get("/:id/results", authenticateToken, async (req: AuthRequest, res: Resp
         id: q.id,
         order: q.order,
         questionText: q.questionText,
-        options: q.options,
+        options: q.options ? JSON.parse(q.options) : null,
         correctAnswer: q.correctAnswer,
         points: q.points,
         maxScore: q.maxScore,
@@ -491,7 +491,7 @@ router.get("/:id/results", authenticateToken, async (req: AuthRequest, res: Resp
         feedback: ans?.aiFeedback ?? null,
         section: q.section,
         taskType: q.taskType,
-        rubric: q.rubric,
+        rubric: q.rubric ? JSON.parse(q.rubric) : null,
         transcript: q.transcript,
       });
     }
@@ -508,12 +508,15 @@ router.get("/:id/results", authenticateToken, async (req: AuthRequest, res: Resp
           id: q.id,
           order: mq.order,
           questionText: q.questionText,
-          options: q.options,
+          options: q.options ? JSON.parse(q.options) : null,
           correctAnswer: q.correctAnswer ?? "",
           points: q.points,
+          maxScore: q.points,
           userAnswer: ans?.answerText ?? null,
           isCorrect: ans?.isCorrect ?? null,
           pointsEarned: ans?.pointsEarned ?? null,
+          score: ans?.pointsEarned ?? null,
+          feedback: ans?.aiFeedback ?? null,
         });
       }
     }

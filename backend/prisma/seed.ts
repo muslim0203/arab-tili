@@ -1,3 +1,4 @@
+// AttanalPro – Prisma schema
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -36,7 +37,7 @@ async function main() {
         examSectionId: section.id,
         questionType: "MULTIPLE_CHOICE",
         questionText: "ما معنى كلمة «كتاب»؟",
-        options: ["book", "pen", "desk", "door"],
+        options: JSON.stringify(["book", "pen", "desk", "door"]),
         correctAnswer: "book",
         points: 1,
         order: 1,
@@ -50,7 +51,7 @@ async function main() {
         examSectionId: section.id,
         questionType: "MULTIPLE_CHOICE",
         questionText: "ما ضد كلمة «كبير»؟",
-        options: ["small", "big", "old", "new"],
+        options: JSON.stringify(["small", "big", "old", "new"]),
         correctAnswer: "small",
         points: 1,
         order: 2,
@@ -64,12 +65,12 @@ async function main() {
         examSectionId: section.id,
         questionType: "MULTIPLE_CHOICE",
         questionText: "اختر الجملة الصحيحة:",
-        options: [
+        options: JSON.stringify([
           "أنا يذهب إلى المدرسة",
           "أنا أذهب إلى المدرسة",
           "أنا ذهب إلى المدرسة",
           "أنا ذاهب المدرسة",
-        ],
+        ]),
         correctAnswer: "أنا أذهب إلى المدرسة",
         points: 1,
         order: 3,
@@ -83,7 +84,7 @@ async function main() {
         examSectionId: section.id,
         questionType: "MULTIPLE_CHOICE",
         questionText: "ما جمع «طالب»؟",
-        options: ["طالبة", "طلاب", "مدرسة", "كتاب"],
+        options: JSON.stringify(["طالبة", "طلاب", "مدرسة", "كتاب"]),
         correctAnswer: "طلاب",
         points: 1,
         order: 4,
@@ -135,14 +136,24 @@ async function main() {
     },
   });
 
-  await prisma.mockExamQuestion.createMany({
-    data: questions.map((q, i) => ({
-      mockExamId: "mock-exam-1",
-      questionId: q.id,
-      order: i + 1,
-    })),
-    skipDuplicates: true,
-  });
+  // SQLite does not support skipDuplicates in createMany, using upsert loop instead
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    await prisma.mockExamQuestion.upsert({
+      where: {
+        mockExamId_questionId: {
+          mockExamId: "mock-exam-1",
+          questionId: q.id,
+        },
+      },
+      update: {},
+      create: {
+        mockExamId: "mock-exam-1",
+        questionId: q.id,
+        order: i + 1,
+      },
+    });
+  }
 
   const bankItems: Array<{ id: string; level: string; section: string; taskType: string; prompt: string; options: string[]; correctAnswer: string; transcript?: string; passage?: string; difficulty: number; tags: object }> = [];
   const levels = ["A1", "B1", "C1"] as const;
@@ -206,12 +217,12 @@ async function main() {
         section: item.section,
         taskType: item.taskType,
         prompt: item.prompt,
-        options: item.options,
-        correctAnswer: item.correctAnswer as object,
+        options: JSON.stringify(item.options),
+        correctAnswer: item.correctAnswer, // correctAnswer is string in both
         transcript: "transcript" in item ? (item as { transcript?: string }).transcript : null,
         passage: "passage" in item ? (item as { passage?: string }).passage : null,
         difficulty: item.difficulty,
-        tags: item.tags,
+        tags: JSON.stringify(item.tags),
       },
     });
   }

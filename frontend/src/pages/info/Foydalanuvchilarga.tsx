@@ -3,12 +3,26 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { SEO } from "@/components/SEO";
+import { StructuredData, buildBreadcrumbSchema } from "@/components/StructuredData";
 
 export function Foydalanuvchilarga() {
   const { i18n } = useTranslation();
 
   return (
     <div className="min-h-screen bg-muted/30">
+      <SEO
+        title="Foydalanuvchilarga"
+        description="Talabalar va o'quvchilar uchun arab tili CEFR mock imtihoniga tayyorgarlik: listening, reading, writing, speaking bo'limlari, AI tutor va batafsil natijalar."
+        canonicalPath="/foydalanuvchilarga"
+        lang={i18n.language}
+      />
+      <StructuredData
+        data={buildBreadcrumbSchema([
+          { name: "Bosh sahifa", url: "https://attanalpro.uz/" },
+          { name: "Foydalanuvchilarga", url: "https://attanalpro.uz/foydalanuvchilarga" },
+        ])}
+      />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>

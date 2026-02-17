@@ -34,9 +34,9 @@ export async function createCefrAttempt(userId: string, level: CefrLevel) {
           questionText: q.prompt,
           transcript: q.transcript,
           passage: q.passage,
-          options: q.options,
-          correctAnswer: q.correctAnswer,
-          rubric: q.rubric,
+          options: typeof q.options === "string" ? q.options : JSON.stringify(q.options),
+          correctAnswer: typeof q.correctAnswer === "string" ? q.correctAnswer : JSON.stringify(q.correctAnswer),
+          rubric: typeof q.rubric === "string" ? q.rubric : (q.rubric ? JSON.stringify(q.rubric) : null),
           points: 1,
           maxScore: 1,
           audioUrl: q.audioUrl,
@@ -66,7 +66,7 @@ export async function createCefrAttempt(userId: string, level: CefrLevel) {
           questionType: "ESSAY",
           questionText: t.prompt,
           correctAnswer: null,
-          rubric: t.rubric as object,
+          rubric: t.rubric ? JSON.stringify(t.rubric) : null,
           points: 0,
           maxScore: t.maxScore,
           wordLimit: t.wordLimit,
@@ -87,14 +87,14 @@ export async function createCefrAttempt(userId: string, level: CefrLevel) {
           questionType: "AUDIO_RESPONSE",
           questionText: t.prompt,
           correctAnswer: null,
-          rubric: t.rubric as object,
+          rubric: t.rubric ? JSON.stringify(t.rubric) : null,
           points: 0,
           maxScore: t.maxScore,
         },
       });
     }
   } catch (e) {
-    await prisma.userExamAttempt.delete({ where: { id: attempt.id } }).catch(() => {});
+    await prisma.userExamAttempt.delete({ where: { id: attempt.id } }).catch(() => { });
     throw e;
   }
 

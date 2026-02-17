@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -73,9 +73,8 @@ export function Pricing() {
                 transition={{ duration: 0.3, delay: i * 0.05 }}
               >
                 <Card
-                  className={`flex flex-col rounded-xl border-border shadow-sm transition-shadow hover:shadow-md ${
-                    plan.tier === "INTENSIVE" ? "ring-2 ring-primary/20" : ""
-                  }`}
+                  className={`flex flex-col rounded-xl border-border shadow-sm transition-shadow hover:shadow-md ${plan.tier === "INTENSIVE" ? "ring-2 ring-primary/20" : ""
+                    }`}
                 >
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-lg">

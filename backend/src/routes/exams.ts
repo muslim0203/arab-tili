@@ -25,12 +25,12 @@ function toPublicQuestion(q: {
     order: q.order,
     questionText: q.questionText,
     questionType: q.questionType,
-    options: q.options,
+    options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
     points: q.points,
     section: q.section,
     taskType: q.taskType,
     transcript: q.transcript,
-    rubric: q.rubric,
+    rubric: typeof q.rubric === "string" ? JSON.parse(q.rubric) : q.rubric,
     wordLimit: q.wordLimit,
   };
 }
@@ -195,7 +195,7 @@ router.post("/:id/start", authenticateToken, async (req: AuthRequest, res: Respo
           attemptId: attempt.id,
           order: i + 1,
           questionText: q.questionText,
-          options: q.options,
+          options: JSON.stringify(q.options),
           correctAnswer: q.correctAnswer,
           points: q.points,
           questionType: "MULTIPLE_CHOICE",

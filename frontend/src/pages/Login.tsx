@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { SEO } from "@/components/SEO";
 import { useAuthStore } from "@/store/auth";
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -69,6 +70,7 @@ export function Login() {
 
   return (
     <div className="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center bg-muted/30 p-4 relative">
+      <SEO title="Kirish" canonicalPath="/login" noindex />
       <Link
         to="/"
         className="absolute top-4 left-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors touch-manipulation"

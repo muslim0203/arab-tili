@@ -19,7 +19,7 @@ async function refreshAccess(): Promise<string | null> {
   return data.accessToken;
 }
 
-export type RequestConfig = RequestInit & { skipAuth?: boolean };
+export type RequestConfig = Omit<RequestInit, "body"> & { body?: BodyInit | object | null; skipAuth?: boolean };
 
 export async function api<T = unknown>(path: string, config: RequestConfig = {}): Promise<T> {
   const { skipAuth, ...init } = config;

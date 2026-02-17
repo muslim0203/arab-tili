@@ -7,8 +7,7 @@ import { AppLayout } from "@/components/app/AppLayout";
 import { StatsCard } from "@/components/app/StatsCard";
 import { Badge } from "@/components/app/Badge";
 import { api } from "@/lib/api";
-import { Loader2, Award, CheckCircle2, XCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 
 const SECTION_LABELS: Record<string, string> = {
   listening: "Listening",
