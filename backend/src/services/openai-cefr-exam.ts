@@ -1,7 +1,4 @@
-import OpenAI from "openai";
-import { config } from "../config.js";
-
-const openai = config.openaiApiKey ? new OpenAI({ apiKey: config.openaiApiKey }) : null;
+import { aiGenerateJson, isAiAvailable } from "../lib/ai-client.js";
 
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export type CefrLevel = (typeof CEFR_LEVELS)[number];
@@ -77,7 +74,7 @@ export function isValidCefrLevel(level: string): level is CefrLevel {
 }
 
 export async function generateFullCefrExam(level: CefrLevel): Promise<FullCefrExamJson> {
-  if (!openai) throw new Error("OPENAI_API_KEY sozlanmagan");
+  if (!isAiAvailable()) throw new Error("AI sozlanmagan (GEMINI_API_KEY yoki OPENAI_API_KEY kerak)");
   if (!isValidCefrLevel(level)) throw new Error(`Noto'g'ri daraja: ${level}`);
 
   const userPrompt = `Daraja: ${level}.
@@ -92,20 +89,17 @@ Quyidagi bo'limlardan iborat to'liq imtihon variantini tuzing:
 
 Natijani faqat yuqoridagi JSON struktura (level, sections, tasks) da qaytaring. Barcha matnlar arabcha (fus'ha).`;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+  const result = await aiGenerateJson<Record<string, unknown>>({
     messages: [
       { role: "system", content: EXPERT_SYSTEM },
       { role: "user", content: userPrompt },
     ],
-    response_format: { type: "json_object" },
-    max_tokens: 16000,
+    maxTokens: 16000,
   });
 
-  const content = completion.choices[0]?.message?.content?.trim();
-  if (!content) throw new Error("AI javob bo'sh");
+  if (!result.data) throw new Error("AI javob bo'sh");
 
-  const parsed = parseFullCefrExam(content, level);
+  const parsed = parseFullCefrExam(JSON.stringify(result.data), level);
   return parsed;
 }
 

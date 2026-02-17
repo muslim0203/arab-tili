@@ -1,29 +1,23 @@
-import OpenAI from "openai";
-import { config } from "../config.js";
-
-const openai = config.openaiApiKey ? new OpenAI({ apiKey: config.openaiApiKey }) : null;
+import { aiGenerate, isAiAvailable } from "../lib/ai-client.js";
 
 export async function chatWithTutor(
   userMessage: string,
   languagePreference: string,
   cefrLevel?: string | null
 ): Promise<{ response: string; tokensUsed?: number }> {
-  if (!openai) throw new Error("OPENAI_API_KEY sozlanmagan");
+  if (!isAiAvailable()) throw new Error("AI sozlanmagan (GEMINI_API_KEY yoki OPENAI_API_KEY kerak)");
 
   const level = cefrLevel ? `Foydalanuvchi taxminiy darajasi: ${cefrLevel}. ` : "";
   const lang = languagePreference === "ar" ? "arabcha" : languagePreference === "ru" ? "ruscha" : "o'zbekcha";
   const systemPrompt = `Siz arab tili (fus'ha) bo'yicha CEFR asosida yordam beradigan tutor siz. ${level}Foydalanuvchi savoliga javobni asosan ${lang} tilida bering. Qisqa, aniq va foydali bo'ling. Arab tili grammatikasi, so'z boyligi va imtihon tayyorgarligida yordam bering.`;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const result = await aiGenerate({
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMessage },
     ],
-    max_tokens: 800,
+    maxTokens: 800,
   });
 
-  const content = completion.choices[0]?.message?.content?.trim() ?? "";
-  const tokensUsed = completion.usage?.total_tokens;
-  return { response: content, tokensUsed: tokensUsed ?? undefined };
+  return { response: result.text || "AI javob berishi mumkin emas edi." };
 }

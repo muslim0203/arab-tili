@@ -1,8 +1,5 @@
-import OpenAI from "openai";
-import { config } from "../config.js";
+import { aiGenerate, aiGenerateJson, isAiAvailable } from "../lib/ai-client.js";
 import { determineCefrLevel, cefrFeedbackUz } from "../lib/cefr-scoring.js";
-
-const openai = config.openaiApiKey ? new OpenAI({ apiKey: config.openaiApiKey }) : null;
 
 export type GeneratedMcq = {
   questionText: string;
@@ -21,71 +18,43 @@ export async function generateMcqQuestions(
   languagePreference: string,
   estimatedLevel?: string
 ): Promise<GeneratedMcq[]> {
-  if (!openai) {
-    throw new Error("OPENAI_API_KEY sozlanmagan");
+  if (!isAiAvailable()) {
+    throw new Error("AI sozlanmagan (GEMINI_API_KEY yoki OPENAI_API_KEY kerak)");
   }
   const levelHint = estimatedLevel ? `Taxminiy daraja: ${estimatedLevel}. ` : "";
   const userPrompt = `${levelHint}Imtihon: "${examTitle}". Til: ${languagePreference}. ${count} ta MCQ savol yarating. Har biri alohida qatorda, faqat JSON object (questionText, options, correctAnswer, points).`;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const result = await aiGenerateJson<{ questions?: GeneratedMcq[];[key: string]: unknown }>({
     messages: [
       { role: "system", content: MCQ_SYSTEM },
       { role: "user", content: userPrompt },
     ],
-    response_format: { type: "json_object" },
-    max_tokens: 4000,
+    maxTokens: 4000,
   });
 
-  const content = completion.choices[0]?.message?.content?.trim();
-  if (!content) throw new Error("AI javob bo'sh");
-
-  const parsed = parseMcqResponse(content, count);
+  if (!result.data) throw new Error("AI javob bo'sh");
+  const parsed = parseMcqResponse(result.data, count);
   return parsed;
 }
 
-function parseMcqResponse(content: string, expectedCount: number): GeneratedMcq[] {
+function parseMcqResponse(data: Record<string, unknown>, expectedCount: number): GeneratedMcq[] {
   const results: GeneratedMcq[] = [];
-  try {
-    const obj = JSON.parse(content);
-    const list = Array.isArray(obj.questions) ? obj.questions : Array.isArray(obj) ? obj : [obj];
-    for (let i = 0; i < list.length && results.length < expectedCount; i++) {
-      const item = list[i];
-      if (!item || typeof item !== "object") continue;
-      const questionText = String(item.questionText ?? item.question ?? "").trim();
-      let options = item.options;
-      if (!Array.isArray(options)) options = [];
-      const correctAnswer = String(item.correctAnswer ?? options[0] ?? "").trim();
-      const points = Math.max(1, parseInt(String(item.points ?? 1), 10) || 1);
-      if (questionText && options.length >= 2) {
-        results.push({
-          questionText,
-          options: options.map((o: unknown) => String(o)),
-          correctAnswer: correctAnswer || options[0],
-          points,
-        });
-      }
-    }
-  } catch {
-    const lines = content.split("\n").filter((l) => l.trim().startsWith("{"));
-    for (const line of lines) {
-      if (results.length >= expectedCount) break;
-      try {
-        const item = JSON.parse(line);
-        const questionText = String(item.questionText ?? item.question ?? "").trim();
-        const options = Array.isArray(item.options) ? item.options.map((o: unknown) => String(o)) : [];
-        const correctAnswer = String(item.correctAnswer ?? options[0] ?? "").trim();
-        if (questionText && options.length >= 2) {
-          results.push({
-            questionText,
-            options,
-            correctAnswer: correctAnswer || options[0],
-            points: Math.max(1, parseInt(String(item.points ?? 1), 10) || 1),
-          });
-        }
-      } catch {
-        // skip invalid line
-      }
+  const list = Array.isArray(data.questions) ? data.questions : Array.isArray(data) ? data : [data];
+  for (let i = 0; i < list.length && results.length < expectedCount; i++) {
+    const item = list[i];
+    if (!item || typeof item !== "object") continue;
+    const questionText = String(item.questionText ?? item.question ?? "").trim();
+    let options = item.options;
+    if (!Array.isArray(options)) options = [];
+    const correctAnswer = String(item.correctAnswer ?? options[0] ?? "").trim();
+    const points = Math.max(1, parseInt(String(item.points ?? 1), 10) || 1);
+    if (questionText && options.length >= 2) {
+      results.push({
+        questionText,
+        options: options.map((o: unknown) => String(o)),
+        correctAnswer: correctAnswer || options[0],
+        points,
+      });
     }
   }
   return results.slice(0, expectedCount);
@@ -116,30 +85,26 @@ export async function evaluateCefrLevel(
   const cefrLevel = determineCefrLevel(totalScore);
   const defaultFeedback = cefrFeedbackUz(cefrLevel, totalScore);
 
-  if (!openai) {
+  if (!isAiAvailable()) {
     return { cefrLevel, feedback: defaultFeedback };
   }
 
   try {
     const userPrompt = `Ball: ${totalScore}/${maxScore}. Til: ${languagePreference}. CEFR darajasini va qisqa feedback bering.`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    const result = await aiGenerateJson<{ cefrLevel?: string; feedback?: string; comment?: string }>({
       messages: [
         { role: "system", content: CEFR_SYSTEM },
         { role: "user", content: userPrompt },
       ],
-      response_format: { type: "json_object" },
-      max_tokens: 300,
+      maxTokens: 300,
     });
 
-    const content = completion.choices[0]?.message?.content?.trim();
-    if (!content) return { cefrLevel, feedback: defaultFeedback };
+    if (!result.data) return { cefrLevel, feedback: defaultFeedback };
 
-    const obj = JSON.parse(content);
     return {
       cefrLevel,
-      feedback: String(obj.feedback ?? obj.comment ?? "").slice(0, 500) || defaultFeedback,
+      feedback: String(result.data.feedback ?? result.data.comment ?? "").slice(0, 500) || defaultFeedback,
     };
   } catch {
     return { cefrLevel, feedback: defaultFeedback };

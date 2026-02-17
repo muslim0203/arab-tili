@@ -1,8 +1,5 @@
-import OpenAI from "openai";
 import { z } from "zod";
-import { config } from "../config.js";
-
-const openai = config.openaiApiKey ? new OpenAI({ apiKey: config.openaiApiKey }) : null;
+import { aiGenerateJson, isAiAvailable } from "../lib/ai-client.js";
 
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export type CefrLevel = (typeof CEFR_LEVELS)[number];
@@ -36,9 +33,9 @@ For generateWritingTasks: { "tasks": [ { "taskId": "w1", "prompt": "...", "wordL
 For gradeWriting: { "score": number, "maxScore": number, "feedback": "string", "rubricBreakdown": { "content": 2, "grammar": 1.5 } } (optional).`;
 
 export async function generateWritingTasks(level: CefrLevel, count: number = 2): Promise<WritingTasksResponse> {
-  if (!openai) throw new Error("OPENAI_API_KEY not set");
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  if (!isAiAvailable()) throw new Error("AI sozlanmagan (GEMINI_API_KEY yoki OPENAI_API_KEY kerak)");
+
+  const result = await aiGenerateJson<Record<string, unknown>>({
     messages: [
       { role: "system", content: WRITING_SYSTEM },
       {
@@ -46,11 +43,11 @@ export async function generateWritingTasks(level: CefrLevel, count: number = 2):
         content: `Generate ${count} CEFR ${level} Arabic (fus'ha) writing tasks. Topics: education, society, technology, culture, economy. Return JSON: { "tasks": [ { "taskId": "w1", "prompt": "...", "wordLimit": 150, "rubric": { "content": 4, "grammar": 3, "vocabulary": 3 }, "maxScore": 10 }, ... ] }.`,
       },
     ],
-    response_format: { type: "json_object" },
-    max_tokens: 1500,
+    maxTokens: 1500,
   });
-  const raw = JSON.parse(completion.choices[0]?.message?.content?.trim() || "{}");
-  return WritingTasksResponseSchema.parse(raw);
+
+  if (!result.data) throw new Error("AI javob bo'sh");
+  return WritingTasksResponseSchema.parse(result.data);
 }
 
 export async function gradeWriting(
@@ -58,15 +55,15 @@ export async function gradeWriting(
   task: { prompt: string; rubric: unknown; maxScore: number },
   userText: string
 ): Promise<WritingGrade> {
-  if (!openai) {
+  if (!isAiAvailable()) {
     return {
       score: 0,
       maxScore: task.maxScore,
-      feedback: "OPENAI_API_KEY not set; grading skipped.",
+      feedback: "AI sozlanmagan; baholash o'tkazib yuborildi.",
     };
   }
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+
+  const result = await aiGenerateJson<Record<string, unknown>>({
     messages: [
       { role: "system", content: WRITING_SYSTEM },
       {
@@ -74,11 +71,13 @@ export async function gradeWriting(
         content: `CEFR ${level}. Task: ${task.prompt}. Rubric: ${JSON.stringify(task.rubric)}. User text:\n${userText}\n\nReturn JSON: { "score": number, "maxScore": ${task.maxScore}, "feedback": "string", "rubricBreakdown": {} }.`,
       },
     ],
-    response_format: { type: "json_object" },
-    max_tokens: 600,
+    maxTokens: 600,
   });
-  const raw = JSON.parse(completion.choices[0]?.message?.content?.trim() || "{}");
-  return WritingGradeSchema.parse({ ...raw, maxScore: task.maxScore });
+
+  if (!result.data) {
+    return { score: 0, maxScore: task.maxScore, feedback: "AI javob bo'sh" };
+  }
+  return WritingGradeSchema.parse({ ...result.data, maxScore: task.maxScore });
 }
 
 // ---- Speaking ----
@@ -116,9 +115,9 @@ For generateSpeakingTasks: { "script": { "intro": ["Q1","Q2"], "monologueTopics"
 For gradeSpeaking: { "score": number, "maxScore": number, "feedback": "string", "rubricBreakdown": {} }.`;
 
 export async function generateSpeakingTasks(level: CefrLevel): Promise<SpeakingExamResponse> {
-  if (!openai) throw new Error("OPENAI_API_KEY not set");
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  if (!isAiAvailable()) throw new Error("AI sozlanmagan (GEMINI_API_KEY yoki OPENAI_API_KEY kerak)");
+
+  const result = await aiGenerateJson<Record<string, unknown>>({
     messages: [
       { role: "system", content: SPEAKING_SYSTEM },
       {
@@ -126,11 +125,11 @@ export async function generateSpeakingTasks(level: CefrLevel): Promise<SpeakingE
         content: `Generate CEFR ${level} Arabic (fus'ha) 3-part speaking exam: intro questions, monologue topics, discussion questions. Include tasks array with taskId, part, prompt, rubric, maxScore. Return JSON.`,
       },
     ],
-    response_format: { type: "json_object" },
-    max_tokens: 2000,
+    maxTokens: 2000,
   });
-  const raw = JSON.parse(completion.choices[0]?.message?.content?.trim() || "{}");
-  return SpeakingExamResponseSchema.parse(raw);
+
+  if (!result.data) throw new Error("AI javob bo'sh");
+  return SpeakingExamResponseSchema.parse(result.data);
 }
 
 export async function gradeSpeaking(
@@ -138,15 +137,15 @@ export async function gradeSpeaking(
   task: { prompt: string; rubric: unknown; maxScore: number },
   userTextOrTranscript: string
 ): Promise<SpeakingGrade> {
-  if (!openai) {
+  if (!isAiAvailable()) {
     return {
       score: 0,
       maxScore: task.maxScore,
-      feedback: "OPENAI_API_KEY not set; grading skipped.",
+      feedback: "AI sozlanmagan; baholash o'tkazib yuborildi.",
     };
   }
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+
+  const result = await aiGenerateJson<Record<string, unknown>>({
     messages: [
       { role: "system", content: SPEAKING_SYSTEM },
       {
@@ -154,9 +153,11 @@ export async function gradeSpeaking(
         content: `CEFR ${level}. Task: ${task.prompt}. Rubric: ${JSON.stringify(task.rubric)}. User response (transcript):\n${userTextOrTranscript}\n\nReturn JSON: { "score": number, "maxScore": ${task.maxScore}, "feedback": "string", "rubricBreakdown": {} }.`,
       },
     ],
-    response_format: { type: "json_object" },
-    max_tokens: 600,
+    maxTokens: 600,
   });
-  const raw = JSON.parse(completion.choices[0]?.message?.content?.trim() || "{}");
-  return SpeakingGradeSchema.parse({ ...raw, maxScore: task.maxScore });
+
+  if (!result.data) {
+    return { score: 0, maxScore: task.maxScore, feedback: "AI javob bo'sh" };
+  }
+  return SpeakingGradeSchema.parse({ ...result.data, maxScore: task.maxScore });
 }
