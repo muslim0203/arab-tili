@@ -3,8 +3,9 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useGoogleLogin } from "@react-oauth/google";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,7 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 const schema = z.object({
-  email: z.string().email("To‘g‘ri email kiriting"),
+  email: z.string().email("To'g'ri email kiriting"),
   password: z.string().min(1, "Parol kiritilishi shart"),
 });
 
@@ -35,6 +36,7 @@ export function Login() {
   const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [error, setError] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -68,8 +70,40 @@ export function Login() {
     }
   };
 
+  // Google OAuth – credential (id_token) flow
+  const googleLogin = useGoogleLogin({
+    flow: "implicit",
+    onSuccess: async (tokenResponse) => {
+      setGoogleLoading(true);
+      setError("");
+      try {
+        // Google access_token bilan userinfo olish, keyin id_token o'rniga
+        // server'ga access_token yuboramiz
+        const res = await api<{ user: unknown; accessToken: string; refreshToken: string }>("/auth/google", {
+          method: "POST",
+          body: { idToken: tokenResponse.access_token },
+          skipAuth: true,
+        });
+        setAuth(res.user as Parameters<typeof setAuth>[0], res.accessToken, res.refreshToken);
+        toast.success("Google bilan muvaffaqiyatli kirdingiz!");
+        navigate(from, { replace: true });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Google bilan kirish amalga oshmadi";
+        setError(msg);
+        toast.error(msg);
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    onError: (error) => {
+      console.error("Google login error:", error);
+      setError("Google bilan kirish bekor qilindi");
+      toast.error("Google bilan kirish bekor qilindi");
+    },
+  });
+
   const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
+    googleLogin();
   };
 
   return (
@@ -97,9 +131,14 @@ export function Login() {
             variant="outline"
             className="w-full min-h-11 rounded-xl touch-manipulation flex items-center justify-center gap-2 border border-input hover:bg-muted/50"
             onClick={handleGoogleLogin}
+            disabled={googleLoading}
           >
-            <GoogleIcon />
-            <span>Google bilan kirish</span>
+            {googleLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <GoogleIcon />
+            )}
+            <span>{googleLoading ? "Kutilmoqda..." : "Google bilan kirish"}</span>
           </Button>
           <div className="relative flex items-center py-2">
             <div className="flex-1 border-t border-border" />
@@ -126,8 +165,8 @@ export function Login() {
             <Button type="submit" className="w-full min-h-11 rounded-xl touch-manipulation">Kirish</Button>
           </form>
           <p className="text-center text-sm text-muted-foreground pt-2">
-            Hisobingiz yo‘qmi?{" "}
-            <Link to="/register" className="text-primary hover:underline touch-manipulation">Ro‘yxatdan o‘ting</Link>
+            Hisobingiz yo'qmi?{" "}
+            <Link to="/register" className="text-primary hover:underline touch-manipulation">Ro'yxatdan o'ting</Link>
           </p>
         </CardContent>
       </Card>

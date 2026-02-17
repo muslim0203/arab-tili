@@ -94,8 +94,17 @@ router.post("/login", authLimiter, async (req, res: Response) => {
   const { email, password } = parsed.data;
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    res.status(401).json({ message: "Email yoki parol noto‘g‘ri" });
+  if (!user) {
+    res.status(401).json({ message: "Email yoki parol noto'g'ri" });
+    return;
+  }
+  // Google orqali ro'yxatdan o'tgan foydalanuvchi (paroli yo'q)
+  if (!user.passwordHash) {
+    res.status(401).json({ message: "Bu hisob Google orqali yaratilgan. Google bilan kiring." });
+    return;
+  }
+  if (!(await bcrypt.compare(password, user.passwordHash))) {
+    res.status(401).json({ message: "Email yoki parol noto'g'ri" });
     return;
   }
 
@@ -207,12 +216,93 @@ router.post("/reset-password", async (req, res: Response) => {
   }
 });
 
-// GET /api/auth/google – OAuth redirect (sozlanmagan bo‘lsa login sahifasiga qaytadi)
-router.get("/google", (_req, res: Response) => {
-  // Google OAuth: kelajakda GOOGLE_CLIENT_ID va callback URL sozlanganida
-  // res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?...`) qilinadi
-  const frontendUrl = config.frontendUrl.replace(/\/$/, "");
-  res.redirect(`${frontendUrl}/login?error=google_not_configured`);
+// POST /api/auth/google – Google OAuth (frontend sends idToken)
+const googleSchema = z.object({
+  idToken: z.string().min(1, "Google token kerak"),
+});
+
+router.post("/google", authLimiter, async (req, res: Response) => {
+  const parsed = googleSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "idToken kerak" });
+    return;
+  }
+
+  let googleUser;
+  try {
+    const { verifyGoogleToken } = await import("../services/google-auth.js");
+    googleUser = await verifyGoogleToken(parsed.data.idToken);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Google tekshiruvi amalga oshmadi";
+    res.status(401).json({ message: msg });
+    return;
+  }
+
+  // 1) googleId bilan foydalanuvchini qidirish
+  let user = await prisma.user.findUnique({
+    where: { googleId: googleUser.sub },
+  });
+
+  if (!user) {
+    // 2) Email bilan mavjud foydalanuvchini qidirish (account linking)
+    user = await prisma.user.findUnique({
+      where: { email: googleUser.email },
+    });
+
+    if (user) {
+      // Mavjud hisobga Google ID ulash
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId: googleUser.sub,
+          avatarUrl: googleUser.picture ?? user.avatarUrl,
+        },
+      });
+    } else {
+      // 3) Yangi foydalanuvchi yaratish
+      user = await prisma.user.create({
+        data: {
+          email: googleUser.email,
+          fullName: googleUser.name,
+          googleId: googleUser.sub,
+          avatarUrl: googleUser.picture ?? null,
+          passwordHash: "", // Google foydalanuvchisida parol yo'q
+          subscriptionTier: "FREE",
+          languagePreference: "uz",
+        },
+      });
+
+      // UserProgress yaratish
+      await prisma.userProgress.create({
+        data: { userId: user.id },
+      });
+    }
+  }
+
+  // lastLogin yangilash
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLogin: new Date() },
+  });
+
+  const accessToken = signAccess({ userId: user.id, email: user.email });
+  const refreshToken = signRefresh({ userId: user.id });
+  const tier = user.subscriptionExpiresAt && new Date() > user.subscriptionExpiresAt ? "FREE" : user.subscriptionTier;
+
+  res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      languagePreference: user.languagePreference,
+      subscriptionTier: tier,
+      subscriptionExpiresAt: user.subscriptionExpiresAt?.toISOString() ?? null,
+      isAdmin: user.isAdmin,
+    },
+    accessToken,
+    refreshToken,
+    expiresIn: 900,
+  });
 });
 
 // GET /api/auth/me (protected)

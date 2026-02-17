@@ -43,8 +43,10 @@ model QuestionBank {
 model User {
   id                    String    @id @default(cuid())
   email                 String    @unique
-  passwordHash          String    @map("password_hash")
+  passwordHash          String    @default("") @map("password_hash")
   fullName              String    @map("full_name")
+  googleId              String?   @unique @map("google_id")
+  avatarUrl             String?   @map("avatar_url")
   subscriptionTier      String    @default("FREE") @map("subscription_tier")
   subscriptionExpiresAt DateTime? @map("subscription_expires_at")
   languagePreference    String    @default("uz") @map("language_preference")
