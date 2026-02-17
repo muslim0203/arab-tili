@@ -53,13 +53,25 @@ export async function aiGenerate(opts: {
 }): Promise<AiResponse> {
     const { messages, maxTokens = 4000, jsonMode = false, temperature } = opts;
 
-    // 1) Gemini bilan urinish
+    // 1) Gemini bilan urinish (retry bilan)
     const model = getGeminiModel();
     if (model) {
-        try {
-            return await callGemini(model, messages, maxTokens, jsonMode, temperature);
-        } catch (e) {
-            console.warn("[AI] Gemini xato, OpenAI ga o'tish:", (e as Error).message);
+        const maxRetries = 3;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                return await callGemini(model, messages, maxTokens, jsonMode, temperature);
+            } catch (e) {
+                const msg = (e as Error).message ?? "";
+                const is429 = msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("quota");
+                if (is429 && attempt < maxRetries) {
+                    const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s, 8s
+                    console.warn(`[AI] Gemini 429 rate limit, ${delay / 1000}s kutish... (${attempt + 1}/${maxRetries})`);
+                    await new Promise(r => setTimeout(r, delay));
+                    continue;
+                }
+                console.warn("[AI] Gemini xato, OpenAI ga o'tish:", msg.slice(0, 200));
+                break;
+            }
         }
     }
 
@@ -84,31 +96,33 @@ async function callGemini(
     jsonMode: boolean,
     temperature?: number
 ): Promise<AiResponse> {
-    // System prompt va chat history ajratish
-    const systemInstruction = messages
+    // System prompt ajratish
+    const systemParts = messages
         .filter((m) => m.role === "system")
-        .map((m) => m.content)
-        .join("\n\n");
+        .map((m) => m.content);
 
-    const history = messages
-        .filter((m) => m.role !== "system")
-        .slice(0, -1) // Oxirgi xabarni qoldirish
-        .map((m) => ({
-            role: m.role === "assistant" ? "model" as const : "user" as const,
-            parts: [{ text: m.content }],
-        }));
+    let systemInstruction = systemParts.join("\n\n");
+    if (jsonMode) {
+        systemInstruction += "\n\nIMPORTANT: Faqat valid JSON formatida javob qaytaring. Boshqa matn yozmang.";
+    }
 
-    const lastMessage = messages.filter((m) => m.role !== "system").slice(-1)[0];
-    const userPrompt = lastMessage?.content ?? "";
+    // User va assistant xabarlarini contents ga aylantirish
+    const nonSystemMessages = messages.filter((m) => m.role !== "system");
+    const contents = nonSystemMessages.map((m) => ({
+        role: m.role === "assistant" ? "model" as const : "user" as const,
+        parts: [{ text: m.content }],
+    }));
 
-    // JSON mode uchun ko'rsatma qo'shish
-    const fullSystemPrompt = jsonMode
-        ? `${systemInstruction}\n\nIMPORTANT: Faqat valid JSON formatida javob qaytaring. Boshqa matn yozmang.`
-        : systemInstruction;
+    // Agar contents bo'sh bo'lsa, systemInstruction ni user message sifatida qo'shish
+    if (contents.length === 0) {
+        contents.push({ role: "user" as const, parts: [{ text: systemInstruction }] });
+        systemInstruction = "";
+    }
 
-    const chat = model.startChat({
-        history,
-        systemInstruction: fullSystemPrompt || undefined,
+    // Model ni system instruction bilan qayta yaratish
+    const modelWithSystem = gemini!.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        ...(systemInstruction ? { systemInstruction } : {}),
         generationConfig: {
             maxOutputTokens: maxTokens,
             temperature: temperature ?? (jsonMode ? 0.3 : 0.7),
@@ -116,7 +130,7 @@ async function callGemini(
         },
     });
 
-    const result = await chat.sendMessage(userPrompt);
+    const result = await modelWithSystem.generateContent({ contents });
     const text = result.response.text().trim();
 
     return { text, provider: "gemini" };

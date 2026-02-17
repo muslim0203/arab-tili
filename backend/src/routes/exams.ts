@@ -183,7 +183,7 @@ router.post("/:id/start", authenticateToken, async (req: AuthRequest, res: Respo
     } catch (e) {
       await prisma.userExamAttempt.delete({ where: { id: attempt.id } });
       res.status(503).json({
-        message: "Savollar generatsiya qilinmadi. OPENAI_API_KEY tekshiring.",
+        message: "AI savollar generatsiya qila olmadi. Keyinroq qayta urinib ko'ring.",
         detail: e instanceof Error ? e.message : "",
       });
       return;

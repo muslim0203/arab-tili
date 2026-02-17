@@ -155,9 +155,10 @@ export function ExamPage() {
   }, [recordingState]);
 
   useEffect(() => {
-    const duration = data?.exam?.durationMinutes ?? 120;
+    if (!data?.startedAt) return;
+    const duration = data.exam?.durationMinutes ?? 120;
     if (!duration) return;
-    const started = new Date(data!.startedAt).getTime();
+    const started = new Date(data.startedAt).getTime();
     const totalSeconds = duration * 60;
     const elapsed = Math.floor((Date.now() - started) / 1000);
     const left = Math.max(0, totalSeconds - elapsed);
