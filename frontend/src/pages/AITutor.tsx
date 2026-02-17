@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppLayout } from "@/components/app/AppLayout";
@@ -40,6 +41,9 @@ export function AITutor() {
       queryClient.invalidateQueries({ queryKey: ["ai-tutor-history"] });
       queryClient.invalidateQueries({ queryKey: ["ai-tutor-quota"] });
       setMessage("");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "AI tutor javob bermadi");
     },
   });
 

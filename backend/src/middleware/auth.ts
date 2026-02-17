@@ -1,17 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma.js";
 import { verifyAccess } from "../lib/jwt.js";
+import { effectiveTier } from "../lib/subscription.js";
 
 export type AuthRequest = Request & {
   userId?: string;
   user?: { id: string; email: string; fullName: string; languagePreference: string; subscriptionTier: string; subscriptionExpiresAt: Date | null; isAdmin: boolean };
 };
-
-function effectiveTier(tier: string, expiresAt: Date | null): string {
-  if (!expiresAt) return tier;
-  if (new Date() > expiresAt) return "FREE";
-  return tier;
-}
 
 export async function authenticateToken(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;

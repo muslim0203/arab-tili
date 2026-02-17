@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
 import { aiLimiter } from "../middleware/rate-limit.js";
 import { chatWithTutor } from "../services/ai-tutor.js";
+import { effectiveTier } from "../lib/subscription.js";
 
 const router = Router();
 
@@ -26,11 +27,6 @@ async function getMonthlyUsage(userId: string): Promise<number> {
     where: { userId, createdAt: { gte: start } },
   });
   return count;
-}
-
-function effectiveTier(tier: string, expiresAt: Date | null): string {
-  if (!expiresAt || new Date() <= expiresAt) return tier;
-  return "FREE";
 }
 
 // GET /api/ai-tutor/quota – oylik limit va ishlatilgan

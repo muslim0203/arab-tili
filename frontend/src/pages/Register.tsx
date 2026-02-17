@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,9 +39,12 @@ export function Register() {
         skipAuth: true,
       });
       setAuth(res.user as Parameters<typeof setAuth>[0], res.accessToken, res.refreshToken);
+      toast.success("Hisob muvaffaqiyatli yaratildi!");
       navigate("/dashboard", { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ro‘yxatdan o‘tish amalga oshmadi");
+      const msg = e instanceof Error ? e.message : "Ro'yxatdan o'tish amalga oshmadi";
+      setError(msg);
+      toast.error(msg);
     }
   };
 

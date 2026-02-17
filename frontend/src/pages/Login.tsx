@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,9 +59,12 @@ export function Login() {
         skipAuth: true,
       });
       setAuth(res.user as Parameters<typeof setAuth>[0], res.accessToken, res.refreshToken);
+      toast.success("Muvaffaqiyatli kirdingiz!");
       navigate(from, { replace: true });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Kirish amalga oshmadi");
+      const msg = e instanceof Error ? e.message : "Kirish amalga oshmadi";
+      setError(msg);
+      toast.error(msg);
     }
   };
 

@@ -33,6 +33,7 @@ const Qollanmalar = lazy(() => import("@/pages/info/Qollanmalar").then((m) => ({
 const VideoQollanmalar = lazy(() => import("@/pages/info/VideoQollanmalar").then((m) => ({ default: m.VideoQollanmalar })));
 const Landing = lazy(() => import("@/pages/Landing").then((m) => ({ default: m.Landing })));
 const NotFound = lazy(() => import("@/pages/NotFound").then((m) => ({ default: m.NotFound })));
+const Settings = lazy(() => import("@/pages/Settings").then((m) => ({ default: m.Settings })));
 
 function PageFallback() {
   return (
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="/ai-tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
             <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
             <Route path="/payment/return" element={<ProtectedRoute><PaymentReturn /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             {/* Tizim haqida, Foydalanuvchilarga, Tashkilotlarga, Yordam (dropdown: Bog'lanish, Qo'llanmalar, Video) */}
             <Route path="/tizim-haqida" element={<TizimHaqida />} />
             <Route path="/foydalanuvchilarga" element={<Foydalanuvchilarga />} />

@@ -44,6 +44,7 @@ import { progressRoutes } from "./routes/progress.js";
 import { aiTutorRoutes } from "./routes/ai-tutor.js";
 import { subscriptionRoutes } from "./routes/subscriptions.js";
 import { adminRoutes } from "./routes/admin.js";
+import { profileRoutes } from "./routes/profile.js";
 app.use("/api/auth", authRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/attempts", attemptRoutes);
@@ -51,6 +52,7 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/ai-tutor", aiTutorRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/profile", profileRoutes);
 
 // Global error handler (async route xatolarini ushlaydi)
 import multer from "multer";
