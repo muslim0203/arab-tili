@@ -1,0 +1,278 @@
+// AttanalPro – Prisma schema
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+  INTENSIVE
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  ESSAY
+  AUDIO_RESPONSE
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+// CEFR question bank (pre-generated, no AI at attempt time for listening/reading/language)
+model QuestionBank {
+  id            String   @id @default(cuid())
+  level         String   @map("level")
+  section       String   @map("section")
+  taskType      String   @map("task_type")
+  prompt        String   @map("prompt")
+  options       Json?    @map("options")
+  correctAnswer Json     @map("correct_answer")
+  transcript    String?  @map("transcript")
+  passage       String?  @map("passage")
+  audioUrl      String?  @map("audio_url")
+  rubric        Json?    @map("rubric")
+  difficulty    Int      @default(3) @map("difficulty")
+  tags          Json?    @map("tags")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  attemptQuestions AttemptQuestion[]
+
+  @@index([level, section])
+  @@map("question_bank")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  passwordHash          String    @map("password_hash")
+  fullName              String    @map("full_name")
+  subscriptionTier      SubscriptionTier @default(FREE) @map("subscription_tier")
+  subscriptionExpiresAt DateTime? @map("subscription_expires_at")
+  languagePreference    String    @default("uz") @map("language_preference")
+  lastLogin             DateTime? @map("last_login")
+  isAdmin               Boolean   @default(false) @map("is_admin")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  attempts            UserExamAttempt[]
+  progress            UserProgress?
+  aiTutorConversations AITutorConversation[]
+  payments            Payment[]
+
+  @@map("users")
+}
+
+model ExamType {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  sections   ExamSection[]
+  mockExams  MockExam[]
+
+  @@map("exam_types")
+}
+
+model ExamSection {
+  id         String   @id @default(cuid())
+  examTypeId String   @map("exam_type_id")
+  name       String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  examType  ExamType   @relation(fields: [examTypeId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@map("exam_sections")
+}
+
+model Question {
+  id            String       @id @default(cuid())
+  examSectionId String       @map("exam_section_id")
+  questionType  QuestionType @map("question_type")
+  questionText  String       @map("question_text")
+  options       Json?        // For MCQ: ["A", "B", "C", "D"] or full text
+  correctAnswer String?      @map("correct_answer")
+  points        Int          @default(1)
+  order         Int          @default(0)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  examSection     ExamSection      @relation(fields: [examSectionId], references: [id], onDelete: Cascade)
+  mockExamQuestions MockExamQuestion[]
+  userAnswers     UserAnswer[]
+
+  @@map("questions")
+}
+
+model MockExam {
+  id                String   @id @default(cuid())
+  examTypeId        String   @map("exam_type_id")
+  title             String
+  description       String?
+  durationMinutes   Int      @map("duration_minutes")
+  useAiGeneration   Boolean  @default(false) @map("use_ai_generation")
+  numberOfQuestions Int?     @map("number_of_questions")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  examType  ExamType          @relation(fields: [examTypeId], references: [id], onDelete: Cascade)
+  questions MockExamQuestion[]
+  attempts  UserExamAttempt[]
+
+  @@map("mock_exams")
+}
+
+model MockExamQuestion {
+  id          String   @id @default(cuid())
+  mockExamId  String   @map("mock_exam_id")
+  questionId  String   @map("question_id")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  mockExam MockExam  @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([mockExamId, questionId])
+  @@map("mock_exam_questions")
+}
+
+model UserExamAttempt {
+  id                 String        @id @default(cuid())
+  userId             String        @map("user_id")
+  mockExamId         String?       @map("mock_exam_id")
+  level              String?       @map("level")
+  startedAt          DateTime      @default(now()) @map("started_at")
+  completedAt        DateTime?     @map("completed_at")
+  status             AttemptStatus @default(IN_PROGRESS)
+  totalScore         Int?          @map("total_score")
+  maxPossibleScore   Int?          @map("max_possible_score")
+  percentage         Float?        @map("percentage")
+  cefrLevelAchieved  String?       @map("cefr_level_achieved")
+  cefrFeedback       String?       @map("cefr_feedback")
+  sectionScores      Json?         @map("section_scores")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mockExam        MockExam?       @relation(fields: [mockExamId], references: [id], onDelete: SetNull)
+  attemptQuestions AttemptQuestion[]
+  answers         UserAnswer[]
+
+  @@map("user_exam_attempts")
+}
+
+model AttemptQuestion {
+  id                 String         @id @default(cuid())
+  attemptId          String         @map("attempt_id")
+  sourceQuestionId   String?        @map("source_question_id")
+  order              Int            @default(0)
+  section            String         @default("reading") @map("section")
+  taskType           String         @default("mcq") @map("task_type")
+  questionType       QuestionType   @default(MULTIPLE_CHOICE) @map("question_type")
+  questionText       String         @map("question_text")
+  transcript         String?        @map("transcript")
+  passage            String?        @map("passage")
+  options            Json?
+  correctAnswer      Json?          @map("correct_answer")
+  rubric             Json?         @map("rubric")
+  points             Int            @default(1) @map("points")
+  maxScore           Int?           @map("max_score")
+  wordLimit          Int?           @map("word_limit")
+  audioUrl           String?        @map("audio_url")
+  createdAt          DateTime       @default(now()) @map("created_at")
+
+  attempt        UserExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  sourceQuestion QuestionBank?   @relation(fields: [sourceQuestionId], references: [id], onDelete: SetNull)
+  userAnswers    UserAnswer[]
+
+  @@map("attempt_questions")
+}
+
+model UserAnswer {
+  id                String   @id @default(cuid())
+  attemptId         String   @map("attempt_id")
+  questionId        String?  @map("question_id")
+  attemptQuestionId String?  @map("attempt_question_id")
+  answerText        String?  @map("answer_text")
+  audioUrl          String?  @map("audio_url")
+  isCorrect         Boolean? @map("is_correct")
+  pointsEarned      Int?     @map("points_earned")
+  score             Float?   @map("score")
+  aiFeedback        String?  @map("ai_feedback")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  attempt         UserExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question        Question?       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  attemptQuestion AttemptQuestion? @relation(fields: [attemptQuestionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, attemptQuestionId])
+  @@unique([attemptId, questionId])
+  @@map("user_answers")
+}
+
+model UserProgress {
+  id                  String   @id @default(cuid())
+  userId              String   @unique @map("user_id")
+  totalExamsTaken     Int      @default(0) @map("total_exams_taken")
+  skillScores         Json?    @map("skill_scores")
+  currentStreakDays   Int      @default(0) @map("current_streak_days")
+  currentCefrEstimate String?  @map("current_cefr_estimate")
+  lastActivityAt      DateTime? @map("last_activity_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_progress")
+}
+
+model AITutorConversation {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  questionAsked String   @map("question_asked")
+  aiResponse    String   @map("ai_response")
+  tokensUsed    Int?     @map("tokens_used")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_tutor_conversations")
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String        @map("user_id")
+  amount            Int           // in tiyin/smallest unit (UZS)
+  currency          String        @default("UZS")
+  status            PaymentStatus @default(PENDING)
+  planId            String?       @map("plan_id")
+  paymentProviderId String?      @unique @map("payment_provider_id")
+  paidAt            DateTime?     @map("paid_at")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
