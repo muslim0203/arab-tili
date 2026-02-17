@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { config } from "../config.js";
+import { determineCefrLevel, cefrFeedbackUz } from "../lib/cefr-scoring.js";
 
 const openai = config.openaiApiKey ? new OpenAI({ apiKey: config.openaiApiKey }) : null;
 
@@ -90,51 +91,57 @@ function parseMcqResponse(content: string, expectedCount: number): GeneratedMcq[
   return results.slice(0, expectedCount);
 }
 
-const CEFR_SYSTEM = `Siz CEFR (Common European Framework) baholovchisisiz. Arab tili imtihonida olingan ball va foiz asosida CEFR darajasini aniqlang.
-Darajalar: A1, A2, B1, B2, C1, C2.
-Javobni faqat quyidagi JSON formatida qaytaring: { "cefrLevel": "A2", "feedback": "qisqa tushuntirma (o'zbek yoki rus tilida)" }.`;
+const CEFR_SYSTEM = `Siz CEFR (Common European Framework) baholovchisisiz. Arab tili imtihonida olingan ball asosida CEFR darajasini aniqlang.
 
+Baholash jadvali (5 skills × max 30 ball = max 150 ball):
+- 0–24 ball: A1 (Boshlang'ich)
+- 25–49 ball: A2 (Asosiy)
+- 50–74 ball: B1 (Mustaqil)
+- 75–99 ball: B2 (Yuqori O'rta)
+- 100–124 ball: C1 (Ilg'or)
+- 125–150 ball: C2 (Yuqori Malaka)
+
+Javobni faqat quyidagi JSON formatida qaytaring: { "cefrLevel": "B1", "feedback": "qisqa tushuntirma (o'zbek tilida)" }.`;
+
+/**
+ * Ball asosida CEFR darajasini aniqlash.
+ * Endi foiz o'rniga JAMI BALL ishlatiladi.
+ */
 export async function evaluateCefrLevel(
   totalScore: number,
   maxScore: number,
-  percentage: number,
+  _percentage: number,
   languagePreference: string
 ): Promise<{ cefrLevel: string; feedback: string }> {
+  const cefrLevel = determineCefrLevel(totalScore);
+  const defaultFeedback = cefrFeedbackUz(cefrLevel, totalScore);
+
   if (!openai) {
-    return {
-      cefrLevel: percentage >= 90 ? "C2" : percentage >= 75 ? "C1" : percentage >= 60 ? "B2" : percentage >= 45 ? "B1" : percentage >= 30 ? "A2" : "A1",
-      feedback: "CEFR darajasi ball asosida hisoblandi (AI sozlanmagan).",
-    };
+    return { cefrLevel, feedback: defaultFeedback };
   }
-  const userPrompt = `Ball: ${totalScore}/${maxScore}, foiz: ${percentage.toFixed(1)}%. Til: ${languagePreference}. CEFR darajasini va qisqa feedback bering.`;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: CEFR_SYSTEM },
-      { role: "user", content: userPrompt },
-    ],
-    response_format: { type: "json_object" },
-    max_tokens: 300,
-  });
-
-  const content = completion.choices[0]?.message?.content?.trim();
-  if (!content) {
-    return {
-      cefrLevel: percentage >= 60 ? "B2" : percentage >= 30 ? "A2" : "A1",
-      feedback: "Daraja ball asosida aniqlandi.",
-    };
-  }
   try {
+    const userPrompt = `Ball: ${totalScore}/${maxScore}. Til: ${languagePreference}. CEFR darajasini va qisqa feedback bering.`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: CEFR_SYSTEM },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 300,
+    });
+
+    const content = completion.choices[0]?.message?.content?.trim();
+    if (!content) return { cefrLevel, feedback: defaultFeedback };
+
     const obj = JSON.parse(content);
     return {
-      cefrLevel: String(obj.cefrLevel ?? obj.level ?? "A1").replace(/[^A-C1-2]/g, "").slice(0, 2) || "A1",
-      feedback: String(obj.feedback ?? obj.comment ?? "").slice(0, 500) || "Baholash yakunlandi.",
+      cefrLevel,
+      feedback: String(obj.feedback ?? obj.comment ?? "").slice(0, 500) || defaultFeedback,
     };
   } catch {
-    return {
-      cefrLevel: percentage >= 60 ? "B2" : percentage >= 30 ? "A2" : "A1",
-      feedback: "Baholash yakunlandi.",
-    };
+    return { cefrLevel, feedback: defaultFeedback };
   }
 }
