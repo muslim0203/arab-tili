@@ -13,12 +13,23 @@ import { transcribeAudio } from "../services/transcribe.js";
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
+const ALLOWED_AUDIO_MIMES = new Set([
+  "audio/webm", "audio/mpeg", "audio/mp3", "audio/mp4",
+  "audio/m4a", "audio/wav", "audio/x-wav", "audio/ogg",
+]);
+const ALLOWED_AUDIO_EXTS = /\.(webm|mp3|m4a|wav|mpga|mpeg|mp4|ogg)$/i;
+
 const upload = multer({
   dest: UPLOADS_DIR,
-  limits: { fileSize: 25 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB
   fileFilter: (_req, file, cb) => {
-    const allowed = /\.(webm|mp3|m4a|wav|mpga|mpeg|mp4)$/i.test(file.originalname) || file.mimetype?.startsWith("audio/");
-    cb(null, !!allowed);
+    const extOk = ALLOWED_AUDIO_EXTS.test(file.originalname);
+    const mimeOk = ALLOWED_AUDIO_MIMES.has(file.mimetype) || file.mimetype?.startsWith("audio/");
+    if (extOk || mimeOk) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Ruxsat etilmagan fayl turi: ${file.mimetype}. Faqat audio fayllar qabul qilinadi.`));
+    }
   },
 });
 

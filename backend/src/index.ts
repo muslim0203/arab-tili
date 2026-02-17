@@ -25,6 +25,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/uploads", express.static(uploadsDir));
 
+// XSS sanitizatsiya – barcha body ma'lumotlarini tozalash
+import { sanitizeBody } from "./middleware/sanitize.js";
+app.use(sanitizeBody);
+
+// Rate limiting – barcha API so'rovlari uchun
+import { generalLimiter } from "./middleware/rate-limit.js";
+app.use("/api", generalLimiter);
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
@@ -45,7 +53,24 @@ app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Global error handler (async route xatolarini ushlaydi)
+import multer from "multer";
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // Multer fayl hajmi xatosi
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      res.status(413).json({ message: "Fayl hajmi juda katta. Maksimum 10MB ruxsat etiladi." });
+      return;
+    }
+    res.status(400).json({ message: `Fayl yuklash xatosi: ${err.message}` });
+    return;
+  }
+
+  // Ruxsat etilmagan fayl turi
+  if (err.message?.includes("Ruxsat etilmagan fayl turi")) {
+    res.status(415).json({ message: err.message });
+    return;
+  }
+
   console.error("API xatosi:", err.message, err.stack);
   const isDev = config.nodeEnv === "development";
   const message =

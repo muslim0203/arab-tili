@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { signAccess, signRefresh, verifyRefresh, signPasswordResetToken, verifyPasswordResetToken } from "../lib/jwt.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
+import { authLimiter, registerLimiter, forgotPasswordLimiter } from "../middleware/rate-limit.js";
 import { isEmailConfigured, sendPasswordResetEmail, sendSubscriptionReminder } from "../services/email.js";
 import { config } from "../config.js";
 
@@ -35,7 +36,7 @@ const resetPasswordSchema = z.object({
 });
 
 // POST /api/auth/register
-router.post("/register", async (req, res: Response) => {
+router.post("/register", registerLimiter, async (req, res: Response) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: "Validation error", errors: parsed.error.flatten() });
@@ -84,7 +85,7 @@ router.post("/register", async (req, res: Response) => {
 });
 
 // POST /api/auth/login
-router.post("/login", async (req, res: Response) => {
+router.post("/login", authLimiter, async (req, res: Response) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: "Email va parol kiritilishi shart" });
@@ -109,7 +110,7 @@ router.post("/login", async (req, res: Response) => {
     const expires = new Date(user.subscriptionExpiresAt);
     const daysLeft = (expires.getTime() - now.getTime()) / (24 * 60 * 60 * 1000);
     if (daysLeft > 0 && daysLeft <= 3) {
-      sendSubscriptionReminder(user.email, user.fullName, expires).catch(() => {});
+      sendSubscriptionReminder(user.email, user.fullName, expires).catch(() => { });
     }
   }
 
@@ -159,7 +160,7 @@ router.post("/refresh-token", async (req, res: Response) => {
 });
 
 // POST /api/auth/forgot-password
-router.post("/forgot-password", async (req, res: Response) => {
+router.post("/forgot-password", forgotPasswordLimiter, async (req, res: Response) => {
   const parsed = forgotPasswordSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: "Email kiritilishi shart" });

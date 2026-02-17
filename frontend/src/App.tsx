@@ -1,11 +1,12 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Login } from "@/pages/Login";
 import { Register } from "@/pages/Register";
 import { ForgotPassword } from "@/pages/ForgotPassword";
 import { ResetPassword } from "@/pages/ResetPassword";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load sahifalar – dastlabki yuklanish tezroq
 const Dashboard = lazy(() => import("@/pages/Dashboard").then((m) => ({ default: m.Dashboard })));
@@ -31,6 +32,7 @@ const Boglanish = lazy(() => import("@/pages/info/Boglanish").then((m) => ({ def
 const Qollanmalar = lazy(() => import("@/pages/info/Qollanmalar").then((m) => ({ default: m.Qollanmalar })));
 const VideoQollanmalar = lazy(() => import("@/pages/info/VideoQollanmalar").then((m) => ({ default: m.VideoQollanmalar })));
 const Landing = lazy(() => import("@/pages/Landing").then((m) => ({ default: m.Landing })));
+const NotFound = lazy(() => import("@/pages/NotFound").then((m) => ({ default: m.NotFound })));
 
 function PageFallback() {
   return (
@@ -42,40 +44,42 @@ function PageFallback() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<PageFallback />}>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/exams" element={<ProtectedRoute><ExamList /></ProtectedRoute>} />
-          <Route path="/exam/start/:examId" element={<ProtectedRoute><ExamStart /></ProtectedRoute>} />
-          <Route path="/exam/:attemptId" element={<ProtectedRoute><ExamPage /></ProtectedRoute>} />
-          <Route path="/attempts/:attemptId/results" element={<ProtectedRoute><AttemptResults /></ProtectedRoute>} />
-          <Route path="/attempts/history" element={<ProtectedRoute><AttemptHistory /></ProtectedRoute>} />
-          <Route path="/ai-tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
-          <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
-          <Route path="/payment/return" element={<ProtectedRoute><PaymentReturn /></ProtectedRoute>} />
-          {/* Tizim haqida, Foydalanuvchilarga, Tashkilotlarga, Yordam (dropdown: Bog'lanish, Qo'llanmalar, Video) */}
-          <Route path="/tizim-haqida" element={<TizimHaqida />} />
-          <Route path="/foydalanuvchilarga" element={<Foydalanuvchilarga />} />
-          <Route path="/tashkilotlarga" element={<Tashkilotlarga />} />
-          <Route path="/yordam" element={<YordamIndex />} />
-          <Route path="/yordam/boglanish" element={<Boglanish />} />
-          <Route path="/yordam/qollanmalar" element={<Qollanmalar />} />
-          <Route path="/yordam/video" element={<VideoQollanmalar />} />
-          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="payments" element={<AdminPayments />} />
-            <Route path="question-bank" element={<AdminQuestionBank />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/exams" element={<ProtectedRoute><ExamList /></ProtectedRoute>} />
+            <Route path="/exam/start/:examId" element={<ProtectedRoute><ExamStart /></ProtectedRoute>} />
+            <Route path="/exam/:attemptId" element={<ProtectedRoute><ExamPage /></ProtectedRoute>} />
+            <Route path="/attempts/:attemptId/results" element={<ProtectedRoute><AttemptResults /></ProtectedRoute>} />
+            <Route path="/attempts/history" element={<ProtectedRoute><AttemptHistory /></ProtectedRoute>} />
+            <Route path="/ai-tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
+            <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+            <Route path="/payment/return" element={<ProtectedRoute><PaymentReturn /></ProtectedRoute>} />
+            {/* Tizim haqida, Foydalanuvchilarga, Tashkilotlarga, Yordam (dropdown: Bog'lanish, Qo'llanmalar, Video) */}
+            <Route path="/tizim-haqida" element={<TizimHaqida />} />
+            <Route path="/foydalanuvchilarga" element={<Foydalanuvchilarga />} />
+            <Route path="/tashkilotlarga" element={<Tashkilotlarga />} />
+            <Route path="/yordam" element={<YordamIndex />} />
+            <Route path="/yordam/boglanish" element={<Boglanish />} />
+            <Route path="/yordam/qollanmalar" element={<Qollanmalar />} />
+            <Route path="/yordam/video" element={<VideoQollanmalar />} />
+            <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="payments" element={<AdminPayments />} />
+              <Route path="question-bank" element={<AdminQuestionBank />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
