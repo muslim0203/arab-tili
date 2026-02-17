@@ -22,11 +22,6 @@ export const authLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: "Juda ko'p kirish urinishi. 15 daqiqadan so'ng qayta urinib ko'ring." },
-    keyGenerator: (req) => {
-        // IP + email kombinatsiyasi bilan cheklash
-        const email = (req.body as { email?: string })?.email ?? "";
-        return `${req.ip}-${email}`;
-    },
 });
 
 /**
