@@ -1,4 +1,4 @@
-// AttanalPro – Prisma schema
+// Arab Exam – Prisma schema
 // https://pris.ly/d/prisma-schema
 
 generator client {
@@ -10,13 +10,136 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums removed for SQLite compatibility
-// SubscriptionTier: FREE, PREMIUM, INTENSIVE
-// QuestionType: MULTIPLE_CHOICE, ESSAY, AUDIO_RESPONSE
-// AttemptStatus: IN_PROGRESS, COMPLETED
-// PaymentStatus: PENDING, COMPLETED, FAILED
+// ══════════════════════════════════════════════════
+// QUESTION BANK TABLES
+// ══════════════════════════════════════════════════
 
-// CEFR question bank (pre-generated, no AI at attempt time for listening/reading/language)
+// ──── Grammar Questions (MCQ) ────
+model GrammarQuestion {
+  id           String   @id @default(cuid())
+  level        String   @map("level") // A1..C2
+  prompt       String   @map("prompt") // Arabic text
+  optionA      String   @map("option_a")
+  optionB      String   @map("option_b")
+  optionC      String   @map("option_c")
+  optionD      String   @map("option_d")
+  correctIndex Int      @map("correct_index") // 0..3
+  tags         String?  @map("tags") // JSON array
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([level])
+  @@map("grammar_questions")
+}
+
+// ──── Reading Passages + sub-Questions ────
+model ReadingPassage {
+  id                 String   @id @default(cuid())
+  level              String   @map("level")
+  passageType        String   @map("passage_type") // short | medium | long
+  text               String   @map("text") // Arabic passage
+  readingTimeSeconds Int      @map("reading_time_seconds")
+  questionTimeSeconds Int     @map("question_time_seconds")
+  orderIndex         Int      @default(0) @map("order_index")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  questions ReadingQuestion[]
+
+  @@index([level])
+  @@map("reading_passages")
+}
+
+model ReadingQuestion {
+  id           String   @id @default(cuid())
+  passageId    String   @map("passage_id")
+  prompt       String   @map("prompt")
+  optionA      String   @map("option_a")
+  optionB      String   @map("option_b")
+  optionC      String   @map("option_c")
+  optionD      String   @map("option_d")
+  correctIndex Int      @map("correct_index")
+  orderIndex   Int      @default(0) @map("order_index")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  passage ReadingPassage @relation(fields: [passageId], references: [id], onDelete: Cascade)
+
+  @@index([passageId])
+  @@map("reading_questions")
+}
+
+// ──── Listening Stages + sub-Questions ────
+model ListeningStage {
+  id                 String   @id @default(cuid())
+  level              String   @map("level")
+  stageType          String   @map("stage_type") // short_dialogue | long_conversation | lecture
+  titleArabic        String   @map("title_arabic")
+  audioUrl           String   @map("audio_url")
+  maxPlays           Int      @default(2) @map("max_plays")
+  timeMode           String   @map("time_mode") // per_question | total
+  perQuestionSeconds Int?     @map("per_question_seconds")
+  totalSeconds       Int?     @map("total_seconds")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  questions ListeningQuestion[]
+
+  @@index([level])
+  @@map("listening_stages")
+}
+
+model ListeningQuestion {
+  id           String   @id @default(cuid())
+  stageId      String   @map("stage_id")
+  prompt       String   @map("prompt")
+  optionA      String   @map("option_a")
+  optionB      String   @map("option_b")
+  optionC      String   @map("option_c")
+  optionD      String   @map("option_d")
+  correctIndex Int      @map("correct_index")
+  orderIndex   Int      @default(0) @map("order_index")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  stage ListeningStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@index([stageId])
+  @@map("listening_questions")
+}
+
+// ──── Writing Tasks ────
+model WritingTask {
+  id           String   @id @default(cuid())
+  level        String   @map("level")
+  prompt       String   @map("prompt") // Arabic
+  wordLimitMin Int      @map("word_limit_min")
+  wordLimitMax Int      @map("word_limit_max")
+  rubric       String   @map("rubric") // JSON: [{criteriaName, maxPoints, description}]
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([level])
+  @@map("writing_tasks")
+}
+
+// ──── Speaking Tasks ────
+model SpeakingTask {
+  id             String   @id @default(cuid())
+  level          String   @map("level")
+  part1Questions String   @map("part1_questions") // JSON: string[]
+  part2Topics    String   @map("part2_topics") // JSON: [{topic, bulletPoints}]
+  part3Discussion String  @map("part3_discussion") // JSON: [{prompt, followUp}]
+  rubric         String   @map("rubric") // JSON
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([level])
+  @@map("speaking_tasks")
+}
+
+// ══════════════════════════════════════════════════
+// LEGACY QUESTION BANK (keeping for backward compat)
+// ══════════════════════════════════════════════════
+
 model QuestionBank {
   id            String   @id @default(cuid())
   level         String   @map("level")
@@ -40,6 +163,10 @@ model QuestionBank {
   @@map("question_bank")
 }
 
+// ══════════════════════════════════════════════════
+// USER + AUTH TABLES
+// ══════════════════════════════════════════════════
+
 model User {
   id                    String    @id @default(cuid())
   email                 String    @unique
@@ -62,6 +189,10 @@ model User {
 
   @@map("users")
 }
+
+// ══════════════════════════════════════════════════
+// EXAM STRUCTURE TABLES
+// ══════════════════════════════════════════════════
 
 model ExamType {
   id          String   @id @default(cuid())
@@ -95,7 +226,7 @@ model Question {
   examSectionId String       @map("exam_section_id")
   questionType  String       @map("question_type")
   questionText  String       @map("question_text")
-  options       String?      // For MCQ: ["A", "B", "C", "D"] or full text
+  options       String?
   correctAnswer String?      @map("correct_answer")
   points        Int          @default(1)
   order         Int          @default(0)
@@ -141,6 +272,10 @@ model MockExamQuestion {
   @@unique([mockExamId, questionId])
   @@map("mock_exam_questions")
 }
+
+// ══════════════════════════════════════════════════
+// ATTEMPT + ANSWER TABLES
+// ══════════════════════════════════════════════════
 
 model UserExamAttempt {
   id                 String        @id @default(cuid())
@@ -216,6 +351,10 @@ model UserAnswer {
   @@unique([attemptId, questionId])
   @@map("user_answers")
 }
+
+// ══════════════════════════════════════════════════
+// MISC TABLES
+// ══════════════════════════════════════════════════
 
 model UserProgress {
   id                  String   @id @default(cuid())

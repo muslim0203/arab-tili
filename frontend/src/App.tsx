@@ -19,6 +19,11 @@ const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard").then((m
 const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers").then((m) => ({ default: m.AdminUsers })));
 const AdminPayments = lazy(() => import("@/pages/admin/AdminPayments").then((m) => ({ default: m.AdminPayments })));
 const AdminQuestionBank = lazy(() => import("@/pages/admin/AdminQuestionBank").then((m) => ({ default: m.AdminQuestionBank })));
+const AdminGrammar = lazy(() => import("@/pages/admin/AdminGrammar").then((m) => ({ default: m.AdminGrammar })));
+const AdminReading = lazy(() => import("@/pages/admin/AdminReading").then((m) => ({ default: m.AdminReading })));
+const AdminListening = lazy(() => import("@/pages/admin/AdminListening").then((m) => ({ default: m.AdminListening })));
+const AdminWriting = lazy(() => import("@/pages/admin/AdminWriting").then((m) => ({ default: m.AdminWriting })));
+const AdminSpeaking = lazy(() => import("@/pages/admin/AdminSpeaking").then((m) => ({ default: m.AdminSpeaking })));
 // Info / yordam sahifalari (suratdagi navigatsiya)
 const TizimHaqida = lazy(() => import("@/pages/info/TizimHaqida").then((m) => ({ default: m.TizimHaqida })));
 const Foydalanuvchilarga = lazy(() => import("@/pages/info/Foydalanuvchilarga").then((m) => ({ default: m.Foydalanuvchilarga })));
@@ -71,6 +76,11 @@ export default function App() {
               <Route path="users" element={<AdminUsers />} />
               <Route path="payments" element={<AdminPayments />} />
               <Route path="question-bank" element={<AdminQuestionBank />} />
+              <Route path="grammar" element={<AdminGrammar />} />
+              <Route path="reading" element={<AdminReading />} />
+              <Route path="listening" element={<AdminListening />} />
+              <Route path="writing" element={<AdminWriting />} />
+              <Route path="speaking" element={<AdminSpeaking />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

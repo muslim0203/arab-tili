@@ -25,6 +25,19 @@ export function calcReadingScore(answers: Answer[]): {
 }
 
 /**
+ * Listening: total 15 questions, scaled to 30.
+ *   listeningScore = round((correctCount / 15) * 30)
+ */
+export function calcListeningScore(answers: Answer[]): {
+    rawCorrect: number;
+    scaled: number;
+} {
+    const rawCorrect = answers.filter((a) => a.isCorrect === true).length;
+    const scaled = Math.round((rawCorrect / 15) * 30);
+    return { rawCorrect, scaled };
+}
+
+/**
  * Determine CEFR level from total score (out of 150).
  * Since we only have grammar + reading now (max 60),
  * we extrapolate to 150 with a note.

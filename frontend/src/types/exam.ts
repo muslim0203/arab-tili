@@ -27,6 +27,36 @@ export interface ReadingPassage {
     questions: ReadingQuestion[];
 }
 
+/** A single listening MC question */
+export interface ListeningQuestion {
+    id: string;
+    prompt: string; // Arabic prompt
+    options: [string, string, string, string];
+    correctIndex: 0 | 1 | 2 | 3;
+}
+
+/** Listening stage type */
+export type ListeningStageType = "short_dialogue" | "long_conversation" | "lecture";
+
+/** Listening stage time mode */
+export type ListeningTimeMode = "per_question" | "total";
+
+/** A listening stage (one of 3 stages) */
+export interface ListeningStage {
+    stageIndex: 1 | 2 | 3;
+    type: ListeningStageType;
+    /** Arabic title */
+    title: string;
+    audioUrl: string;
+    maxPlays: 2;
+    timeMode: ListeningTimeMode;
+    /** Per-question time in seconds (stage 1 only) */
+    perQuestionTimeSec?: number;
+    /** Total time for all questions in seconds (stages 2 & 3) */
+    totalTimeSec?: number;
+    questions: ListeningQuestion[];
+}
+
 /** An answer record for a single question */
 export interface Answer {
     questionId: string;
@@ -37,6 +67,13 @@ export interface Answer {
 /** A passage attempt with answers */
 export interface PassageAttempt {
     passageId: string;
+    answers: Answer[];
+    score: number;
+}
+
+/** A listening stage attempt result */
+export interface ListeningStageAttempt {
+    stageIndex: number;
     answers: Answer[];
     score: number;
 }
@@ -55,6 +92,13 @@ export interface ReadingSectionResult {
     maxScore: 30;
 }
 
+export interface ListeningSectionResult {
+    stages: ListeningStageAttempt[];
+    score: number; // scaled to 30
+    rawCorrect: number; // out of 15
+    maxScore: 30;
+}
+
 /** The full exam attempt */
 export interface ExamAttempt {
     id: string;
@@ -65,12 +109,12 @@ export interface ExamAttempt {
     sections: {
         grammar: GrammarSectionResult | null;
         reading: ReadingSectionResult | null;
-        listening: null; // future
+        listening: ListeningSectionResult | null;
         writing: null;   // future
         speaking: null;  // future
     };
-    totalScore: number; // partial sum (grammar + reading for now)
-    maxPossibleScore: number; // 150 at full, 60 for now
+    totalScore: number; // partial sum
+    maxPossibleScore: number; // 150 at full, 90 for now
     level: string | null; // CEFR level
 }
 
@@ -82,6 +126,7 @@ export type ExamPhase =
     | "cards"       // exam selection screen
     | "grammar"     // grammar section running
     | "reading"     // reading section running
+    | "listening"   // listening section running
     | "results";    // showing results
 
 /** Reading sub-phase within a passage */

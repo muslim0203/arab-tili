@@ -3,7 +3,7 @@
 // 30 Grammar Questions + 3 Reading Passages (6+8+10 = 24 questions)
 // ─────────────────────────────────────────────────
 
-import type { GrammarQuestion, ReadingPassage } from "@/types/exam";
+import type { GrammarQuestion, ReadingPassage, ListeningStage } from "@/types/exam";
 
 // ══════════════════════════════════════════════════
 // GRAMMAR QUESTIONS (30)
@@ -417,6 +417,149 @@ export const readingPassages: ReadingPassage[] = [
                     "الأجهزة الجديدة",
                     "البرامج الحاسوبية",
                     "المصانع",
+                ],
+                correctIndex: 0,
+            },
+        ],
+    },
+];
+
+// ══════════════════════════════════════════════════
+// LISTENING STAGES (3 stages × 5 questions = 15)
+// ══════════════════════════════════════════════════
+
+export const listeningStages: ListeningStage[] = [
+    // ──────── Stage 1: Short Dialogue (المحادثة القصيرة) ────────
+    // Per-question timer: 60s each, audio max 2 plays per question
+    {
+        stageIndex: 1,
+        type: "short_dialogue",
+        title: "المحادثة القصيرة",
+        audioUrl: "/audio/listening1.mp3",
+        maxPlays: 2,
+        timeMode: "per_question",
+        perQuestionTimeSec: 60,
+        questions: [
+            {
+                id: "l1q1",
+                prompt: "أين يريد الرجل أن يذهب؟",
+                options: ["إلى المستشفى", "إلى السوق", "إلى المدرسة", "إلى المطار"],
+                correctIndex: 1,
+            },
+            {
+                id: "l1q2",
+                prompt: "ماذا تريد المرأة أن تشتري؟",
+                options: ["فواكه وخضروات", "ملابس جديدة", "كتبًا", "أدوية"],
+                correctIndex: 0,
+            },
+            {
+                id: "l1q3",
+                prompt: "كيف سيذهبان إلى السوق؟",
+                options: ["بالحافلة", "بالسيارة", "مشيًا", "بسيارة أجرة"],
+                correctIndex: 1,
+            },
+            {
+                id: "l1q4",
+                prompt: "في أيّ وقت سيذهبان؟",
+                options: ["صباحًا", "ظهرًا", "عصرًا", "مساءً"],
+                correctIndex: 2,
+            },
+            {
+                id: "l1q5",
+                prompt: "ما هي مشكلة الرجل؟",
+                options: ["ليس لديه وقت", "ليس لديه مال", "سيارته معطلة", "هو مريض"],
+                correctIndex: 0,
+            },
+        ],
+    },
+
+    // ──────── Stage 2: Long Conversation / Story (المحادثة الطويلة / الرواية) ────────
+    // Total timer: 420s (7 min) for all 5 questions, audio max 2 plays total
+    {
+        stageIndex: 2,
+        type: "long_conversation",
+        title: "المحادثة الطويلة / الرواية",
+        audioUrl: "/audio/listening2.mp3",
+        maxPlays: 2,
+        timeMode: "total",
+        totalTimeSec: 420,
+        questions: [
+            {
+                id: "l2q1",
+                prompt: "ما موضوع المحادثة الرئيسي؟",
+                options: ["السفر إلى مصر", "التقدم لوظيفة", "حفل زفاف", "شراء منزل"],
+                correctIndex: 1,
+            },
+            {
+                id: "l2q2",
+                prompt: "ما المؤهل العلمي للمتحدث؟",
+                options: ["بكالوريوس إدارة أعمال", "دكتوراه لغة", "ماجستير هندسة", "دبلوم محاسبة"],
+                correctIndex: 0,
+            },
+            {
+                id: "l2q3",
+                prompt: "كم سنة خبرة لدى المتحدث؟",
+                options: ["سنة واحدة", "سنتان", "ثلاث سنوات", "خمس سنوات"],
+                correctIndex: 2,
+            },
+            {
+                id: "l2q4",
+                prompt: "ما الراتب المتوقع الذي ذكره؟",
+                options: ["500 دولار", "800 دولار", "1000 دولار", "1500 دولار"],
+                correctIndex: 2,
+            },
+            {
+                id: "l2q5",
+                prompt: "متى يمكنه أن يبدأ العمل؟",
+                options: ["فورًا", "بعد أسبوع", "بعد شهر", "بعد ثلاثة أشهر"],
+                correctIndex: 1,
+            },
+        ],
+    },
+
+    // ──────── Stage 3: Lecture (المحاضرة) ────────
+    // Total timer: 420s (7 min) for all 5 questions, audio max 2 plays total
+    {
+        stageIndex: 3,
+        type: "lecture",
+        title: "المحاضرة",
+        audioUrl: "/audio/listening3.mp3",
+        maxPlays: 2,
+        timeMode: "total",
+        totalTimeSec: 420,
+        questions: [
+            {
+                id: "l3q1",
+                prompt: "ما عنوان المحاضرة؟",
+                options: ["تأثير البيئة على الصحة", "تاريخ الحضارة الإسلامية", "أهمية الرياضة", "تعلم اللغات"],
+                correctIndex: 0,
+            },
+            {
+                id: "l3q2",
+                prompt: "ما النسبة المئوية للأمراض المرتبطة بتلوث الهواء حسب المحاضر؟",
+                options: ["%10", "%25", "%30", "%40"],
+                correctIndex: 2,
+            },
+            {
+                id: "l3q3",
+                prompt: "ما الحل الأول الذي اقترحه المحاضر؟",
+                options: ["زراعة الأشجار", "إغلاق المصانع", "استخدام الطاقة المتجددة", "الهجرة إلى الريف"],
+                correctIndex: 2,
+            },
+            {
+                id: "l3q4",
+                prompt: "أيّ بلد ذكره المحاضر كمثال ناجح؟",
+                options: ["ألمانيا", "أمريكا", "الصين", "اليابان"],
+                correctIndex: 0,
+            },
+            {
+                id: "l3q5",
+                prompt: "ما الرسالة الأخيرة في المحاضرة؟",
+                options: [
+                    "كل فرد مسؤول عن حماية البيئة",
+                    "الحكومات وحدها المسؤولة",
+                    "لا يمكن حل مشكلة التلوث",
+                    "يجب التركيز على الاقتصاد فقط",
                 ],
                 correctIndex: 0,
             },

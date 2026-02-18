@@ -1,21 +1,25 @@
 // ─────────────────────────────────────────────────
 // At-Taanal Exam Runner – main orchestrator (state machine)
+// Grammar -> Reading -> Listening -> Results
 // ─────────────────────────────────────────────────
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { ExamStartCards } from "./ExamStartCards";
 import { GrammarRunner } from "./GrammarRunner";
 import { ReadingRunner } from "./ReadingRunner";
+import { ListeningRunner } from "./ListeningRunner";
 import { ExamResults } from "./ExamResults";
-import { grammarQuestions, readingPassages } from "@/data/at-taanal-seed";
-import { calcGrammarScore, calcReadingScore, generateId } from "@/utils/scoring";
+import { grammarQuestions, readingPassages, listeningStages } from "@/data/at-taanal-seed";
+import { calcGrammarScore, calcReadingScore, calcListeningScore, generateId } from "@/utils/scoring";
 import type {
     ExamPhase,
     ExamAttempt,
     Answer,
     PassageAttempt,
+    ListeningStageAttempt,
     GrammarSectionResult,
     ReadingSectionResult,
+    ListeningSectionResult,
 } from "@/types/exam";
 
 const STORAGE_KEY = "at-taanal-attempt";
@@ -69,7 +73,7 @@ export function AtTaanalExamRunner() {
                 speaking: null,
             },
             totalScore: 0,
-            maxPossibleScore: 60,
+            maxPossibleScore: 90, // grammar(30) + reading(30) + listening(30)
             level: null,
         };
         setAttempt(newAttempt);
@@ -135,22 +139,16 @@ export function AtTaanalExamRunner() {
 
         setAttempt((prev) => {
             if (!prev) return prev;
-            const grammarScore = prev.sections.grammar?.score ?? 0;
-            const totalScore = grammarScore + scaled;
             const updated: ExamAttempt = {
                 ...prev,
-                status: "completed",
-                completedAt: new Date().toISOString(),
                 sections: { ...prev.sections, reading: readingResult },
-                totalScore,
-                level: null, // Will be computed in results view
             };
             attemptRef.current = updated;
             saveAttempt(updated);
             return updated;
         });
 
-        setPhase("results");
+        setPhase("listening");
     }, []);
 
     // ═══ Reading answer change (for persistence) ═══
@@ -166,6 +164,68 @@ export function AtTaanalExamRunner() {
                         ...prev.sections,
                         reading: {
                             passages: passageAttempts,
+                            score: scaled,
+                            rawCorrect,
+                            maxScore: 30 as const,
+                        },
+                    },
+                };
+                attemptRef.current = updated;
+                saveAttempt(updated);
+                return updated;
+            });
+        },
+        []
+    );
+
+    // ═══ Listening complete ═══
+    const handleListeningComplete = useCallback(
+        (stageAttempts: ListeningStageAttempt[]) => {
+            const allAnswers = stageAttempts.flatMap((s) => s.answers);
+            const { rawCorrect, scaled } = calcListeningScore(allAnswers);
+            const listeningResult: ListeningSectionResult = {
+                stages: stageAttempts,
+                score: scaled,
+                rawCorrect,
+                maxScore: 30,
+            };
+
+            setAttempt((prev) => {
+                if (!prev) return prev;
+                const grammarScore = prev.sections.grammar?.score ?? 0;
+                const readingScore = prev.sections.reading?.score ?? 0;
+                const totalScore = grammarScore + readingScore + scaled;
+                const updated: ExamAttempt = {
+                    ...prev,
+                    status: "completed",
+                    completedAt: new Date().toISOString(),
+                    sections: { ...prev.sections, listening: listeningResult },
+                    totalScore,
+                    level: null, // Will be computed in results view
+                };
+                attemptRef.current = updated;
+                saveAttempt(updated);
+                return updated;
+            });
+
+            setPhase("results");
+        },
+        []
+    );
+
+    // ═══ Listening answer change (for persistence) ═══
+    const handleListeningAnswerChange = useCallback(
+        (stageAttempts: ListeningStageAttempt[]) => {
+            const allAnswers = stageAttempts.flatMap((s) => s.answers);
+            const { rawCorrect, scaled } = calcListeningScore(allAnswers);
+            setAttempt((prev) => {
+                if (!prev) return prev;
+                const updated = {
+                    ...prev,
+                    sections: {
+                        ...prev.sections,
+                        listening: {
+                            stages: stageAttempts,
                             score: scaled,
                             rawCorrect,
                             maxScore: 30 as const,
@@ -207,6 +267,15 @@ export function AtTaanalExamRunner() {
                     passages={readingPassages}
                     onComplete={handleReadingComplete}
                     onAnswerChange={handleReadingAnswerChange}
+                />
+            );
+
+        case "listening":
+            return (
+                <ListeningRunner
+                    stages={listeningStages}
+                    onComplete={handleListeningComplete}
+                    onAnswerChange={handleListeningAnswerChange}
                 />
             );
 

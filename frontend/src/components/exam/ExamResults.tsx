@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────
-// Exam Results – O'zbek tilida
+// Exam Results – O'zbek tilida (Grammar + Reading + Listening)
 // ─────────────────────────────────────────────────
 
 import type { ExamAttempt } from "@/types/exam";
@@ -26,12 +26,16 @@ export function ExamResults({ attempt, onRestart }: ExamResultsProps) {
     const navigate = useNavigate();
     const grammar = attempt.sections.grammar;
     const reading = attempt.sections.reading;
+    const listening = attempt.sections.listening;
 
     const grammarScore = grammar?.score ?? 0;
     const readingRaw = reading?.rawCorrect ?? 0;
     const readingScaled = reading?.score ?? 0;
-    const totalPartial = grammarScore + readingScaled;
-    const estimated150 = extrapolateToFull(totalPartial, 60);
+    const listeningRaw = listening?.rawCorrect ?? 0;
+    const listeningScaled = listening?.score ?? 0;
+    const totalPartial = grammarScore + readingScaled + listeningScaled;
+    const maxPartial = 90; // 30 + 30 + 30
+    const estimated150 = extrapolateToFull(totalPartial, maxPartial);
     const level = getCEFRLevel(estimated150);
 
     // Level color mapping
@@ -80,7 +84,7 @@ export function ExamResults({ attempt, onRestart }: ExamResultsProps) {
                         {level}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                        ※ Faqat Grammatika va O'qish asosida taxminiy ({totalPartial}/60)
+                        ※ Grammatika, O'qish va Tinglash asosida taxminiy ({totalPartial}/{maxPartial})
                     </p>
                 </div>
 
@@ -140,17 +144,37 @@ export function ExamResults({ attempt, onRestart }: ExamResultsProps) {
                             </div>
                         </div>
 
-                        {/* Listening – coming soon */}
-                        <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 border border-border opacity-50">
-                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                                <Headphones className="w-5 h-5 text-muted-foreground" />
+                        {/* Listening */}
+                        <div className="flex items-center gap-4 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                                <Headphones className="w-5 h-5 text-emerald-500" />
                             </div>
                             <div className="flex-1">
-                                <span className="font-semibold text-muted-foreground">
-                                    Tinglash — tez kunlarda
-                                </span>
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="font-semibold text-card-foreground">
+                                        Tinglash
+                                    </span>
+                                    <span className="font-bold text-emerald-500">
+                                        {listeningRaw}/15 → {listeningScaled}/30
+                                    </span>
+                                </div>
+                                <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                                    <div
+                                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-1000"
+                                        style={{ width: `${(listeningScaled / 30) * 100}%` }}
+                                    />
+                                </div>
+                                {/* Stage breakdown */}
+                                {listening && listening.stages.length > 0 && (
+                                    <div className="mt-2 flex gap-3 text-xs text-muted-foreground">
+                                        {listening.stages.map((s, i) => (
+                                            <span key={i}>
+                                                {i + 1}-bosqich: {s.score}/5
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <span className="text-sm text-muted-foreground">-- / 30</span>
                         </div>
 
                         {/* Writing – coming soon */}
@@ -186,11 +210,11 @@ export function ExamResults({ attempt, onRestart }: ExamResultsProps) {
                             Qisman jami
                         </span>
                         <span className="text-2xl font-black text-primary">
-                            {totalPartial} / 60
+                            {totalPartial} / {maxPartial}
                         </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                        To'liq natija 150 balldan iborat — Tinglash, Yozish va Gapirish qo'shilgandan so'ng
+                        To'liq natija 150 balldan iborat — Yozish va Gapirish qo'shilgandan so'ng
                     </p>
                 </div>
 
