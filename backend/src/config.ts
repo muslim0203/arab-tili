@@ -32,6 +32,6 @@ export const config = {
     secure: env.SMTP_SECURE === "true",
     user: env.SMTP_USER ?? "",
     pass: env.SMTP_PASS ?? "",
-    from: env.SMTP_FROM ?? env.SMTP_USER ?? "noreply@attanalpro.uz",
+    from: env.SMTP_FROM ?? env.SMTP_USER ?? "noreply@Arab Exam.uz",
   },
 } as const;

@@ -40,9 +40,9 @@ export function LandingNav() {
         <Link
           to="/"
           className="text-xl font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md"
-          aria-label="AttanalPro home"
+          aria-label="Arab Exam home"
         >
-          AttanalPro
+          Arab Exam
         </Link>
         <nav className="flex items-center gap-2 sm:gap-4">
           <Link

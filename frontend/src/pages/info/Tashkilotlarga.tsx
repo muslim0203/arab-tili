@@ -19,8 +19,8 @@ export function Tashkilotlarga() {
       />
       <StructuredData
         data={buildBreadcrumbSchema([
-          { name: "Bosh sahifa", url: "https://attanalpro.uz/" },
-          { name: "Tashkilotlarga", url: "https://attanalpro.uz/tashkilotlarga" },
+          { name: "Bosh sahifa", url: "https://Arab Exam.uz/" },
+          { name: "Tashkilotlarga", url: "https://Arab Exam.uz/tashkilotlarga" },
         ])}
       />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
@@ -32,7 +32,7 @@ export function Tashkilotlarga() {
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">
             <p>
-              AttanalPro tashkilotlar uchun guruh obunalari va boshqaruv imkoniyatlarini taqdim etadi.
+              Arab Exam tashkilotlar uchun guruh obunalari va boshqaruv imkoniyatlarini taqdim etadi.
               O‘quvchilar yoki xodimlar uchun hisoblar yaratishingiz va natijalarni kuzatishingiz mumkin.
             </p>
             <p>

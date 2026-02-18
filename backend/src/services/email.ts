@@ -30,7 +30,7 @@ export async function sendPasswordResetEmail(to: string, resetLink: string): Pro
     await trans.sendMail({
       from: config.smtp.from,
       to,
-      subject: "AttanalPro – Parolni tiklash",
+      subject: "Arab Exam – Parolni tiklash",
       text: `Parolni tiklash uchun quyidagi havolani bosing (1 soat amal qiladi):\n\n${resetLink}\n\nAgar siz bu so'rovni yubormagan bo'lsangiz, bu xatni e'tiborsiz qoldiring.`,
       html: `
         <p>Parolni tiklash uchun quyidagi tugmani bosing (havola 1 soat amal qiladi):</p>
@@ -66,11 +66,11 @@ export async function sendSubscriptionReminder(
     await trans.sendMail({
       from: config.smtp.from,
       to,
-      subject: "AttanalPro – Obunangiz tez orada tugaydi",
-      text: `Salom ${fullName}. Sizning AttanalPro obunangiz ${dateStr} da tugaydi. Davom etish uchun tariflar sahifasiga tashrif buyuring: ${pricingUrl}`,
+      subject: "Arab Exam – Obunangiz tez orada tugaydi",
+      text: `Salom ${fullName}. Sizning Arab Exam obunangiz ${dateStr} da tugaydi. Davom etish uchun tariflar sahifasiga tashrif buyuring: ${pricingUrl}`,
       html: `
         <p>Salom ${fullName},</p>
-        <p>Sizning AttanalPro obunangiz <strong>${dateStr}</strong> da tugaydi.</p>
+        <p>Sizning Arab Exam obunangiz <strong>${dateStr}</strong> da tugaydi.</p>
         <p>Davom etish uchun <a href="${pricingUrl}">tariflar sahifasiga</a> tashrif buyuring.</p>
       `,
     });

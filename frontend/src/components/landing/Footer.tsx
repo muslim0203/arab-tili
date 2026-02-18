@@ -29,7 +29,7 @@ export function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Link to="/" className="text-lg font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded">
-              AttanalPro
+              Arab Exam
             </Link>
             <p className="mt-3 text-sm text-muted-foreground">
               {t("footer.tagline")}
@@ -71,11 +71,11 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-foreground">{t("footer.contact")}</h3>
             <a
-              href="mailto:support@attanalpro.uz"
+              href="mailto:support@arabexam.uz"
               className="mt-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
             >
               <Mail className="h-4 w-4" aria-hidden />
-              support@attanalpro.uz
+              support@arabexam.uz
             </a>
             <div className="mt-4 flex gap-4">
               {SOCIALS.map((s) => (
@@ -96,7 +96,7 @@ export function Footer() {
 
         <div className="mt-12 border-t border-border pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} AttanalPro. {t("footer.rights")}
+            © {new Date().getFullYear()} Arab Exam. {t("footer.rights")}
           </p>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <Link to="/yordam" className="hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded">

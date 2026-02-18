@@ -20,14 +20,14 @@ export function YordamIndex() {
     <div className="min-h-screen bg-muted/30">
       <SEO
         title="Yordam markazi"
-        description="AttanalPro platformasidan foydalanish bo'yicha yordam, qo'llanmalar, video darsliklar va bog'lanish ma'lumotlari."
+        description="Arab Exam platformasidan foydalanish bo'yicha yordam, qo'llanmalar, video darsliklar va bog'lanish ma'lumotlari."
         canonicalPath="/yordam"
         lang={i18n.language}
       />
       <StructuredData
         data={buildBreadcrumbSchema([
-          { name: "Bosh sahifa", url: "https://attanalpro.uz/" },
-          { name: "Yordam", url: "https://attanalpro.uz/yordam" },
+          { name: "Bosh sahifa", url: "https://Arab Exam.uz/" },
+          { name: "Yordam", url: "https://Arab Exam.uz/yordam" },
         ])}
       />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />

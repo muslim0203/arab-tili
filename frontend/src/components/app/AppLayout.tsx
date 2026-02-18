@@ -106,7 +106,7 @@ export function AppLayout({ children, maxWidth = "max-w-4xl" }: AppLayoutProps) 
             to="/dashboard"
             className="font-semibold text-primary shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md"
           >
-            AttanalPro
+            Arab Exam
           </Link>
 
           {/* Desktop navigatsiya */}
@@ -202,7 +202,7 @@ export function AppLayout({ children, maxWidth = "max-w-4xl" }: AppLayoutProps) 
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
           <Link to="/dashboard" className="font-semibold text-primary text-lg">
-            AttanalPro
+            Arab Exam
           </Link>
           <Button
             variant="ghost"

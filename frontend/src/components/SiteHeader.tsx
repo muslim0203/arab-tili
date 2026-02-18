@@ -68,7 +68,7 @@ export function SiteHeader({
           to="/dashboard"
           className="font-semibold text-primary shrink-0 mr-2"
         >
-          AttanalPro
+          Arab Exam
         </Link>
 
         <nav className="flex flex-1 items-center gap-1 overflow-x-auto">

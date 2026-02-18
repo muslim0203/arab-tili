@@ -20,7 +20,9 @@ export const landingTranslations = {
     },
     examModules: {
       title: "Imtihon boʻlimlari",
-      subtitle: "Toʻrtta koʻnikma, bitta platforma. A1 dan C2 gacha toʻliq qamrov.",
+      subtitle: "Beshta koʻnikma, bitta platforma. A1 dan C2 gacha toʻliq qamrov.",
+      grammar: "Grammatika",
+      grammarDesc: "Arab tili grammatikasi boʻyicha 30 ta test savoli. Har bir savolga 1 daqiqa.",
       listening: "Listening",
       listeningDesc: "Audio asosidagi vazifalar va transkriptlar. CEFR ga mos savollar.",
       reading: "Reading",
@@ -128,7 +130,9 @@ export const landingTranslations = {
     },
     examModules: {
       title: "Exam modules",
-      subtitle: "Four skills, one platform. Full CEFR coverage from A1 to C2.",
+      subtitle: "Five skills, one platform. Full CEFR coverage from A1 to C2.",
+      grammar: "Grammar",
+      grammarDesc: "30 multiple-choice grammar questions. 1 minute per question.",
       listening: "Listening",
       listeningDesc: "Audio-based tasks with transcripts. CEFR-aligned comprehension questions.",
       reading: "Reading",
@@ -236,7 +240,9 @@ export const landingTranslations = {
     },
     examModules: {
       title: "وحدات الامتحان",
-      subtitle: "أربع مهارات، منصة واحدة. تغطية CEFR كاملة من A1 إلى C2.",
+      subtitle: "خمس مهارات، منصة واحدة. تغطية CEFR كاملة من A1 إلى C2.",
+      grammar: "القواعد",
+      grammarDesc: "30 سؤال قواعد متعدد الخيارات. دقيقة واحدة لكل سؤال.",
       listening: "الاستماع",
       listeningDesc: "مهام مسموعة مع نصوص. أسئلة فهم متوافقة مع CEFR.",
       reading: "القراءة",

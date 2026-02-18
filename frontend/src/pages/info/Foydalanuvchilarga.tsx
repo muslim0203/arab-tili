@@ -19,8 +19,8 @@ export function Foydalanuvchilarga() {
       />
       <StructuredData
         data={buildBreadcrumbSchema([
-          { name: "Bosh sahifa", url: "https://attanalpro.uz/" },
-          { name: "Foydalanuvchilarga", url: "https://attanalpro.uz/foydalanuvchilarga" },
+          { name: "Bosh sahifa", url: "https://Arab Exam.uz/" },
+          { name: "Foydalanuvchilarga", url: "https://Arab Exam.uz/foydalanuvchilarga" },
         ])}
       />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />

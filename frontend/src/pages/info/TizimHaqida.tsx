@@ -11,14 +11,14 @@ export function TizimHaqida() {
     <div className="min-h-screen bg-muted/30">
       <SEO
         title="Tizim haqida"
-        description="AttanalPro platformasi haqida: CEFR asosida arab tili baholash, 5 bo'lim (listening, reading, language use, writing, speaking), AI tutor."
+        description="Arab Exam platformasi haqida: CEFR asosida arab tili baholash, 5 bo'lim (listening, reading, language use, writing, speaking), AI tutor."
         canonicalPath="/tizim-haqida"
         lang={i18n.language}
       />
       <StructuredData
         data={buildBreadcrumbSchema([
-          { name: "Bosh sahifa", url: "https://attanalpro.uz/" },
-          { name: "Tizim haqida", url: "https://attanalpro.uz/tizim-haqida" },
+          { name: "Bosh sahifa", url: "https://Arab Exam.uz/" },
+          { name: "Tizim haqida", url: "https://Arab Exam.uz/tizim-haqida" },
         ])}
       />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
@@ -26,11 +26,11 @@ export function TizimHaqida() {
         <Card>
           <CardHeader>
             <CardTitle>Tizim haqida</CardTitle>
-            <CardDescription>AttanalPro – Arab tili imtihoniga tayyorgarlik platformasi</CardDescription>
+            <CardDescription>Arab Exam – Arab tili imtihoniga tayyorgarlik platformasi</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">
             <p>
-              AttanalPro – bu CEFR (Common European Framework of Reference) asosida arab tili bilimlarini
+              Arab Exam – bu CEFR (Common European Framework of Reference) asosida arab tili bilimlarini
               baholash va mock imtihonlar orqali tayyorgarlik ko‘rish uchun yaratilgan platforma.
             </p>
             <p>

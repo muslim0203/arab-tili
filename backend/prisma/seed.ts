@@ -1,4 +1,4 @@
-// AttanalPro – Prisma schema
+// Arab Exam – Prisma schema
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();

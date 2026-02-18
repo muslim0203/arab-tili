@@ -119,7 +119,7 @@ export function Login() {
       </Link>
       <Card className="w-full max-w-md rounded-xl border-border shadow-lg">
         <CardHeader>
-          <CardTitle className="text-xl">AttanalPro</CardTitle>
+          <CardTitle className="text-xl">Arab Exam</CardTitle>
           <CardDescription>Arab tili imtihoniga tayyorgarlik – hisobingizga kiring</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

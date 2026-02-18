@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Headphones, BookOpen, PenLine, Mic } from "lucide-react";
+import { Headphones, BookOpen, PenLine, Mic, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MODULES = [
+  { key: "grammar", icon: FileText },
   { key: "listening", icon: Headphones },
   { key: "reading", icon: BookOpen },
   { key: "writing", icon: PenLine },
@@ -45,7 +46,7 @@ export function ExamModules() {
         </motion.div>
 
         <motion.div
-          className="mx-auto mt-16 grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-4"
+          className="mx-auto mt-16 grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-5"
           variants={container}
           initial="hidden"
           whileInView="show"

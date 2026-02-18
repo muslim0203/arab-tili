@@ -86,5 +86,5 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 
 const PORT = config.port;
 app.listen(PORT, () => {
-  console.log(`AttanalPro API running at http://localhost:${PORT}`);
+  console.log(`Arab Exam API running at http://localhost:${PORT}`);
 });

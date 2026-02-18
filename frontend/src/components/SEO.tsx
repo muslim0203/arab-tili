@@ -1,13 +1,13 @@
 import { Helmet } from "react-helmet-async";
 
-const SITE_NAME = "AttanalPro";
-const BASE_URL = "https://attanalpro.uz";
+const SITE_NAME = "Arab Exam";
+const BASE_URL = "https://arabexam.uz";
 const DEFAULT_OG_IMAGE = "/og-image.png";
 const DEFAULT_DESCRIPTION =
-    "AttanalPro – Arab tili CEFR imtihon platformasi. A1–C2 darajalar uchun mock imtihon, AI baholash va sertifikat.";
+    "Arab Exam – Arab tili CEFR imtihon platformasi. A1–C2 darajalar uchun mock imtihon, AI baholash va sertifikat.";
 
 export interface SEOProps {
-    /** Page title – will be appended with " | AttanalPro" unless isHome */
+    /** Page title – will be appended with " | Arab Exam" unless isHome */
     title?: string;
     /** Meta description (max ~155 chars recommended) */
     description?: string;

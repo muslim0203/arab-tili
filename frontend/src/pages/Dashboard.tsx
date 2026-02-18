@@ -20,8 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AppLayout } from "@/components/app/AppLayout";
 import { PageHeader } from "@/components/app/PageHeader";
 import { StatsCard } from "@/components/app/StatsCard";
-import { EmptyState } from "@/components/app/EmptyState";
-import { Badge } from "@/components/app/Badge";
+
 import { useAuthStore } from "@/store/auth";
 import { api } from "@/lib/api";
 import {
@@ -54,18 +53,7 @@ type DashboardStats = {
   aiCreditsRefreshDays: number;
 };
 
-type AttemptItem = {
-  id: string;
-  status: string;
-  level: string | null;
-  totalScore: number | null;
-  maxPossibleScore: number | null;
-  percentage: number | null;
-  cefrLevelAchieved: string | null;
-  startedAt: string;
-  completedAt: string | null;
-  examTitle: string | null;
-};
+
 
 const SKILL_LABELS: Record<string, string> = {
   reading: "Reading",
@@ -96,27 +84,22 @@ export function Dashboard() {
     queryFn: () => api<DashboardStats>("/progress/stats"),
   });
 
-  const { data: attemptsData } = useQuery({
-    queryKey: ["attempts", "recent"],
-    queryFn: () => api<{ items: AttemptItem[]; nextCursor: string | null }>("/attempts?limit=5"),
-  });
 
-  const recentAttempts = attemptsData?.items ?? [];
 
   const radarData =
     stats?.skillScores && Object.keys(stats.skillScores).length > 0
       ? Object.entries(stats.skillScores).map(([key, val]) => ({
-          skill: SKILL_LABELS[key] ?? key,
-          ball: Math.round(Number(val) ?? 0),
-          fullMark: 100,
-        }))
+        skill: SKILL_LABELS[key] ?? key,
+        ball: Math.round(Number(val) ?? 0),
+        fullMark: 100,
+      }))
       : [
-          { skill: "Reading", ball: 0, fullMark: 100 },
-          { skill: "Writing", ball: 0, fullMark: 100 },
-          { skill: "Listening", ball: 0, fullMark: 100 },
-          { skill: "Speaking", ball: 0, fullMark: 100 },
-          { skill: "Grammar", ball: 0, fullMark: 100 },
-        ];
+        { skill: "Reading", ball: 0, fullMark: 100 },
+        { skill: "Writing", ball: 0, fullMark: 100 },
+        { skill: "Listening", ball: 0, fullMark: 100 },
+        { skill: "Speaking", ball: 0, fullMark: 100 },
+        { skill: "Grammar", ball: 0, fullMark: 100 },
+      ];
 
   const isLoading = progressLoading || statsLoading;
 
@@ -292,55 +275,19 @@ export function Dashboard() {
         </section>
 
         <section>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <PageHeader title="So'nggi imtihonlar" />
-            <Button variant="ghost" size="sm" asChild className="rounded-lg shrink-0">
-              <Link to="/attempts/history">Barchasi</Link>
-            </Button>
-          </div>
-          {recentAttempts.length === 0 ? (
-            <EmptyState
-              icon={ClipboardList}
-              title="Hali imtihon topshirmagansiz"
-              description="Mock imtihonlardan birini boshlang va CEFR darajangizni bilib oling."
-              action={
-                <Button asChild className="rounded-xl">
-                  <Link to="/exams">Mock imtihonni boshlash</Link>
-                </Button>
-              }
-            />
-          ) : (
-            <ul className="space-y-3">
-              {recentAttempts.map((a) => (
-                <li key={a.id}>
-                  <Link
-                    to={a.status === "COMPLETED" ? `/attempts/${a.id}/results` : `/exam/${a.id}`}
-                    className="block rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium text-foreground">
-                        {a.examTitle ?? `Imtihon ${a.id.slice(0, 8)}`}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {a.status === "COMPLETED" ? (
-                          <>
-                            {a.percentage != null && `${a.percentage.toFixed(0)}% · `}
-                            {a.cefrLevelAchieved && (
-                              <Badge cefr={a.cefrLevelAchieved}>
-                                {a.cefrLevelAchieved}
-                              </Badge>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-amber-600">Davom etmoqda</span>
-                        )}
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+          <PageHeader title="Imtihon" />
+          <Card className="rounded-xl border-border bg-card shadow-sm">
+            <CardContent className="flex flex-col items-center gap-4 py-8">
+              <ClipboardList className="h-10 w-10 text-primary" />
+              <p className="text-center text-muted-foreground max-w-md">
+                At-Ta'anul imtihonini topshiring va CEFR darajangizni bilib oling.
+                Grammatika va O'qish bo'limlari mavjud.
+              </p>
+              <Button asChild className="rounded-xl">
+                <Link to="/exams">Imtihonni boshlash</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </section>
       </motion.div>
     </AppLayout>

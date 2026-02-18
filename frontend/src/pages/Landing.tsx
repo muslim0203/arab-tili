@@ -68,7 +68,7 @@ export function Landing() {
     <div className="min-h-screen bg-white" dir={isRtl ? "rtl" : "ltr"}>
       <SEO
         isHome
-        title="AttanalPro – Arab tili CEFR imtihon platformasi"
+        title="Arab Exam – Arab tili CEFR imtihon platformasi"
         description="A1 dan C2 gacha arab tili bilimini mock imtihon, AI baholash va CEFR sertifikat bilan tekshiring. Listening, reading, writing, speaking."
         canonicalPath="/"
         lang={i18n.language}

@@ -93,11 +93,11 @@ export function Register() {
 
   return (
     <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-muted/30 p-4">
-      <SEO title="Ro'yxatdan o'tish" description="Bepul ro'yxatdan o'ting va arab tili CEFR mock imtihoniga tayyorlaning. AttanalPro platformasi." canonicalPath="/register" />
+      <SEO title="Ro'yxatdan o'tish" description="Bepul ro'yxatdan o'ting va arab tili CEFR mock imtihoniga tayyorlaning. Arab Exam platformasi." canonicalPath="/register" />
       <Card className="w-full max-w-md rounded-xl border-border shadow-lg">
         <CardHeader>
           <CardTitle className="text-xl">Hisob yaratish</CardTitle>
-          <CardDescription>AttanalPro – Arab tili imtihoniga tayyorgarlik</CardDescription>
+          <CardDescription>Arab Exam – Arab tili imtihoniga tayyorgarlik</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (

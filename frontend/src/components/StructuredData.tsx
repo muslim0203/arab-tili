@@ -18,13 +18,13 @@ export function StructuredData({ data }: StructuredDataProps) {
 export const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
-    name: "AttanalPro",
-    url: "https://attanalpro.uz",
+    name: "Arab Exam",
+    url: "https://arabexam.uz",
     description:
         "Arab tili CEFR imtihon platformasi. A1–C2 darajalar uchun mock imtihon, AI baholash va sertifikat.",
     contactPoint: {
         "@type": "ContactPoint",
-        email: "support@attanalpro.uz",
+        email: "support@arabexam.uz",
         contactType: "customer support",
         availableLanguage: ["uz", "en", "ar"],
     },
@@ -33,8 +33,8 @@ export const organizationSchema = {
 export const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "AttanalPro",
-    url: "https://attanalpro.uz",
+    name: "Arab Exam",
+    url: "https://arabexam.uz",
     inLanguage: ["uz", "en", "ar"],
 };
 

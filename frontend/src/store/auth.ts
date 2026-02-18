@@ -32,6 +32,6 @@ export const useAuthStore = create<AuthState>()(
       logout: () => set({ user: null, accessToken: null, refreshToken: null }),
       isAuthenticated: () => !!get().accessToken,
     }),
-    { name: "attanalpro-auth", partialize: (s) => ({ user: s.user, accessToken: s.accessToken, refreshToken: s.refreshToken }) }
+    { name: "arabexam-auth", partialize: (s) => ({ user: s.user, accessToken: s.accessToken, refreshToken: s.refreshToken }) }
   )
 );

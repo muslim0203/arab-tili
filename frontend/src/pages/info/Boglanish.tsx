@@ -12,15 +12,15 @@ export function Boglanish() {
     <div className="min-h-screen bg-muted/30">
       <SEO
         title="Bog'lanish"
-        description="AttanalPro bilan bog'lanish – savol, taklif va hamkorlik bo'yicha murojaat qiling. Email: support@attanalpro.uz"
+        description="Arab Exam bilan bog'lanish – savol, taklif va hamkorlik bo'yicha murojaat qiling. Email: support@Arab Exam.uz"
         canonicalPath="/yordam/boglanish"
         lang={i18n.language}
       />
       <StructuredData
         data={buildBreadcrumbSchema([
-          { name: "Bosh sahifa", url: "https://attanalpro.uz/" },
-          { name: "Yordam", url: "https://attanalpro.uz/yordam" },
-          { name: "Bog'lanish", url: "https://attanalpro.uz/yordam/boglanish" },
+          { name: "Bosh sahifa", url: "https://Arab Exam.uz/" },
+          { name: "Yordam", url: "https://Arab Exam.uz/yordam" },
+          { name: "Bog'lanish", url: "https://Arab Exam.uz/yordam/boglanish" },
         ])}
       />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
@@ -36,7 +36,7 @@ export function Boglanish() {
               <div>
                 <p className="font-medium">Email</p>
                 <p className="text-sm text-muted-foreground">
-                  support@attanalpro.uz (namuna – o‘zingizning support emailingizni yozing)
+                  support@Arab Exam.uz (namuna – o‘zingizning support emailingizni yozing)
                 </p>
               </div>
             </div>

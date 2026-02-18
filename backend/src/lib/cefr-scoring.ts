@@ -1,5 +1,5 @@
 /**
- * AttanalPro – CEFR Baholash Tizimi
+ * Arab Exam – CEFR Baholash Tizimi
  *
  * 5 ta ko'nikma (skill), har biri max 30 ball:
  *   - grammar (language_use): Grammatika

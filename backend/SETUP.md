@@ -6,7 +6,7 @@
 - ✅ `npm install` (dependency’lar o‘rnatildi)
 - ✅ `npx prisma generate` (Prisma client yaratildi)
 - ✅ Prisma schema’dagi relation xatosi tuzatildi
-- ✅ PostgreSQL’da `attanalpro` bazasi yaratildi / mavjudligi tekshirildi
+- ✅ PostgreSQL’da `Arab Exam` bazasi yaratildi / mavjudligi tekshirildi
 - ✅ `npx prisma migrate dev --name init` (jadvalar yaratildi)
 - ✅ `npm run db:seed` (exam type, 4 ta savol, 1 ta mock exam qo‘shildi)
 
