@@ -1,420 +1,397 @@
-import { useState, useCallback, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/app/PageHeader";
+import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
-import { useAuthStore } from "@/store/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-    Loader2, ChevronLeft, ChevronRight, Plus, Pencil, Trash2,
-    Upload, Headphones, ChevronDown, ChevronUp, Volume2,
-    Play,
+    Headphones, Plus, Save, X, Trash2, Upload, CheckCircle2,
+    AlertTriangle, ChevronDown, ChevronUp, Settings2, Music,
 } from "lucide-react";
 
-const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
+interface ListeningQ {
+    id: string; stageId: string; difficulty: string; prompt: string;
+    options: string; correctIndex: number; audioUrl: string;
+    maxPlays: number; orderIndex: number; createdAt: string;
+}
 
-const STAGE_TYPES = [
-    { value: "short_dialogue", label: "Qisqa dialog (المحادثة القصيرة)", titleArabic: "المحادثة القصيرة", timeMode: "per_question", perQuestionSeconds: 60, totalSeconds: null, maxPlays: 2 },
-    { value: "long_conversation", label: "Uzun suhbat (المحادثة الطويلة / الرواية)", titleArabic: "المحادثة الطويلة / الرواية", timeMode: "total", perQuestionSeconds: null, totalSeconds: 420, maxPlays: 2 },
-    { value: "lecture", label: "Ma'ruza (المحاضرة)", titleArabic: "المحاضرة", timeMode: "total", perQuestionSeconds: null, totalSeconds: 420, maxPlays: 2 },
-] as const;
+interface Stage {
+    id: string; stageType: string; titleArabic: string;
+    timingMode: string; perQuestionSeconds: number | null; totalSeconds: number | null;
+    questions: ListeningQ[];
+    questionCount: number; isComplete: boolean;
+}
 
-type ListeningQuestionItem = {
-    id: string;
-    prompt: string;
-    optionA: string;
-    optionB: string;
-    optionC: string;
-    optionD: string;
-    correctIndex: number;
-    orderIndex: number;
+const DIFFICULTIES = ["easy", "medium", "hard"] as const;
+const DIFF_LABEL: Record<string, string> = { easy: "Oson", medium: "O'rta", hard: "Qiyin" };
+const DIFF_BADGE: Record<string, string> = {
+    easy: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    medium: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+    hard: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+};
+const STAGE_ICON: Record<string, string> = {
+    short_dialogue: "🗣️",
+    long_conversation: "💬",
+    lecture: "🎓",
+};
+const TIMING_LABEL: Record<string, string> = {
+    per_question: "Har savol uchun alohida vaqt",
+    total: "Umumiy vaqt (barcha savollar uchun)",
 };
 
-type ListeningStageItem = {
-    id: string;
-    level: string;
-    stageType: string;
-    titleArabic: string;
-    audioUrl: string;
-    maxPlays: number;
-    timeMode: string;
-    perQuestionSeconds: number | null;
-    totalSeconds: number | null;
-    questions: ListeningQuestionItem[];
-    createdAt: string;
-};
+interface QForm {
+    difficulty: string; prompt: string; options: string[];
+    correctIndex: number; audioUrl: string; maxPlays: number;
+    audioFile?: File;
+}
 
-type QuestionForm = { prompt: string; optionA: string; optionB: string; optionC: string; optionD: string; correctIndex: number };
-const emptyQuestion: QuestionForm = { prompt: "", optionA: "", optionB: "", optionC: "", optionD: "", correctIndex: 0 };
-
-const emptyForm = {
-    level: "A1",
-    stageType: "short_dialogue" as string,
-    titleArabic: "المحادثة القصيرة",
-    audioUrl: "",
-    maxPlays: 2,
-    timeMode: "per_question",
-    perQuestionSeconds: 60 as number | null,
-    totalSeconds: null as number | null,
-    questions: Array.from({ length: 5 }, () => ({ ...emptyQuestion })),
-};
-
-type ListResponse = { items: ListeningStageItem[]; total: number; page: number; pageSize: number; totalPages: number };
+const emptyQForm = (): QForm => ({
+    difficulty: "easy", prompt: "", options: ["", "", "", ""],
+    correctIndex: 0, audioUrl: "", maxPlays: 2,
+});
 
 export function AdminListening() {
-    const qc = useQueryClient();
-    const [page, setPage] = useState(1);
-    const [levelFilter, setLevelFilter] = useState("");
-    const [modalOpen, setModalOpen] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [form, setForm] = useState(emptyForm);
-    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-    const [expanded, setExpanded] = useState<string | null>(null);
-    const [audioUploading, setAudioUploading] = useState(false);
-    const [audioUploadError, setAudioUploadError] = useState<string | null>(null);
-    const audioFileInputRef = useRef<HTMLInputElement>(null);
+    const [stages, setStages] = useState<Stage[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [expandedStage, setExpandedStage] = useState<string | null>(null);
+    const [addingTo, setAddingTo] = useState<string | null>(null);
+    const [qForm, setQForm] = useState<QForm>(emptyQForm());
+    const [saving, setSaving] = useState(false);
+    const [editSettings, setEditSettings] = useState<string | null>(null);
+    const [settingsForm, setSettingsForm] = useState({ timingMode: "", perQuestionSeconds: 0, totalSeconds: 0 });
 
-    const params = new URLSearchParams();
-    if (levelFilter) params.set("level", levelFilter);
-    params.set("page", String(page));
-    params.set("pageSize", "20");
-
-    const { data, isLoading } = useQuery({
-        queryKey: ["admin-listening", levelFilter, page],
-        queryFn: () => api<ListResponse>(`/admin/listening?${params}`),
-    });
-
-    const createMut = useMutation({
-        mutationFn: (body: Record<string, unknown>) => api("/admin/listening", { method: "POST", body }),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-listening"] }); closeModal(); },
-    });
-
-    const updateMut = useMutation({
-        mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
-            api(`/admin/listening/${id}`, { method: "PUT", body }),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-listening"] }); closeModal(); },
-    });
-
-    const deleteMut = useMutation({
-        mutationFn: (id: string) => api(`/admin/listening/${id}`, { method: "DELETE" }),
-        onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-listening"] }); setDeleteConfirm(null); },
-    });
-
-    const closeModal = () => { setModalOpen(false); setForm(emptyForm); setEditingId(null); setAudioUploadError(null); };
-
-    const openCreate = useCallback(() => {
-        setForm({ ...emptyForm, questions: Array.from({ length: 5 }, () => ({ ...emptyQuestion })) });
-        setEditingId(null);
-        setModalOpen(true);
-        setAudioUploadError(null);
-    }, []);
-
-    const openEdit = useCallback((item: ListeningStageItem) => {
-        setForm({
-            level: item.level,
-            stageType: item.stageType,
-            titleArabic: item.titleArabic,
-            audioUrl: item.audioUrl,
-            maxPlays: item.maxPlays,
-            timeMode: item.timeMode,
-            perQuestionSeconds: item.perQuestionSeconds,
-            totalSeconds: item.totalSeconds,
-            questions: item.questions.map(q => ({
-                prompt: q.prompt, optionA: q.optionA, optionB: q.optionB,
-                optionC: q.optionC, optionD: q.optionD, correctIndex: q.correctIndex,
-            })),
-        });
-        // Ensure 5 questions
-        while (form.questions.length < 5) form.questions.push({ ...emptyQuestion });
-        setEditingId(item.id);
-        setModalOpen(true);
-        setAudioUploadError(null);
-    }, []);
-
-    const handleStageTypeChange = (type: string) => {
-        const st = STAGE_TYPES.find(s => s.value === type)!;
-        setForm(f => ({
-            ...f,
-            stageType: type,
-            titleArabic: st.titleArabic,
-            timeMode: st.timeMode,
-            perQuestionSeconds: st.perQuestionSeconds,
-            totalSeconds: st.totalSeconds,
-            maxPlays: st.maxPlays,
-        }));
-    };
-
-    const updateQuestion = (idx: number, field: keyof QuestionForm, value: string | number) => {
-        setForm(f => {
-            const qs = [...f.questions];
-            qs[idx] = { ...qs[idx], [field]: value };
-            return { ...f, questions: qs };
-        });
-    };
-
-    const uploadAudio = useCallback(async (file: File) => {
-        setAudioUploadError(null);
-        setAudioUploading(true);
+    const load = useCallback(async () => {
+        setLoading(true);
         try {
-            const token = useAuthStore.getState().accessToken;
-            const fd = new FormData();
-            fd.append("audio", file);
-            const res = await fetch("/api/admin/upload-audio", {
-                method: "POST",
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-                body: fd,
-            });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({ message: res.statusText }));
-                throw new Error(err.message || "Yuklash muvaffaqiyatsiz");
-            }
-            const data = (await res.json()) as { audioUrl: string };
-            setForm(f => ({ ...f, audioUrl: data.audioUrl }));
-        } catch (e) {
-            setAudioUploadError(e instanceof Error ? e.message : "Xatolik");
-        } finally {
-            setAudioUploading(false);
-            if (audioFileInputRef.current) audioFileInputRef.current.value = "";
-        }
+            const data = await api<Stage[]>("/admin/listening/stages");
+            setStages(data);
+        } catch { /* ignore */ }
+        setLoading(false);
     }, []);
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!form.audioUrl) { setAudioUploadError("Audio fayl yuklang!"); return; }
-        const body = {
-            level: form.level, stageType: form.stageType, titleArabic: form.titleArabic,
-            audioUrl: form.audioUrl, maxPlays: form.maxPlays, timeMode: form.timeMode,
-            perQuestionSeconds: form.perQuestionSeconds, totalSeconds: form.totalSeconds,
-            questions: form.questions.map(q => ({ ...q, correctIndex: Number(q.correctIndex) })),
-        };
-        if (editingId) updateMut.mutate({ id: editingId, body });
-        else createMut.mutate(body);
+    useEffect(() => { load(); }, [load]);
+
+    // Upload audio file
+    const uploadAudio = async (file: File): Promise<string> => {
+        const fd = new FormData();
+        fd.append("audio", file);
+        const res = await api<{ audioUrl: string }>("/admin/upload-audio", { method: "POST", body: fd });
+        return res.audioUrl;
     };
 
-    const items = data?.items ?? [];
-    const totalPages = data?.totalPages ?? 0;
-    const optionLabels = ["A", "B", "C", "D"];
-    const stageTypeLabel = (t: string) => STAGE_TYPES.find(s => s.value === t)?.label ?? t;
+    // Add question
+    const addQuestion = async () => {
+        if (!addingTo) return;
+        if (!qForm.prompt.trim() || qForm.options.some((o) => !o.trim())) {
+            alert("Barcha maydonlarni to'ldiring"); return;
+        }
+        if (!qForm.audioUrl && !qForm.audioFile) {
+            alert("Audio fayl yuklang"); return;
+        }
+
+        setSaving(true);
+        try {
+            let audioUrl = qForm.audioUrl;
+            if (qForm.audioFile) {
+                audioUrl = await uploadAudio(qForm.audioFile);
+            }
+            await api("/admin/listening/questions", {
+                method: "POST",
+                body: {
+                    stageId: addingTo,
+                    difficulty: qForm.difficulty,
+                    prompt: qForm.prompt,
+                    options: qForm.options,
+                    correctIndex: qForm.correctIndex,
+                    audioUrl,
+                    maxPlays: qForm.maxPlays,
+                },
+            });
+            setAddingTo(null);
+            setQForm(emptyQForm());
+            await load();
+        } catch (e: unknown) {
+            alert(e instanceof Error ? e.message : "Xatolik");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // Delete question
+    const deleteQuestion = async (qId: string) => {
+        if (!confirm("Savolni o'chirmoqchimisiz?")) return;
+        await api(`/admin/listening/questions/${qId}`, { method: "DELETE" });
+        await load();
+    };
+
+    // Update stage settings
+    const saveSettings = async () => {
+        if (!editSettings) return;
+        setSaving(true);
+        try {
+            await api(`/admin/listening/stages/${editSettings}`, {
+                method: "PUT",
+                body: {
+                    timingMode: settingsForm.timingMode,
+                    perQuestionSeconds: settingsForm.timingMode === "per_question" ? settingsForm.perQuestionSeconds : null,
+                    totalSeconds: settingsForm.timingMode === "total" ? settingsForm.totalSeconds : null,
+                },
+            });
+            setEditSettings(null);
+            await load();
+        } catch (e: unknown) {
+            alert(e instanceof Error ? e.message : "Xatolik");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[40vh]">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+        );
+    }
 
     return (
-        <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-            <PageHeader
-                title="Tinglash bo'limi (Listening)"
-                subtitle="Har bir bosqich: audio fayl + 5 ta savol. Bosqich turi bo'yicha avtomatik vaqt sozlamalari."
-                action={<Button className="rounded-xl gap-2" onClick={openCreate}><Plus className="h-4 w-4" />Yangi bosqich</Button>}
-            />
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-2xl font-bold">🎧 Tinglash (Listening)</h1>
+                <p className="text-sm text-muted-foreground">3 ta bosqich, har birida 5 ta savol (har savolda alohida audio)</p>
+            </div>
 
-            <Card className="rounded-xl border-border shadow-sm overflow-hidden">
-                <CardHeader className="pb-2">
-                    <div className="flex flex-wrap gap-3 items-center">
-                        <CardTitle className="text-base">Listening Stages</CardTitle>
-                        <select value={levelFilter} onChange={e => { setLevelFilter(e.target.value); setPage(1); }}
-                            className="h-9 rounded-md border border-input bg-background px-3 text-sm">
-                            <option value="">Barcha darajalar</option>
-                            {CEFR_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                        </select>
-                        <span className="text-sm text-muted-foreground ml-auto">Jami: {data?.total ?? 0}</span>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    {isLoading ? (
-                        <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
-                            <Loader2 className="h-6 w-6 animate-spin" /><span>Yuklanmoqda…</span>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="divide-y divide-border">
-                                {items.length === 0 ? (
-                                    <div className="p-8 text-center text-muted-foreground">Bosqichlar topilmadi</div>
-                                ) : items.map(s => (
-                                    <div key={s.id} className="hover:bg-muted/30 transition-colors">
-                                        <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => setExpanded(e => e === s.id ? null : s.id)}>
-                                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 text-xs font-bold">{s.level}</span>
-                                            <Headphones className="h-4 w-4 text-emerald-500" />
-                                            <span className="text-sm font-medium" dir="rtl">{s.titleArabic}</span>
-                                            <span className="text-xs text-muted-foreground">({stageTypeLabel(s.stageType)})</span>
-                                            <span className="text-xs text-muted-foreground ml-auto">{s.questions.length} savol</span>
-                                            <span className="text-xs text-muted-foreground">
-                                                {s.timeMode === "per_question" ? `${s.perQuestionSeconds}s/savol` : `${s.totalSeconds}s jami`}
-                                            </span>
-                                            {expanded === s.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={e => { e.stopPropagation(); openEdit(s); }}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            {deleteConfirm === s.id ? (
-                                                <>
-                                                    <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={e => { e.stopPropagation(); deleteMut.mutate(s.id); }}>Ha</Button>
-                                                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={e => { e.stopPropagation(); setDeleteConfirm(null); }}>Yo'q</Button>
-                                                </>
-                                            ) : (
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={e => { e.stopPropagation(); setDeleteConfirm(s.id); }}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                        {expanded === s.id && (
-                                            <div className="px-4 pb-4 space-y-3">
-                                                {/* Audio preview */}
-                                                <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
-                                                    <Volume2 className="h-4 w-4 text-emerald-500" />
-                                                    <span className="text-sm text-muted-foreground flex-1 truncate">{s.audioUrl}</span>
-                                                    <audio controls preload="none" className="h-8">
-                                                        <source src={s.audioUrl} />
-                                                    </audio>
-                                                </div>
-                                                {/* Questions */}
-                                                <div className="space-y-1">
-                                                    {s.questions.map((q, i) => (
-                                                        <div key={q.id} className="flex gap-2 items-start text-sm p-2 rounded bg-background border border-border">
-                                                            <span className="font-bold text-muted-foreground w-6 shrink-0">{i + 1}.</span>
-                                                            <div className="flex-1" dir="rtl">
-                                                                <p className="font-medium">{q.prompt}</p>
-                                                                <div className="flex gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                                                                    {[q.optionA, q.optionB, q.optionC, q.optionD].map((o, oi) => (
-                                                                        <span key={oi} className={oi === q.correctIndex ? "text-emerald-600 font-bold" : ""}>
-                                                                            {optionLabels[oi]}) {o}
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
+            {/* Stages */}
+            <div className="space-y-4">
+                {stages.map((stage) => (
+                    <div key={stage.id} className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+                        {/* Stage header */}
+                        <div
+                            className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                            onClick={() => setExpandedStage((prev) => prev === stage.id ? null : stage.id)}
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">{STAGE_ICON[stage.stageType] || "🎵"}</span>
+                                <div>
+                                    <h3 className="font-semibold" dir="rtl">{stage.titleArabic}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-xs text-muted-foreground">{TIMING_LABEL[stage.timingMode]}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                            ({stage.timingMode === "per_question"
+                                                ? `${stage.perQuestionSeconds}s/savol`
+                                                : `${stage.totalSeconds}s umumiy`})
+                                        </span>
                                     </div>
-                                ))}
+                                </div>
                             </div>
-                            {totalPages > 1 && (
-                                <div className="flex items-center justify-between p-3 border-t">
-                                    <p className="text-sm text-muted-foreground">Sahifa {page} / {totalPages}</p>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}><ChevronLeft className="h-4 w-4" /></Button>
-                                        <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}><ChevronRight className="h-4 w-4" /></Button>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </CardContent>
-            </Card>
+                            <div className="flex items-center gap-3 shrink-0">
+                                {/* Status badge */}
+                                {stage.isComplete ? (
+                                    <span className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 px-2.5 py-1 rounded-full font-medium">
+                                        <CheckCircle2 className="h-3.5 w-3.5" /> 5/5 ✓
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2.5 py-1 rounded-full font-medium">
+                                        <AlertTriangle className="h-3.5 w-3.5" /> {stage.questionCount}/5
+                                    </span>
+                                )}
+                                <Button
+                                    variant="ghost" size="sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditSettings(stage.id);
+                                        setSettingsForm({
+                                            timingMode: stage.timingMode,
+                                            perQuestionSeconds: stage.perQuestionSeconds ?? 60,
+                                            totalSeconds: stage.totalSeconds ?? 420,
+                                        });
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                >
+                                    <Settings2 className="h-4 w-4" />
+                                </Button>
+                                {expandedStage === stage.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </div>
+                        </div>
 
-            {/* Modal */}
-            {modalOpen && (
-                <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-8 bg-black/50 overflow-y-auto"
-                    onClick={() => !createMut.isPending && !updateMut.isPending && closeModal()}>
-                    <Card className="w-full max-w-3xl rounded-xl shadow-lg mb-8" onClick={e => e.stopPropagation()}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle>{editingId ? "Bosqichni tahrirlash" : "Yangi bosqich"}</CardTitle>
-                            <Button variant="ghost" size="sm" onClick={closeModal}>✕</Button>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                <div className="grid grid-cols-2 gap-4">
+                        {/* Settings edit */}
+                        {editSettings === stage.id && (
+                            <div className="border-t border-border p-4 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
+                                <h4 className="text-sm font-medium flex items-center gap-2"><Settings2 className="h-4 w-4" /> Vaqt sozlamalari</h4>
+                                <div className="grid gap-3 sm:grid-cols-3">
                                     <div>
-                                        <label className="block text-sm font-medium mb-1">CEFR darajasi</label>
-                                        <select value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value }))}
-                                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" required>
-                                            {CEFR_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                                        <label className="text-xs font-medium">Vaqt rejimi</label>
+                                        <select className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={settingsForm.timingMode} onChange={(e) => setSettingsForm((f) => ({ ...f, timingMode: e.target.value }))}>
+                                            <option value="per_question">Har savol uchun</option>
+                                            <option value="total">Umumiy vaqt</option>
                                         </select>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Bosqich turi</label>
-                                        <select value={form.stageType} onChange={e => handleStageTypeChange(e.target.value)}
-                                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                                            {STAGE_TYPES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                                        </select>
+                                    {settingsForm.timingMode === "per_question" ? (
+                                        <div>
+                                            <label className="text-xs font-medium">Savol uchun (sek)</label>
+                                            <Input type="number" className="mt-1" value={settingsForm.perQuestionSeconds} onChange={(e) => setSettingsForm((f) => ({ ...f, perQuestionSeconds: Number(e.target.value) }))} />
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <label className="text-xs font-medium">Umumiy vaqt (sek)</label>
+                                            <Input type="number" className="mt-1" value={settingsForm.totalSeconds} onChange={(e) => setSettingsForm((f) => ({ ...f, totalSeconds: Number(e.target.value) }))} />
+                                        </div>
+                                    )}
+                                    <div className="flex items-end gap-2">
+                                        <Button size="sm" onClick={saveSettings} disabled={saving} className="gap-1 rounded-lg"><Save className="h-3.5 w-3.5" /> Saqlash</Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setEditSettings(null)} className="rounded-lg"><X className="h-3.5 w-3.5" /></Button>
                                     </div>
                                 </div>
+                            </div>
+                        )}
 
-                                {/* Auto-filled info */}
-                                <div className="grid grid-cols-3 gap-3 p-3 rounded-lg bg-muted/50 border border-border">
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Arabcha nomi</p>
-                                        <p className="font-semibold text-sm" dir="rtl">{form.titleArabic}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Vaqt rejimi</p>
-                                        <p className="font-semibold text-sm">
-                                            {form.timeMode === "per_question" ? `Har savol: ${form.perQuestionSeconds}s` : `Jami: ${form.totalSeconds}s`}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Maks tinglash</p>
-                                        <p className="font-semibold text-sm">{form.maxPlays} marta</p>
-                                    </div>
-                                </div>
-
-                                {/* Audio upload */}
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Audio fayl (mp3)</label>
-                                    <div className="flex gap-2 items-center flex-wrap">
-                                        <input type="text" value={form.audioUrl} readOnly
-                                            className="h-10 flex-1 min-w-[200px] rounded-md border border-input bg-muted/50 px-3 text-sm"
-                                            placeholder="Audio yuklanmadi..." />
-                                        <input ref={audioFileInputRef} type="file" accept="audio/*" className="sr-only"
-                                            onChange={e => { const f = e.target.files?.[0]; if (f) uploadAudio(f); }} />
-                                        <Button type="button" variant="outline" className="gap-2 shrink-0"
-                                            disabled={audioUploading} onClick={() => audioFileInputRef.current?.click()}>
-                                            {audioUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                                            {audioUploading ? "Yuklanmoqda…" : "Fayl yuklash"}
-                                        </Button>
-                                        {form.audioUrl && (
-                                            <Button type="button" variant="ghost" size="sm" className="gap-1"
-                                                onClick={() => { const a = new Audio(form.audioUrl); a.play(); }}>
-                                                <Play className="h-3 w-3" /> Tinglash
-                                            </Button>
-                                        )}
-                                    </div>
-                                    {audioUploadError && <p className="text-sm text-destructive mt-1">{audioUploadError}</p>}
-                                </div>
-
-                                {/* 5 Questions */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-3">Savollar (5 ta)</h3>
-                                    <div className="space-y-4">
-                                        {form.questions.map((q, qi) => (
-                                            <div key={qi} className="p-4 rounded-xl border border-border bg-muted/30 space-y-3">
-                                                <span className="text-sm font-bold text-muted-foreground">Savol {qi + 1}</span>
-                                                <textarea value={q.prompt} onChange={e => updateQuestion(qi, "prompt", e.target.value)}
-                                                    className="w-full min-h-[50px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                                    dir="rtl" placeholder="سؤال..." required />
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {(["optionA", "optionB", "optionC", "optionD"] as const).map((key, oi) => (
-                                                        <div key={key} className="flex items-center gap-2">
-                                                            <span className={`text-xs font-bold w-5 ${q.correctIndex === oi ? 'text-emerald-600' : 'text-muted-foreground'}`}>{optionLabels[oi]}</span>
-                                                            <input type="text" value={q[key]}
-                                                                onChange={e => updateQuestion(qi, key, e.target.value)}
-                                                                className="h-9 flex-1 rounded-md border border-input bg-background px-2 text-sm"
-                                                                dir="rtl" required />
+                        {/* Expanded questions */}
+                        {expandedStage === stage.id && (
+                            <div className="border-t border-border">
+                                {/* Question list */}
+                                {stage.questions.length > 0 ? (
+                                    <div className="divide-y divide-border">
+                                        {stage.questions.map((q, qi) => {
+                                            const opts: string[] = JSON.parse(q.options);
+                                            return (
+                                                <div key={q.id} className="p-4 flex gap-4 hover:bg-muted/20 transition-colors">
+                                                    <div className="text-center shrink-0">
+                                                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">
+                                                            {qi + 1}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 space-y-2">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFF_BADGE[q.difficulty]}`}>{DIFF_LABEL[q.difficulty]}</span>
+                                                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                                <Music className="h-3 w-3" /> max {q.maxPlays} play
+                                                            </span>
                                                         </div>
-                                                    ))}
+                                                        <p className="text-sm" dir="rtl">{q.prompt}</p>
+                                                        <div className="grid grid-cols-2 gap-1.5 text-xs">
+                                                            {opts.map((o, oi) => (
+                                                                <div key={oi} className={`rounded px-2 py-1 ${oi === q.correctIndex ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 font-medium" : "bg-muted"}`} dir="rtl">
+                                                                    {String.fromCharCode(65 + oi)}. {o}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        {/* Audio player */}
+                                                        <audio controls className="w-full h-8 mt-1" preload="none">
+                                                            <source src={q.audioUrl} />
+                                                        </audio>
+                                                    </div>
+                                                    <Button variant="ghost" size="sm" onClick={() => deleteQuestion(q.id)} className="h-8 w-8 p-0 text-destructive shrink-0 self-start">
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="p-6 text-center text-muted-foreground text-sm">Hali savollar yo'q</div>
+                                )}
+
+                                {/* Add question button / form */}
+                                {stage.questionCount < 5 && (
+                                    addingTo === stage.id ? (
+                                        <div className="border-t border-border p-4 space-y-4 bg-muted/10">
+                                            <h4 className="font-medium text-sm">➕ Yangi savol (Slot {stage.questionCount + 1}/5)</h4>
+
+                                            <div className="grid gap-3 sm:grid-cols-3">
+                                                <div>
+                                                    <label className="text-xs font-medium">Qiyinlik</label>
+                                                    <select className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={qForm.difficulty} onChange={(e) => setQForm((f) => ({ ...f, difficulty: e.target.value }))}>
+                                                        {DIFFICULTIES.map((d) => <option key={d} value={d}>{DIFF_LABEL[d]}</option>)}
+                                                    </select>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs text-muted-foreground">To'g'ri:</label>
-                                                    <select value={q.correctIndex} onChange={e => updateQuestion(qi, "correctIndex", Number(e.target.value))}
-                                                        className="h-8 ml-2 rounded border border-input bg-background px-2 text-xs">
-                                                        {optionLabels.map((l, i) => <option key={i} value={i}>{l}</option>)}
+                                                    <label className="text-xs font-medium">Max plays</label>
+                                                    <Input type="number" className="mt-1" value={qForm.maxPlays} onChange={(e) => setQForm((f) => ({ ...f, maxPlays: Number(e.target.value) }))} min={1} max={5} />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium">To'g'ri javob</label>
+                                                    <select className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={qForm.correctIndex} onChange={(e) => setQForm((f) => ({ ...f, correctIndex: Number(e.target.value) }))}>
+                                                        {[0, 1, 2, 3].map((i) => <option key={i} value={i}>Variant {String.fromCharCode(65 + i)}</option>)}
                                                     </select>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
 
-                                <div className="flex gap-2 pt-2">
-                                    <Button type="submit" className="rounded-xl gap-2" disabled={createMut.isPending || updateMut.isPending}>
-                                        {(createMut.isPending || updateMut.isPending) && <Loader2 className="h-4 w-4 animate-spin" />}
-                                        {editingId ? "Saqlash" : "Qo'shish"}
-                                    </Button>
-                                    <Button type="button" variant="outline" onClick={closeModal}>Bekor qilish</Button>
-                                </div>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-        </motion.div>
+                                            <div>
+                                                <label className="text-xs font-medium">Savol matni (عربي)</label>
+                                                <textarea dir="rtl" className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[60px]" value={qForm.prompt} onChange={(e) => setQForm((f) => ({ ...f, prompt: e.target.value }))} placeholder="اكتب السؤال هنا..." />
+                                            </div>
+
+                                            <div className="grid gap-2 sm:grid-cols-2">
+                                                {qForm.options.map((opt, i) => (
+                                                    <div key={i}>
+                                                        <label className="text-xs font-medium">
+                                                            Variant {String.fromCharCode(65 + i)} {i === qForm.correctIndex && <span className="text-emerald-600">✓</span>}
+                                                        </label>
+                                                        <Input dir="rtl" className="mt-1" value={opt} onChange={(e) => {
+                                                            const opts = [...qForm.options]; opts[i] = e.target.value;
+                                                            setQForm((f) => ({ ...f, options: opts }));
+                                                        }} placeholder={`خيار ${String.fromCharCode(65 + i)}`}
+                                                            {...(i === qForm.correctIndex ? { className: "mt-1 border-emerald-500 ring-1 ring-emerald-200" } : {})}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Audio upload */}
+                                            <div>
+                                                <label className="text-xs font-medium flex items-center gap-1"><Upload className="h-3.5 w-3.5" /> Audio fayl (MP3)</label>
+                                                <div className="mt-1 flex items-center gap-3">
+                                                    <input
+                                                        type="file"
+                                                        accept="audio/*"
+                                                        className="text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:text-primary-foreground hover:file:bg-primary/90 cursor-pointer"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) setQForm((f) => ({ ...f, audioFile: file, audioUrl: "" }));
+                                                        }}
+                                                    />
+                                                    {qForm.audioFile && (
+                                                        <span className="text-xs text-muted-foreground">{qForm.audioFile.name}</span>
+                                                    )}
+                                                </div>
+                                                {/* Or enter URL */}
+                                                <div className="mt-2">
+                                                    <label className="text-xs text-muted-foreground">yoki URL kiriting:</label>
+                                                    <Input className="mt-1" value={qForm.audioUrl} onChange={(e) => setQForm((f) => ({ ...f, audioUrl: e.target.value, audioFile: undefined }))} placeholder="/api/uploads/audio/..." />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-2 justify-end">
+                                                <Button variant="ghost" size="sm" onClick={() => { setAddingTo(null); setQForm(emptyQForm()); }} className="gap-1 rounded-lg"><X className="h-3.5 w-3.5" /> Bekor</Button>
+                                                <Button size="sm" onClick={addQuestion} disabled={saving} className="gap-1 rounded-lg"><Save className="h-3.5 w-3.5" /> {saving ? "Yuklanmoqda..." : "Saqlash"}</Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="border-t border-border p-3">
+                                            <Button
+                                                variant="outline" size="sm"
+                                                className="w-full gap-2 rounded-lg border-dashed"
+                                                onClick={() => {
+                                                    setAddingTo(stage.id);
+                                                    setQForm(emptyQForm());
+                                                }}
+                                            >
+                                                <Plus className="h-4 w-4" /> Savol qo'shish ({stage.questionCount}/5)
+                                            </Button>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        )}
+                    </div>
+                ))}
+
+                {stages.length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                        <Headphones className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                        <p>Stage'lar topilmadi. Seed scriptni ishga tushiring:</p>
+                        <code className="text-xs mt-2 block">npx prisma db seed</code>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }

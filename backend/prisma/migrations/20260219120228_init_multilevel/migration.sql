@@ -1,4 +1,90 @@
 -- CreateTable
+CREATE TABLE "grammar_questions" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "difficulty" TEXT NOT NULL,
+    "prompt" TEXT NOT NULL,
+    "options" TEXT NOT NULL,
+    "correct_index" INTEGER NOT NULL,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "reading_passages" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "difficulty" TEXT NOT NULL,
+    "passage_type" TEXT NOT NULL,
+    "text" TEXT NOT NULL,
+    "reading_time_seconds" INTEGER NOT NULL,
+    "question_time_seconds" INTEGER NOT NULL,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "reading_questions" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "passage_id" TEXT NOT NULL,
+    "prompt" TEXT NOT NULL,
+    "options" TEXT NOT NULL,
+    "correct_index" INTEGER NOT NULL,
+    "order_index" INTEGER NOT NULL DEFAULT 0,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "reading_questions_passage_id_fkey" FOREIGN KEY ("passage_id") REFERENCES "reading_passages" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "listening_stages" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "stage_type" TEXT NOT NULL,
+    "title_arabic" TEXT NOT NULL,
+    "timing_mode" TEXT NOT NULL,
+    "per_question_seconds" INTEGER,
+    "total_seconds" INTEGER,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "listening_questions" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "stage_id" TEXT NOT NULL,
+    "difficulty" TEXT NOT NULL,
+    "prompt" TEXT NOT NULL,
+    "options" TEXT NOT NULL,
+    "correct_index" INTEGER NOT NULL,
+    "audio_url" TEXT NOT NULL,
+    "max_plays" INTEGER NOT NULL DEFAULT 2,
+    "order_index" INTEGER NOT NULL DEFAULT 0,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "listening_questions_stage_id_fkey" FOREIGN KEY ("stage_id") REFERENCES "listening_stages" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "writing_tasks" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "difficulty" TEXT NOT NULL,
+    "prompt" TEXT NOT NULL,
+    "word_limit_min" INTEGER NOT NULL,
+    "word_limit_max" INTEGER NOT NULL,
+    "rubric" TEXT NOT NULL,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "speaking_tasks" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "difficulty" TEXT NOT NULL,
+    "part1_questions" TEXT NOT NULL,
+    "part2_topics" TEXT NOT NULL,
+    "part3_discussion" TEXT NOT NULL,
+    "rubric" TEXT NOT NULL,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "question_bank" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "level" TEXT NOT NULL,
@@ -21,8 +107,10 @@ CREATE TABLE "question_bank" (
 CREATE TABLE "users" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "email" TEXT NOT NULL,
-    "password_hash" TEXT NOT NULL,
+    "password_hash" TEXT NOT NULL DEFAULT '',
     "full_name" TEXT NOT NULL,
+    "google_id" TEXT,
+    "avatar_url" TEXT,
     "subscription_tier" TEXT NOT NULL DEFAULT 'FREE',
     "subscription_expires_at" DATETIME,
     "language_preference" TEXT NOT NULL DEFAULT 'uz',
@@ -197,10 +285,34 @@ CREATE TABLE "payments" (
 );
 
 -- CreateIndex
+CREATE INDEX "grammar_questions_difficulty_idx" ON "grammar_questions"("difficulty");
+
+-- CreateIndex
+CREATE INDEX "reading_passages_difficulty_idx" ON "reading_passages"("difficulty");
+
+-- CreateIndex
+CREATE INDEX "reading_questions_passage_id_idx" ON "reading_questions"("passage_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "listening_stages_stage_type_key" ON "listening_stages"("stage_type");
+
+-- CreateIndex
+CREATE INDEX "listening_questions_stage_id_idx" ON "listening_questions"("stage_id");
+
+-- CreateIndex
+CREATE INDEX "writing_tasks_difficulty_idx" ON "writing_tasks"("difficulty");
+
+-- CreateIndex
+CREATE INDEX "speaking_tasks_difficulty_idx" ON "speaking_tasks"("difficulty");
+
+-- CreateIndex
 CREATE INDEX "question_bank_level_section_idx" ON "question_bank"("level", "section");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_google_id_key" ON "users"("google_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "mock_exam_questions_mock_exam_id_question_id_key" ON "mock_exam_questions"("mock_exam_id", "question_id");

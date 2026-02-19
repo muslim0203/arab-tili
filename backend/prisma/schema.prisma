@@ -11,42 +11,37 @@ datasource db {
 }
 
 // ══════════════════════════════════════════════════
-// QUESTION BANK TABLES
+// QUESTION BANK TABLES (Multilevel – difficulty based)
 // ══════════════════════════════════════════════════
 
 // ──── Grammar Questions (MCQ) ────
 model GrammarQuestion {
   id           String   @id @default(cuid())
-  level        String   @map("level") // A1..C2
+  difficulty   String   @map("difficulty") // easy | medium | hard
   prompt       String   @map("prompt") // Arabic text
-  optionA      String   @map("option_a")
-  optionB      String   @map("option_b")
-  optionC      String   @map("option_c")
-  optionD      String   @map("option_d")
+  options      String   @map("options") // JSON: string[] (4 options)
   correctIndex Int      @map("correct_index") // 0..3
-  tags         String?  @map("tags") // JSON array
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@index([level])
+  @@index([difficulty])
   @@map("grammar_questions")
 }
 
 // ──── Reading Passages + sub-Questions ────
 model ReadingPassage {
-  id                 String   @id @default(cuid())
-  level              String   @map("level")
-  passageType        String   @map("passage_type") // short | medium | long
-  text               String   @map("text") // Arabic passage
-  readingTimeSeconds Int      @map("reading_time_seconds")
-  questionTimeSeconds Int     @map("question_time_seconds")
-  orderIndex         Int      @default(0) @map("order_index")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  id                  String   @id @default(cuid())
+  difficulty          String   @map("difficulty") // easy | medium | hard
+  passageType         String   @map("passage_type") // short | medium | long
+  text                String   @map("text") // Arabic passage
+  readingTimeSeconds  Int      @map("reading_time_seconds")
+  questionTimeSeconds Int      @map("question_time_seconds")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   questions ReadingQuestion[]
 
-  @@index([level])
+  @@index([difficulty])
   @@map("reading_passages")
 }
 
@@ -54,10 +49,7 @@ model ReadingQuestion {
   id           String   @id @default(cuid())
   passageId    String   @map("passage_id")
   prompt       String   @map("prompt")
-  optionA      String   @map("option_a")
-  optionB      String   @map("option_b")
-  optionC      String   @map("option_c")
-  optionD      String   @map("option_d")
+  options      String   @map("options") // JSON: string[] (4 options)
   correctIndex Int      @map("correct_index")
   orderIndex   Int      @default(0) @map("order_index")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -71,12 +63,9 @@ model ReadingQuestion {
 // ──── Listening Stages + sub-Questions ────
 model ListeningStage {
   id                 String   @id @default(cuid())
-  level              String   @map("level")
-  stageType          String   @map("stage_type") // short_dialogue | long_conversation | lecture
+  stageType          String   @unique @map("stage_type") // short_dialogue | long_conversation | lecture
   titleArabic        String   @map("title_arabic")
-  audioUrl           String   @map("audio_url")
-  maxPlays           Int      @default(2) @map("max_plays")
-  timeMode           String   @map("time_mode") // per_question | total
+  timingMode         String   @map("timing_mode") // per_question | total
   perQuestionSeconds Int?     @map("per_question_seconds")
   totalSeconds       Int?     @map("total_seconds")
   createdAt          DateTime @default(now()) @map("created_at")
@@ -84,19 +73,18 @@ model ListeningStage {
 
   questions ListeningQuestion[]
 
-  @@index([level])
   @@map("listening_stages")
 }
 
 model ListeningQuestion {
   id           String   @id @default(cuid())
   stageId      String   @map("stage_id")
+  difficulty   String   @map("difficulty") // easy | medium | hard
   prompt       String   @map("prompt")
-  optionA      String   @map("option_a")
-  optionB      String   @map("option_b")
-  optionC      String   @map("option_c")
-  optionD      String   @map("option_d")
+  options      String   @map("options") // JSON: string[] (4 options)
   correctIndex Int      @map("correct_index")
+  audioUrl     String   @map("audio_url") // PER QUESTION audio file
+  maxPlays     Int      @default(2) @map("max_plays")
   orderIndex   Int      @default(0) @map("order_index")
   createdAt    DateTime @default(now()) @map("created_at")
 
@@ -106,10 +94,10 @@ model ListeningQuestion {
   @@map("listening_questions")
 }
 
-// ──── Writing Tasks ────
+// ──── Writing Tasks (coming later) ────
 model WritingTask {
   id           String   @id @default(cuid())
-  level        String   @map("level")
+  difficulty   String   @map("difficulty") // easy | medium | hard
   prompt       String   @map("prompt") // Arabic
   wordLimitMin Int      @map("word_limit_min")
   wordLimitMax Int      @map("word_limit_max")
@@ -117,22 +105,22 @@ model WritingTask {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@index([level])
+  @@index([difficulty])
   @@map("writing_tasks")
 }
 
-// ──── Speaking Tasks ────
+// ──── Speaking Tasks (coming later) ────
 model SpeakingTask {
-  id             String   @id @default(cuid())
-  level          String   @map("level")
-  part1Questions String   @map("part1_questions") // JSON: string[]
-  part2Topics    String   @map("part2_topics") // JSON: [{topic, bulletPoints}]
-  part3Discussion String  @map("part3_discussion") // JSON: [{prompt, followUp}]
-  rubric         String   @map("rubric") // JSON
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  difficulty      String   @map("difficulty") // easy | medium | hard
+  part1Questions  String   @map("part1_questions") // JSON: string[]
+  part2Topics     String   @map("part2_topics") // JSON: [{topic, bulletPoints}]
+  part3Discussion String   @map("part3_discussion") // JSON: [{prompt, followUp}]
+  rubric          String   @map("rubric") // JSON
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  @@index([level])
+  @@index([difficulty])
   @@map("speaking_tasks")
 }
 

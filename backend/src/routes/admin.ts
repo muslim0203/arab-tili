@@ -30,7 +30,7 @@ const audioUpload = multer({
 
 router.use(authenticateToken, requireAdmin);
 
-const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
+const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 
 // ══════════════════════════════════════════════════
 // AUDIO UPLOAD
@@ -58,7 +58,7 @@ router.get("/stats", async (_req: AuthRequest, res: Response) => {
     totalRevenue,
     grammarCount,
     readingPassageCount,
-    listeningStageCount,
+    listeningQuestionCount,
     writingTaskCount,
     speakingTaskCount,
   ] = await Promise.all([
@@ -69,10 +69,18 @@ router.get("/stats", async (_req: AuthRequest, res: Response) => {
     prisma.payment.aggregate({ where: { status: "COMPLETED" }, _sum: { amount: true } }),
     prisma.grammarQuestion.count(),
     prisma.readingPassage.count(),
-    prisma.listeningStage.count(),
+    prisma.listeningQuestion.count(),
     prisma.writingTask.count(),
     prisma.speakingTask.count(),
   ]);
+
+  // Count by difficulty
+  const [grammarByDiff, readingByDiff, listeningByDiff] = await Promise.all([
+    prisma.grammarQuestion.groupBy({ by: ["difficulty"], _count: true }),
+    prisma.readingPassage.groupBy({ by: ["difficulty"], _count: true }),
+    prisma.listeningQuestion.groupBy({ by: ["difficulty"], _count: true }),
+  ]);
+
   res.json({
     usersCount,
     attemptsCount,
@@ -82,15 +90,20 @@ router.get("/stats", async (_req: AuthRequest, res: Response) => {
     questionBank: {
       grammar: grammarCount,
       readingPassages: readingPassageCount,
-      listeningStages: listeningStageCount,
+      listeningQuestions: listeningQuestionCount,
       writingTasks: writingTaskCount,
       speakingTasks: speakingTaskCount,
+    },
+    byDifficulty: {
+      grammar: Object.fromEntries(grammarByDiff.map((g) => [g.difficulty, g._count])),
+      reading: Object.fromEntries(readingByDiff.map((g) => [g.difficulty, g._count])),
+      listening: Object.fromEntries(listeningByDiff.map((g) => [g.difficulty, g._count])),
     },
   });
 });
 
 // ══════════════════════════════════════════════════
-// USERS (existing)
+// USERS
 // ══════════════════════════════════════════════════
 
 router.get("/users", async (req: AuthRequest, res: Response) => {
@@ -124,7 +137,7 @@ router.get("/users", async (req: AuthRequest, res: Response) => {
 });
 
 // ══════════════════════════════════════════════════
-// PAYMENTS (existing)
+// PAYMENTS
 // ══════════════════════════════════════════════════
 
 router.get("/payments", async (req: AuthRequest, res: Response) => {
@@ -151,16 +164,16 @@ router.get("/payments", async (req: AuthRequest, res: Response) => {
 });
 
 // ══════════════════════════════════════════════════
-// GRAMMAR QUESTIONS CRUD
+// GRAMMAR QUESTIONS CRUD  (difficulty-based)
 // ══════════════════════════════════════════════════
 
 router.get("/grammar", async (req: AuthRequest, res: Response) => {
   const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
   const pageSize = Math.min(100, Math.max(5, parseInt(String(req.query.pageSize), 10) || 20));
-  const level = req.query.level as string | undefined;
+  const difficulty = req.query.difficulty as string | undefined;
   const skip = (page - 1) * pageSize;
-  const where: { level?: string } = {};
-  if (level && CEFR_LEVELS.includes(level as typeof CEFR_LEVELS[number])) where.level = level;
+  const where: { difficulty?: string } = {};
+  if (difficulty && DIFFICULTIES.includes(difficulty as typeof DIFFICULTIES[number])) where.difficulty = difficulty;
 
   const [items, total] = await Promise.all([
     prisma.grammarQuestion.findMany({ where, skip, take: pageSize, orderBy: { createdAt: "desc" } }),
@@ -176,12 +189,20 @@ router.get("/grammar/:id", async (req: AuthRequest, res: Response) => {
 });
 
 router.post("/grammar", async (req: AuthRequest, res: Response) => {
-  const { level, prompt, optionA, optionB, optionC, optionD, correctIndex, tags } = req.body;
-  if (!level || !prompt || !optionA || !optionB || !optionC || !optionD || correctIndex === undefined) {
-    res.status(400).json({ message: "Barcha maydonlar to'ldirilishi shart" }); return;
+  const { difficulty, prompt, options, correctIndex } = req.body;
+  if (!difficulty || !prompt || !options || correctIndex === undefined) {
+    res.status(400).json({ message: "difficulty, prompt, options, correctIndex to'ldirilishi shart" }); return;
+  }
+  if (!DIFFICULTIES.includes(difficulty)) {
+    res.status(400).json({ message: "difficulty faqat easy, medium yoki hard bo'lishi mumkin" }); return;
+  }
+  const optionsStr = typeof options === "string" ? options : JSON.stringify(options);
+  const parsed = JSON.parse(optionsStr);
+  if (!Array.isArray(parsed) || parsed.length !== 4) {
+    res.status(400).json({ message: "options 4 ta element bo'lishi shart" }); return;
   }
   const created = await prisma.grammarQuestion.create({
-    data: { level, prompt, optionA, optionB, optionC, optionD, correctIndex: Number(correctIndex), tags: tags ? JSON.stringify(tags) : null },
+    data: { difficulty, prompt, options: optionsStr, correctIndex: Number(correctIndex) },
   });
   res.status(201).json(created);
 });
@@ -189,20 +210,18 @@ router.post("/grammar", async (req: AuthRequest, res: Response) => {
 router.put("/grammar/:id", async (req: AuthRequest, res: Response) => {
   const existing = await prisma.grammarQuestion.findUnique({ where: { id: req.params.id } });
   if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
-  const { level, prompt, optionA, optionB, optionC, optionD, correctIndex, tags } = req.body;
-  const updated = await prisma.grammarQuestion.update({
-    where: { id: req.params.id },
-    data: {
-      ...(level !== undefined && { level }),
-      ...(prompt !== undefined && { prompt }),
-      ...(optionA !== undefined && { optionA }),
-      ...(optionB !== undefined && { optionB }),
-      ...(optionC !== undefined && { optionC }),
-      ...(optionD !== undefined && { optionD }),
-      ...(correctIndex !== undefined && { correctIndex: Number(correctIndex) }),
-      ...(tags !== undefined && { tags: tags ? JSON.stringify(tags) : null }),
-    },
-  });
+  const { difficulty, prompt, options, correctIndex } = req.body;
+
+  const data: Record<string, unknown> = {};
+  if (difficulty !== undefined) {
+    if (!DIFFICULTIES.includes(difficulty)) { res.status(400).json({ message: "Noto'g'ri difficulty" }); return; }
+    data.difficulty = difficulty;
+  }
+  if (prompt !== undefined) data.prompt = prompt;
+  if (options !== undefined) data.options = typeof options === "string" ? options : JSON.stringify(options);
+  if (correctIndex !== undefined) data.correctIndex = Number(correctIndex);
+
+  const updated = await prisma.grammarQuestion.update({ where: { id: req.params.id }, data });
   res.json(updated);
 });
 
@@ -217,13 +236,21 @@ router.delete("/grammar/:id", async (req: AuthRequest, res: Response) => {
 // READING PASSAGES CRUD (with nested questions)
 // ══════════════════════════════════════════════════
 
+const PASSAGE_DEFAULTS: Record<string, { readingTime: number; questionTime: number; questionCount: number }> = {
+  short: { readingTime: 120, questionTime: 360, questionCount: 6 },
+  medium: { readingTime: 180, questionTime: 480, questionCount: 8 },
+  long: { readingTime: 300, questionTime: 1200, questionCount: 10 },
+};
+
 router.get("/reading", async (req: AuthRequest, res: Response) => {
   const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
   const pageSize = Math.min(100, Math.max(5, parseInt(String(req.query.pageSize), 10) || 20));
-  const level = req.query.level as string | undefined;
+  const difficulty = req.query.difficulty as string | undefined;
+  const passageType = req.query.passageType as string | undefined;
   const skip = (page - 1) * pageSize;
-  const where: { level?: string } = {};
-  if (level && CEFR_LEVELS.includes(level as typeof CEFR_LEVELS[number])) where.level = level;
+  const where: { difficulty?: string; passageType?: string } = {};
+  if (difficulty && DIFFICULTIES.includes(difficulty as typeof DIFFICULTIES[number])) where.difficulty = difficulty;
+  if (passageType && ["short", "medium", "long"].includes(passageType)) where.passageType = passageType;
 
   const [items, total] = await Promise.all([
     prisma.readingPassage.findMany({
@@ -233,6 +260,10 @@ router.get("/reading", async (req: AuthRequest, res: Response) => {
     prisma.readingPassage.count({ where }),
   ]);
   res.json({ items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
+});
+
+router.get("/reading/defaults", (_req: AuthRequest, res: Response) => {
+  res.json(PASSAGE_DEFAULTS);
 });
 
 router.get("/reading/:id", async (req: AuthRequest, res: Response) => {
@@ -245,20 +276,26 @@ router.get("/reading/:id", async (req: AuthRequest, res: Response) => {
 });
 
 router.post("/reading", async (req: AuthRequest, res: Response) => {
-  const { level, passageType, text, readingTimeSeconds, questionTimeSeconds, questions } = req.body;
-  if (!level || !passageType || !text) {
-    res.status(400).json({ message: "level, passageType, text to'ldirilishi shart" }); return;
+  const { difficulty, passageType, text, readingTimeSeconds, questionTimeSeconds, questions } = req.body;
+  if (!difficulty || !passageType || !text) {
+    res.status(400).json({ message: "difficulty, passageType, text to'ldirilishi shart" }); return;
   }
+  if (!DIFFICULTIES.includes(difficulty)) {
+    res.status(400).json({ message: "Noto'g'ri difficulty" }); return;
+  }
+  const defaults = PASSAGE_DEFAULTS[passageType];
   const created = await prisma.readingPassage.create({
     data: {
-      level, passageType, text,
-      readingTimeSeconds: Number(readingTimeSeconds),
-      questionTimeSeconds: Number(questionTimeSeconds),
+      difficulty, passageType, text,
+      readingTimeSeconds: Number(readingTimeSeconds ?? defaults?.readingTime ?? 120),
+      questionTimeSeconds: Number(questionTimeSeconds ?? defaults?.questionTime ?? 360),
       questions: questions?.length ? {
-        create: (questions as Array<{ prompt: string; optionA: string; optionB: string; optionC: string; optionD: string; correctIndex: number }>)
+        create: (questions as Array<{ prompt: string; options: string | string[]; correctIndex: number }>)
           .map((q, i) => ({
-            prompt: q.prompt, optionA: q.optionA, optionB: q.optionB, optionC: q.optionC, optionD: q.optionD,
-            correctIndex: Number(q.correctIndex), orderIndex: i,
+            prompt: q.prompt,
+            options: typeof q.options === "string" ? q.options : JSON.stringify(q.options),
+            correctIndex: Number(q.correctIndex),
+            orderIndex: i,
           })),
       } : undefined,
     },
@@ -270,9 +307,8 @@ router.post("/reading", async (req: AuthRequest, res: Response) => {
 router.put("/reading/:id", async (req: AuthRequest, res: Response) => {
   const existing = await prisma.readingPassage.findUnique({ where: { id: req.params.id } });
   if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
-  const { level, passageType, text, readingTimeSeconds, questionTimeSeconds, questions } = req.body;
+  const { difficulty, passageType, text, readingTimeSeconds, questionTimeSeconds, questions } = req.body;
 
-  // If questions provided, delete old ones and create new
   if (questions) {
     await prisma.readingQuestion.deleteMany({ where: { passageId: req.params.id } });
   }
@@ -280,17 +316,19 @@ router.put("/reading/:id", async (req: AuthRequest, res: Response) => {
   const updated = await prisma.readingPassage.update({
     where: { id: req.params.id },
     data: {
-      ...(level !== undefined && { level }),
+      ...(difficulty !== undefined && { difficulty }),
       ...(passageType !== undefined && { passageType }),
       ...(text !== undefined && { text }),
       ...(readingTimeSeconds !== undefined && { readingTimeSeconds: Number(readingTimeSeconds) }),
       ...(questionTimeSeconds !== undefined && { questionTimeSeconds: Number(questionTimeSeconds) }),
       ...(questions && {
         questions: {
-          create: (questions as Array<{ prompt: string; optionA: string; optionB: string; optionC: string; optionD: string; correctIndex: number }>)
+          create: (questions as Array<{ prompt: string; options: string | string[]; correctIndex: number }>)
             .map((q, i) => ({
-              prompt: q.prompt, optionA: q.optionA, optionB: q.optionB, optionC: q.optionC, optionD: q.optionD,
-              correctIndex: Number(q.correctIndex), orderIndex: i,
+              prompt: q.prompt,
+              options: typeof q.options === "string" ? q.options : JSON.stringify(q.options),
+              correctIndex: Number(q.correctIndex),
+              orderIndex: i,
             })),
         },
       }),
@@ -308,99 +346,142 @@ router.delete("/reading/:id", async (req: AuthRequest, res: Response) => {
 });
 
 // ══════════════════════════════════════════════════
-// LISTENING STAGES CRUD (with nested questions)
+// LISTENING STAGES + QUESTIONS CRUD
 // ══════════════════════════════════════════════════
 
-router.get("/listening", async (req: AuthRequest, res: Response) => {
-  const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
-  const pageSize = Math.min(100, Math.max(5, parseInt(String(req.query.pageSize), 10) || 20));
-  const level = req.query.level as string | undefined;
-  const skip = (page - 1) * pageSize;
-  const where: { level?: string } = {};
-  if (level && CEFR_LEVELS.includes(level as typeof CEFR_LEVELS[number])) where.level = level;
-
-  const [items, total] = await Promise.all([
-    prisma.listeningStage.findMany({
-      where, skip, take: pageSize, orderBy: { createdAt: "desc" },
-      include: { questions: { orderBy: { orderIndex: "asc" } } },
-    }),
-    prisma.listeningStage.count({ where }),
-  ]);
-  res.json({ items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
+// GET all stages (fixed 3)
+router.get("/listening/stages", async (_req: AuthRequest, res: Response) => {
+  const stages = await prisma.listeningStage.findMany({
+    orderBy: { createdAt: "asc" },
+    include: {
+      questions: { orderBy: { orderIndex: "asc" } },
+      _count: { select: { questions: true } },
+    },
+  });
+  res.json(stages.map((s) => ({
+    ...s,
+    questionCount: s._count.questions,
+    isComplete: s._count.questions === 5,
+  })));
 });
 
-router.get("/listening/:id", async (req: AuthRequest, res: Response) => {
-  const item = await prisma.listeningStage.findUnique({
+// GET single stage with questions
+router.get("/listening/stages/:id", async (req: AuthRequest, res: Response) => {
+  const stage = await prisma.listeningStage.findUnique({
     where: { id: req.params.id },
     include: { questions: { orderBy: { orderIndex: "asc" } } },
   });
-  if (!item) { res.status(404).json({ message: "Topilmadi" }); return; }
-  res.json(item);
+  if (!stage) { res.status(404).json({ message: "Stage topilmadi" }); return; }
+  res.json(stage);
 });
 
-router.post("/listening", async (req: AuthRequest, res: Response) => {
-  const { level, stageType, titleArabic, audioUrl, maxPlays, timeMode, perQuestionSeconds, totalSeconds, questions } = req.body;
-  if (!level || !stageType || !titleArabic || !audioUrl || !timeMode) {
-    res.status(400).json({ message: "level, stageType, titleArabic, audioUrl, timeMode to'ldirilishi shart" }); return;
-  }
-  const created = await prisma.listeningStage.create({
-    data: {
-      level, stageType, titleArabic, audioUrl,
-      maxPlays: Number(maxPlays ?? 2), timeMode,
-      perQuestionSeconds: perQuestionSeconds ? Number(perQuestionSeconds) : null,
-      totalSeconds: totalSeconds ? Number(totalSeconds) : null,
-      questions: questions?.length ? {
-        create: (questions as Array<{ prompt: string; optionA: string; optionB: string; optionC: string; optionD: string; correctIndex: number }>)
-          .map((q, i) => ({
-            prompt: q.prompt, optionA: q.optionA, optionB: q.optionB, optionC: q.optionC, optionD: q.optionD,
-            correctIndex: Number(q.correctIndex), orderIndex: i,
-          })),
-      } : undefined,
-    },
-    include: { questions: { orderBy: { orderIndex: "asc" } } },
-  });
-  res.status(201).json(created);
-});
-
-router.put("/listening/:id", async (req: AuthRequest, res: Response) => {
+// UPDATE stage timing settings
+router.put("/listening/stages/:id", async (req: AuthRequest, res: Response) => {
   const existing = await prisma.listeningStage.findUnique({ where: { id: req.params.id } });
-  if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
-  const { level, stageType, titleArabic, audioUrl, maxPlays, timeMode, perQuestionSeconds, totalSeconds, questions } = req.body;
-
-  if (questions) {
-    await prisma.listeningQuestion.deleteMany({ where: { stageId: req.params.id } });
-  }
+  if (!existing) { res.status(404).json({ message: "Stage topilmadi" }); return; }
+  const { titleArabic, timingMode, perQuestionSeconds, totalSeconds } = req.body;
 
   const updated = await prisma.listeningStage.update({
     where: { id: req.params.id },
     data: {
-      ...(level !== undefined && { level }),
-      ...(stageType !== undefined && { stageType }),
       ...(titleArabic !== undefined && { titleArabic }),
-      ...(audioUrl !== undefined && { audioUrl }),
-      ...(maxPlays !== undefined && { maxPlays: Number(maxPlays) }),
-      ...(timeMode !== undefined && { timeMode }),
+      ...(timingMode !== undefined && { timingMode }),
       ...(perQuestionSeconds !== undefined && { perQuestionSeconds: perQuestionSeconds ? Number(perQuestionSeconds) : null }),
       ...(totalSeconds !== undefined && { totalSeconds: totalSeconds ? Number(totalSeconds) : null }),
-      ...(questions && {
-        questions: {
-          create: (questions as Array<{ prompt: string; optionA: string; optionB: string; optionC: string; optionD: string; correctIndex: number }>)
-            .map((q, i) => ({
-              prompt: q.prompt, optionA: q.optionA, optionB: q.optionB, optionC: q.optionC, optionD: q.optionD,
-              correctIndex: Number(q.correctIndex), orderIndex: i,
-            })),
-        },
-      }),
     },
     include: { questions: { orderBy: { orderIndex: "asc" } } },
   });
   res.json(updated);
 });
 
-router.delete("/listening/:id", async (req: AuthRequest, res: Response) => {
-  const existing = await prisma.listeningStage.findUnique({ where: { id: req.params.id } });
-  if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
-  await prisma.listeningStage.delete({ where: { id: req.params.id } });
+// ── Listening Questions CRUD ──
+
+// Add question to a stage
+router.post("/listening/questions", async (req: AuthRequest, res: Response) => {
+  const { stageId, difficulty, prompt, options, correctIndex, audioUrl, maxPlays } = req.body;
+  if (!stageId || !difficulty || !prompt || !options || correctIndex === undefined || !audioUrl) {
+    res.status(400).json({ message: "stageId, difficulty, prompt, options, correctIndex, audioUrl to'ldirilishi shart" }); return;
+  }
+
+  // Validate stage exists
+  const stage = await prisma.listeningStage.findUnique({
+    where: { id: stageId },
+    include: { _count: { select: { questions: true } } },
+  });
+  if (!stage) { res.status(404).json({ message: "Stage topilmadi" }); return; }
+  if (stage._count.questions >= 5) {
+    res.status(400).json({ message: "Bu stage da 5 ta savol mavjud. Yangi savol qo'shib bo'lmaydi." }); return;
+  }
+
+  if (!DIFFICULTIES.includes(difficulty)) {
+    res.status(400).json({ message: "Noto'g'ri difficulty" }); return;
+  }
+
+  const optionsStr = typeof options === "string" ? options : JSON.stringify(options);
+  const created = await prisma.listeningQuestion.create({
+    data: {
+      stageId, difficulty, prompt, options: optionsStr,
+      correctIndex: Number(correctIndex),
+      audioUrl,
+      maxPlays: Number(maxPlays ?? 2),
+      orderIndex: stage._count.questions,
+    },
+  });
+  res.status(201).json(created);
+});
+
+// Update a listening question
+router.put("/listening/questions/:id", async (req: AuthRequest, res: Response) => {
+  const existing = await prisma.listeningQuestion.findUnique({ where: { id: req.params.id } });
+  if (!existing) { res.status(404).json({ message: "Savol topilmadi" }); return; }
+  const { difficulty, prompt, options, correctIndex, audioUrl, maxPlays, orderIndex } = req.body;
+
+  const data: Record<string, unknown> = {};
+  if (difficulty !== undefined) {
+    if (!DIFFICULTIES.includes(difficulty)) { res.status(400).json({ message: "Noto'g'ri difficulty" }); return; }
+    data.difficulty = difficulty;
+  }
+  if (prompt !== undefined) data.prompt = prompt;
+  if (options !== undefined) data.options = typeof options === "string" ? options : JSON.stringify(options);
+  if (correctIndex !== undefined) data.correctIndex = Number(correctIndex);
+  if (audioUrl !== undefined) data.audioUrl = audioUrl;
+  if (maxPlays !== undefined) data.maxPlays = Number(maxPlays);
+  if (orderIndex !== undefined) data.orderIndex = Number(orderIndex);
+
+  const updated = await prisma.listeningQuestion.update({ where: { id: req.params.id }, data });
+  res.json(updated);
+});
+
+// Delete a listening question
+router.delete("/listening/questions/:id", async (req: AuthRequest, res: Response) => {
+  const existing = await prisma.listeningQuestion.findUnique({ where: { id: req.params.id } });
+  if (!existing) { res.status(404).json({ message: "Savol topilmadi" }); return; }
+
+  // Delete audio file if exists
+  if (existing.audioUrl) {
+    const filename = existing.audioUrl.split("/").pop();
+    if (filename) {
+      const filePath = path.join(audioUploadDir, filename);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+  }
+
+  await prisma.listeningQuestion.delete({ where: { id: req.params.id } });
+
+  // Reorder remaining questions
+  const remaining = await prisma.listeningQuestion.findMany({
+    where: { stageId: existing.stageId },
+    orderBy: { orderIndex: "asc" },
+  });
+  for (let i = 0; i < remaining.length; i++) {
+    if (remaining[i].orderIndex !== i) {
+      await prisma.listeningQuestion.update({
+        where: { id: remaining[i].id },
+        data: { orderIndex: i },
+      });
+    }
+  }
+
   res.status(204).send();
 });
 
@@ -411,10 +492,10 @@ router.delete("/listening/:id", async (req: AuthRequest, res: Response) => {
 router.get("/writing", async (req: AuthRequest, res: Response) => {
   const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
   const pageSize = Math.min(100, Math.max(5, parseInt(String(req.query.pageSize), 10) || 20));
-  const level = req.query.level as string | undefined;
+  const difficulty = req.query.difficulty as string | undefined;
   const skip = (page - 1) * pageSize;
-  const where: { level?: string } = {};
-  if (level && CEFR_LEVELS.includes(level as typeof CEFR_LEVELS[number])) where.level = level;
+  const where: { difficulty?: string } = {};
+  if (difficulty && DIFFICULTIES.includes(difficulty as typeof DIFFICULTIES[number])) where.difficulty = difficulty;
 
   const [items, total] = await Promise.all([
     prisma.writingTask.findMany({ where, skip, take: pageSize, orderBy: { createdAt: "desc" } }),
@@ -430,13 +511,13 @@ router.get("/writing/:id", async (req: AuthRequest, res: Response) => {
 });
 
 router.post("/writing", async (req: AuthRequest, res: Response) => {
-  const { level, prompt, wordLimitMin, wordLimitMax, rubric } = req.body;
-  if (!level || !prompt || wordLimitMin === undefined || wordLimitMax === undefined || !rubric) {
+  const { difficulty, prompt, wordLimitMin, wordLimitMax, rubric } = req.body;
+  if (!difficulty || !prompt || wordLimitMin === undefined || wordLimitMax === undefined || !rubric) {
     res.status(400).json({ message: "Barcha maydonlar to'ldirilishi shart" }); return;
   }
   const created = await prisma.writingTask.create({
     data: {
-      level, prompt,
+      difficulty, prompt,
       wordLimitMin: Number(wordLimitMin),
       wordLimitMax: Number(wordLimitMax),
       rubric: typeof rubric === "string" ? rubric : JSON.stringify(rubric),
@@ -448,11 +529,11 @@ router.post("/writing", async (req: AuthRequest, res: Response) => {
 router.put("/writing/:id", async (req: AuthRequest, res: Response) => {
   const existing = await prisma.writingTask.findUnique({ where: { id: req.params.id } });
   if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
-  const { level, prompt, wordLimitMin, wordLimitMax, rubric } = req.body;
+  const { difficulty, prompt, wordLimitMin, wordLimitMax, rubric } = req.body;
   const updated = await prisma.writingTask.update({
     where: { id: req.params.id },
     data: {
-      ...(level !== undefined && { level }),
+      ...(difficulty !== undefined && { difficulty }),
       ...(prompt !== undefined && { prompt }),
       ...(wordLimitMin !== undefined && { wordLimitMin: Number(wordLimitMin) }),
       ...(wordLimitMax !== undefined && { wordLimitMax: Number(wordLimitMax) }),
@@ -476,10 +557,10 @@ router.delete("/writing/:id", async (req: AuthRequest, res: Response) => {
 router.get("/speaking", async (req: AuthRequest, res: Response) => {
   const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
   const pageSize = Math.min(100, Math.max(5, parseInt(String(req.query.pageSize), 10) || 20));
-  const level = req.query.level as string | undefined;
+  const difficulty = req.query.difficulty as string | undefined;
   const skip = (page - 1) * pageSize;
-  const where: { level?: string } = {};
-  if (level && CEFR_LEVELS.includes(level as typeof CEFR_LEVELS[number])) where.level = level;
+  const where: { difficulty?: string } = {};
+  if (difficulty && DIFFICULTIES.includes(difficulty as typeof DIFFICULTIES[number])) where.difficulty = difficulty;
 
   const [items, total] = await Promise.all([
     prisma.speakingTask.findMany({ where, skip, take: pageSize, orderBy: { createdAt: "desc" } }),
@@ -495,13 +576,13 @@ router.get("/speaking/:id", async (req: AuthRequest, res: Response) => {
 });
 
 router.post("/speaking", async (req: AuthRequest, res: Response) => {
-  const { level, part1Questions, part2Topics, part3Discussion, rubric } = req.body;
-  if (!level || !part1Questions || !part2Topics || !part3Discussion || !rubric) {
+  const { difficulty, part1Questions, part2Topics, part3Discussion, rubric } = req.body;
+  if (!difficulty || !part1Questions || !part2Topics || !part3Discussion || !rubric) {
     res.status(400).json({ message: "Barcha maydonlar to'ldirilishi shart" }); return;
   }
   const created = await prisma.speakingTask.create({
     data: {
-      level,
+      difficulty,
       part1Questions: typeof part1Questions === "string" ? part1Questions : JSON.stringify(part1Questions),
       part2Topics: typeof part2Topics === "string" ? part2Topics : JSON.stringify(part2Topics),
       part3Discussion: typeof part3Discussion === "string" ? part3Discussion : JSON.stringify(part3Discussion),
@@ -514,11 +595,11 @@ router.post("/speaking", async (req: AuthRequest, res: Response) => {
 router.put("/speaking/:id", async (req: AuthRequest, res: Response) => {
   const existing = await prisma.speakingTask.findUnique({ where: { id: req.params.id } });
   if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
-  const { level, part1Questions, part2Topics, part3Discussion, rubric } = req.body;
+  const { difficulty, part1Questions, part2Topics, part3Discussion, rubric } = req.body;
   const updated = await prisma.speakingTask.update({
     where: { id: req.params.id },
     data: {
-      ...(level !== undefined && { level }),
+      ...(difficulty !== undefined && { difficulty }),
       ...(part1Questions !== undefined && { part1Questions: typeof part1Questions === "string" ? part1Questions : JSON.stringify(part1Questions) }),
       ...(part2Topics !== undefined && { part2Topics: typeof part2Topics === "string" ? part2Topics : JSON.stringify(part2Topics) }),
       ...(part3Discussion !== undefined && { part3Discussion: typeof part3Discussion === "string" ? part3Discussion : JSON.stringify(part3Discussion) }),
@@ -539,21 +620,13 @@ router.delete("/speaking/:id", async (req: AuthRequest, res: Response) => {
 // LEGACY QUESTION BANK (backward compat)
 // ══════════════════════════════════════════════════
 
-const BANK_SECTIONS = ["listening", "reading", "language_use"] as const;
-
 router.get("/question-bank", async (req: AuthRequest, res: Response) => {
   const page = Math.max(1, parseInt(String(req.query.page), 10) || 1);
   const pageSize = Math.min(100, Math.max(10, parseInt(String(req.query.pageSize), 10) || 20));
-  const level = req.query.level as string | undefined;
-  const section = req.query.section as string | undefined;
   const skip = (page - 1) * pageSize;
-  const where: { level?: string; section?: string } = {};
-  if (level && CEFR_LEVELS.includes(level as typeof CEFR_LEVELS[number])) where.level = level;
-  if (section && BANK_SECTIONS.includes(section as typeof BANK_SECTIONS[number])) where.section = section;
-
   const [items, total] = await Promise.all([
-    prisma.questionBank.findMany({ where, skip, take: pageSize, orderBy: [{ level: "asc" }, { section: "asc" }, { createdAt: "desc" }] }),
-    prisma.questionBank.count({ where }),
+    prisma.questionBank.findMany({ skip, take: pageSize, orderBy: { createdAt: "desc" } }),
+    prisma.questionBank.count(),
   ]);
   res.json({ items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) });
 });
