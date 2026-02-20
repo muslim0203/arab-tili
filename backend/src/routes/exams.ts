@@ -7,6 +7,74 @@ import { createCefrAttempt } from "../services/cefr-attempt.js";
 
 const router = Router();
 
+// ──────────────────────────────────────────────────
+// GET /api/exams/grammar/mixed  — 10 easy + 10 medium + 10 hard = 30 mixed grammar Qs
+// Javob variantlari ham random aralashtiriladi
+// ──────────────────────────────────────────────────
+router.get("/grammar/mixed", authenticateToken, async (_req: AuthRequest, res: Response) => {
+  try {
+    const PER_DIFFICULTY = 10;
+
+    // Har bir qiyinlikdan barcha savollarni olamiz
+    const [easyAll, mediumAll, hardAll] = await Promise.all([
+      prisma.grammarQuestion.findMany({ where: { difficulty: "easy" } }),
+      prisma.grammarQuestion.findMany({ where: { difficulty: "medium" } }),
+      prisma.grammarQuestion.findMany({ where: { difficulty: "hard" } }),
+    ]);
+
+    // Fisher-Yates shuffle
+    function shuffle<T>(arr: T[]): T[] {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // Har biridan PER_DIFFICULTY ta random tanlaymiz
+    const easy = shuffle(easyAll).slice(0, PER_DIFFICULTY);
+    const medium = shuffle(mediumAll).slice(0, PER_DIFFICULTY);
+    const hard = shuffle(hardAll).slice(0, PER_DIFFICULTY);
+
+    // Barchasini birlashtirib, yana aralashtirish
+    const allQuestions = shuffle([...easy, ...medium, ...hard]);
+
+    // Har bir savolning variantlarini aralashtirish
+    const result = allQuestions.map((q) => {
+      const options: string[] = typeof q.options === "string" ? JSON.parse(q.options) : q.options;
+      const correctOption = options[q.correctIndex];
+
+      // Variantlarni aralashtirish
+      const indices = [0, 1, 2, 3];
+      const shuffledIndices = shuffle(indices);
+      const shuffledOptions = shuffledIndices.map((i) => options[i]);
+      const newCorrectIndex = shuffledOptions.indexOf(correctOption);
+
+      return {
+        id: q.id,
+        prompt: q.prompt,
+        options: shuffledOptions,
+        correctIndex: newCorrectIndex,
+        difficulty: q.difficulty,
+      };
+    });
+
+    res.json({
+      questions: result,
+      count: result.length,
+      breakdown: {
+        easy: easy.length,
+        medium: medium.length,
+        hard: hard.length,
+      },
+    });
+  } catch (e) {
+    console.error("Grammar mixed error:", e);
+    res.status(500).json({ message: "Grammatika savollari yuklanmadi" });
+  }
+});
+
 function toPublicQuestion(q: {
   id: string;
   order: number;

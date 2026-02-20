@@ -2,7 +2,7 @@
 // Passage Runner – with intro screen – O'zbek UI
 // ─────────────────────────────────────────────────
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Timer } from "./Timer";
 import { createDeadline } from "@/utils/timer";
 import { formatTime } from "@/utils/timer";
@@ -31,9 +31,29 @@ export function PassageRunner({
     const [answers, setAnswers] = useState<Answer[]>([]);
     const [deadline, setDeadline] = useState(0);
     const completedRef = useRef(false);
+    const [showPassageInQuestions, setShowPassageInQuestions] = useState(true);
 
-    const currentQuestion = passage.questions[questionIndex];
-    const isLastQuestion = questionIndex === passage.questions.length - 1;
+    // ── Javob variantlarini aralashtirish (Fisher-Yates) ──
+    const shuffledQuestions = useMemo(() => {
+        function shuffle<T>(arr: T[]): T[] {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+        return passage.questions.map((q) => {
+            const indices = [0, 1, 2, 3];
+            const shuffledIndices = shuffle(indices);
+            const shuffledOptions = shuffledIndices.map((i) => q.options[i]) as [string, string, string, string];
+            const newCorrectIndex = shuffledOptions.indexOf(q.options[q.correctIndex]) as 0 | 1 | 2 | 3;
+            return { ...q, options: shuffledOptions, correctIndex: newCorrectIndex };
+        });
+    }, [passage.questions]);
+
+    const currentQuestion = shuffledQuestions[questionIndex];
+    const isLastQuestion = questionIndex === shuffledQuestions.length - 1;
 
     useEffect(() => {
         onAnswerChange?.(passage.id, answers);
@@ -54,23 +74,23 @@ export function PassageRunner({
         completedRef.current = true;
 
         const remaining: Answer[] = [];
-        for (let i = questionIndex; i < passage.questions.length; i++) {
+        for (let i = questionIndex; i < shuffledQuestions.length; i++) {
             const alreadyAnswered = answers.find(
-                (a) => a.questionId === passage.questions[i].id
+                (a) => a.questionId === shuffledQuestions[i].id
             );
             if (!alreadyAnswered) {
                 const sel = i === questionIndex ? selectedOption : null;
                 remaining.push({
-                    questionId: passage.questions[i].id,
+                    questionId: shuffledQuestions[i].id,
                     selectedIndex: sel,
                     isCorrect:
-                        sel !== null ? sel === passage.questions[i].correctIndex : null,
+                        sel !== null ? sel === shuffledQuestions[i].correctIndex : null,
                 });
             }
         }
         const finalAnswers = [...answers, ...remaining];
         onComplete(finalAnswers);
-    }, [questionIndex, selectedOption, answers, passage.questions, onComplete]);
+    }, [questionIndex, selectedOption, answers, shuffledQuestions, onComplete]);
 
     const goNextQuestion = useCallback(() => {
         if (completedRef.current) return;
@@ -265,15 +285,16 @@ export function PassageRunner({
 
     // ═══════════════ QUESTIONS PHASE ═══════════════
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
-            <div className="max-w-3xl w-full">
-                <div className="flex items-center justify-between mb-6">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4 py-6">
+            <div className="max-w-5xl mx-auto">
+                {/* ── Header ── */}
+                <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <div className="px-3 py-1 rounded-lg bg-primary/10 text-primary text-sm font-bold">
                             O'qish — Matn {passageNumber}
                         </div>
                         <span className="text-sm text-muted-foreground">
-                            Savol {questionIndex + 1} / {passage.questions.length}
+                            Savol {questionIndex + 1} / {shuffledQuestions.length}
                         </span>
                     </div>
                     <Timer
@@ -287,90 +308,111 @@ export function PassageRunner({
                     />
                 </div>
 
-                <div className="w-full h-2 rounded-full bg-muted mb-6 overflow-hidden">
+                {/* ── Progress bar ── */}
+                <div className="w-full h-2 rounded-full bg-muted mb-4 overflow-hidden">
                     <div
                         className="h-full rounded-full bg-gradient-to-r from-blue-500 to-primary transition-all duration-500 ease-out"
                         style={{
-                            width: `${((questionIndex + 1) / passage.questions.length) * 100}%`,
+                            width: `${((questionIndex + 1) / shuffledQuestions.length) * 100}%`,
                         }}
                     />
                 </div>
 
-                <details className="rounded-xl border border-border bg-card/60 mb-4 group">
-                    <summary className="px-4 py-3 cursor-pointer text-sm font-medium text-muted-foreground flex items-center gap-2 hover:text-primary transition-colors">
-                        <BookOpen className="w-4 h-4" />
-                        Matnni ko'rish
-                    </summary>
-                    <div
-                        className="px-6 pb-4 text-base leading-[2] text-card-foreground border-r-4 border-primary/20 mr-4"
-                        dir="rtl"
-                    >
-                        {passage.text}
-                    </div>
-                </details>
-
-                <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-8 shadow-lg">
-                    <p
-                        className="text-xl md:text-2xl font-semibold text-card-foreground mb-8 leading-relaxed"
-                        dir="rtl"
-                    >
-                        {currentQuestion.prompt}
-                    </p>
-
-                    <div className="space-y-3" dir="rtl">
-                        {currentQuestion.options.map((option, idx) => {
-                            const isSelected = selectedOption === idx;
-                            return (
-                                <button
-                                    key={idx}
-                                    onClick={() => setSelectedOption(idx)}
-                                    className={`
-                    w-full text-right p-4 rounded-xl border-2 transition-all duration-200
-                    flex items-center gap-4 group
-                    ${isSelected
-                                            ? "border-primary bg-primary/10 shadow-md shadow-primary/10"
-                                            : "border-border hover:border-primary/40 hover:bg-primary/5"
-                                        }
-                  `}
-                                >
-                                    <span
-                                        className={`
-                      w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0
-                      transition-all duration-200
-                      ${isSelected
-                                                ? "bg-primary text-primary-foreground"
-                                                : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
-                                            }
-                    `}
+                {/* ── Two-column layout: matn + savol ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* ── Chap: Asosiy matn (doim ko'rinadi) ── */}
+                    <div className="relative">
+                        <div className="lg:sticky lg:top-4">
+                            <div className="rounded-2xl border border-blue-500/20 bg-card/80 backdrop-blur-sm shadow-lg overflow-hidden">
+                                <div className="flex items-center justify-between px-5 py-3 bg-blue-500/5 border-b border-blue-500/10">
+                                    <div className="flex items-center gap-2">
+                                        <BookOpen className="w-4 h-4 text-blue-500" />
+                                        <span className="text-sm font-semibold text-card-foreground">Matn</span>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowPassageInQuestions(prev => !prev)}
+                                        className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
                                     >
-                                        {optionLabels[idx]}
-                                    </span>
-                                    <span className="text-base md:text-lg font-medium flex-1">
-                                        {option}
-                                    </span>
-                                    {isSelected && (
-                                        <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
-                                    )}
-                                </button>
-                            );
-                        })}
+                                        <Eye className="w-3.5 h-3.5" />
+                                        {showPassageInQuestions ? "Yashirish" : "Ko'rsatish"}
+                                    </button>
+                                </div>
+                                {showPassageInQuestions && (
+                                    <div
+                                        className="p-5 text-base leading-[2.1] text-card-foreground border-r-4 border-blue-500/20 mr-3 max-h-[60vh] overflow-y-auto scrollbar-thin"
+                                        dir="rtl"
+                                    >
+                                        {passage.text}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="mt-8 flex justify-end">
-                        <button
-                            onClick={goNextQuestion}
-                            disabled={selectedOption === null}
-                            className={`
-                px-8 py-3 rounded-xl font-semibold text-sm transition-all duration-200
-                flex items-center gap-2
-                ${selectedOption !== null
-                                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98]"
-                                    : "bg-muted text-muted-foreground cursor-not-allowed"
-                                }
-              `}
+                    {/* ── O'ng: Savol va variantlar ── */}
+                    <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-6 md:p-8 shadow-lg">
+                        <p
+                            className="text-lg md:text-xl font-semibold text-card-foreground mb-6 leading-relaxed"
+                            dir="rtl"
                         >
-                            {isLastQuestion ? "Matnni yakunlash" : "Keyingisi"}
-                        </button>
+                            {currentQuestion.prompt}
+                        </p>
+
+                        <div className="space-y-3" dir="rtl">
+                            {currentQuestion.options.map((option, idx) => {
+                                const isSelected = selectedOption === idx;
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setSelectedOption(idx)}
+                                        className={`
+                                            w-full text-right p-4 rounded-xl border-2 transition-all duration-200
+                                            flex items-center gap-4 group
+                                            ${isSelected
+                                                ? "border-primary bg-primary/10 shadow-md shadow-primary/10"
+                                                : "border-border hover:border-primary/40 hover:bg-primary/5"
+                                            }
+                                        `}
+                                    >
+                                        <span
+                                            className={`
+                                                w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0
+                                                transition-all duration-200
+                                                ${isSelected
+                                                    ? "bg-primary text-primary-foreground"
+                                                    : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
+                                                }
+                                            `}
+                                        >
+                                            {optionLabels[idx]}
+                                        </span>
+                                        <span className="text-base md:text-lg font-medium flex-1">
+                                            {option}
+                                        </span>
+                                        {isSelected && (
+                                            <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-8 flex justify-end">
+                            <button
+                                onClick={goNextQuestion}
+                                disabled={selectedOption === null}
+                                className={`
+                                    px-8 py-3 rounded-xl font-semibold text-sm transition-all duration-200
+                                    flex items-center gap-2
+                                    ${selectedOption !== null
+                                        ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98]"
+                                        : "bg-muted text-muted-foreground cursor-not-allowed"
+                                    }
+                                `}
+                            >
+                                {isLastQuestion ? "Matnni yakunlash" : "Keyingisi"}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

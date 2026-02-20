@@ -3,7 +3,7 @@
 // 30 Grammar Questions + 3 Reading Passages (6+8+10 = 24 questions)
 // ─────────────────────────────────────────────────
 
-import type { GrammarQuestion, ReadingPassage, ListeningStage } from "@/types/exam";
+import type { GrammarQuestion, ReadingPassage, ListeningStage, SpeakingQuestion, WritingTask } from "@/types/exam";
 
 // ══════════════════════════════════════════════════
 // GRAMMAR QUESTIONS (30)
@@ -564,5 +564,145 @@ export const listeningStages: ListeningStage[] = [
                 correctIndex: 0,
             },
         ],
+    },
+];
+
+// ══════════════════════════════════════════════════
+// SPEAKING QUESTIONS (12 — 4 easy + 4 medium + 4 hard)
+// Random 2+2+2 tanlash uchun
+// ══════════════════════════════════════════════════
+
+export const speakingQuestions: SpeakingQuestion[] = [
+    // ──── Easy (4) ────
+    {
+        id: "sp-e1",
+        difficulty: "easy",
+        prompt: "عَرِّف نَفسَكَ: ما اسمُكَ؟ وَمِن أيْنَ أنتَ؟ وَماذا تَدرُسُ أو تَعمَل؟",
+        maxScore: 5,
+    },
+    {
+        id: "sp-e2",
+        difficulty: "easy",
+        prompt: "صِف يَومَكَ العادي مِنَ الصَّباحِ إلى المَساءِ.",
+        maxScore: 5,
+    },
+    {
+        id: "sp-e3",
+        difficulty: "easy",
+        prompt: "ما هِوايَتُكَ المُفَضَّلة؟ ولِماذا تُحِبُّها؟",
+        maxScore: 5,
+    },
+    {
+        id: "sp-e4",
+        difficulty: "easy",
+        prompt: "تَحَدَّث عَن عائِلَتِكَ: كَم فَردًا فيها؟ وَماذا يَعمَلونَ؟",
+        maxScore: 5,
+    },
+    // ──── Medium (4) ────
+    {
+        id: "sp-m1",
+        difficulty: "medium",
+        prompt: "ما رَأيُكَ في التَّعليمِ عَن بُعد؟ اذكُرْ إيجابيّاتِه وسَلبيّاتِه.",
+        maxScore: 5,
+    },
+    {
+        id: "sp-m2",
+        difficulty: "medium",
+        prompt: "كَيفَ تُنَظِّمُ وَقتَكَ بَينَ الدِّراسَةِ والعَمَلِ والرّاحَةِ؟",
+        maxScore: 5,
+    },
+    {
+        id: "sp-m3",
+        difficulty: "medium",
+        prompt: "صِف مَدينَتَكَ أو قَريَتَكَ وَما يُميِّزُها عَن غَيرِها.",
+        maxScore: 5,
+    },
+    {
+        id: "sp-m4",
+        difficulty: "medium",
+        prompt: "اِحكِ عَن تَجرِبَةٍ سَفَرٍ مُمَيَّزَةٍ في حَياتِكَ.",
+        maxScore: 5,
+    },
+    // ──── Hard (4) ────
+    {
+        id: "sp-h1",
+        difficulty: "hard",
+        prompt: "ناقِشْ دَورَ الذَّكاءِ الاصطِناعيِّ في تَغييرِ سوقِ العَمَلِ مُستَقبلًا. هَل تَراهُ إيجابيًّا أم سَلبيًّا؟",
+        maxScore: 5,
+    },
+    {
+        id: "sp-h2",
+        difficulty: "hard",
+        prompt: "كَيفَ يُمكِنُ لِلدُّوَلِ النّاميَةِ تَحقيقُ التَّوازُنِ بَينَ النُّموِّ الاقتِصاديِّ وحِمايَةِ البيئَةِ؟",
+        maxScore: 5,
+    },
+    {
+        id: "sp-h3",
+        difficulty: "hard",
+        prompt: "ما أهَمِّيَّةُ الحِوارِ بَينَ الحَضاراتِ في بِناءِ السَّلامِ العالَميّ؟ أعطِ أمثِلَةً.",
+        maxScore: 5,
+    },
+    {
+        id: "sp-h4",
+        difficulty: "hard",
+        prompt: "قارِنْ بَينَ مَزايا وعُيوبِ العَولَمَةِ الثَّقافِيَّةِ على الهُوِيَّةِ المَحَلِّيَّةِ.",
+        maxScore: 5,
+    },
+];
+
+// ══════════════════════════════════════════════════
+// WRITING TASKS (3 easy + 3 hard → pick 1+1)
+// ══════════════════════════════════════════════════
+
+export const writingTasks: WritingTask[] = [
+    // ──── Easy (3) ────
+    {
+        id: "wr-e1",
+        difficulty: "easy",
+        prompt: "اكتُبْ رِسالَةً قَصيرَةً إلى صَديقِكَ تَدعوهُ فيها لِزيارَةِ مَدينَتِكَ. اِذكُرْ الأماكِنَ الجَميلَةَ وَالأنشِطَةَ المُمتِعَةَ الَّتي يُمكِنُكُما القِيامُ بِها مَعًا.",
+        wordLimitMin: 80,
+        wordLimitMax: 130,
+        maxScore: 15,
+    },
+    {
+        id: "wr-e2",
+        difficulty: "easy",
+        prompt: "صِفْ يَومَكَ المُعتادَ مِنَ الصَّباحِ حَتّى المَساءِ. تَحَدَّثْ عَنْ أنشِطَتِكَ اليَومِيَّةِ، وَما تُحِبُّ أنْ تَفعَلَهُ في وَقتِ الفَراغِ.",
+        wordLimitMin: 80,
+        wordLimitMax: 130,
+        maxScore: 15,
+    },
+    {
+        id: "wr-e3",
+        difficulty: "easy",
+        prompt: "اكتُبْ عَنْ هِوايَتِكَ المُفَضَّلَةِ. لِماذا تُحِبُّ هَذِهِ الهِوايَةَ؟ مَتى بَدأتَ مُمارَسَتَها؟ وَكَيفَ تُؤَثِّرُ على حَياتِكَ؟",
+        wordLimitMin: 80,
+        wordLimitMax: 130,
+        maxScore: 15,
+    },
+    // ──── Hard (3) ────
+    {
+        id: "wr-h1",
+        difficulty: "hard",
+        prompt: "ناقِشْ تَأثيرَ وَسائِلِ التَّواصُلِ الاجتِماعِيِّ على العَلاقاتِ الإنسانِيَّةِ. هَلْ تَرى أنَّها قَرَّبَتِ النّاسَ أمْ أبعَدَتهُم عَنْ بَعضِهِم؟ قَدِّمْ حُجَجًا مُقنِعَةً.",
+        wordLimitMin: 80,
+        wordLimitMax: 130,
+        maxScore: 15,
+    },
+    {
+        id: "wr-h2",
+        difficulty: "hard",
+        prompt: "اكتُبْ مَقالًا عَنْ أهَمِّيَّةِ التَّعليمِ في بِناءِ المُجتَمَعاتِ. كَيفَ يُمكِنُ لِلتَّعليمِ أنْ يُساهِمَ في حَلِّ المُشكِلاتِ الاجتِماعِيَّةِ وَالاقتِصادِيَّةِ؟",
+        wordLimitMin: 80,
+        wordLimitMax: 130,
+        maxScore: 15,
+    },
+    {
+        id: "wr-h3",
+        difficulty: "hard",
+        prompt: "حَلِّلْ ظاهِرَةَ الهِجرَةِ مِنَ الرّيفِ إلى المَدينَةِ. ما أسبابُها وَنَتائِجُها؟ وَما الحُلولُ المُمكِنَةُ لِلتَّخفيفِ مِنْ آثارِها السَّلبِيَّةِ؟",
+        wordLimitMin: 80,
+        wordLimitMax: 130,
+        maxScore: 15,
     },
 ];

@@ -94,16 +94,13 @@ model ListeningQuestion {
   @@map("listening_questions")
 }
 
-// ──── Writing Tasks (coming later) ────
+// ──── Writing Tasks ────
 model WritingTask {
-  id           String   @id @default(cuid())
-  difficulty   String   @map("difficulty") // easy | medium | hard
-  prompt       String   @map("prompt") // Arabic
-  wordLimitMin Int      @map("word_limit_min")
-  wordLimitMax Int      @map("word_limit_max")
-  rubric       String   @map("rubric") // JSON: [{criteriaName, maxPoints, description}]
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  difficulty String   @map("difficulty") // easy | medium | hard
+  prompt     String   @map("prompt")     // Arabic topic text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@index([difficulty])
   @@map("writing_tasks")
@@ -111,14 +108,11 @@ model WritingTask {
 
 // ──── Speaking Tasks (coming later) ────
 model SpeakingTask {
-  id              String   @id @default(cuid())
-  difficulty      String   @map("difficulty") // easy | medium | hard
-  part1Questions  String   @map("part1_questions") // JSON: string[]
-  part2Topics     String   @map("part2_topics") // JSON: [{topic, bulletPoints}]
-  part3Discussion String   @map("part3_discussion") // JSON: [{prompt, followUp}]
-  rubric          String   @map("rubric") // JSON
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(cuid())
+  difficulty String   @map("difficulty") // easy | medium | hard
+  prompt     String   @map("prompt")     // Arabic topic text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@index([difficulty])
   @@map("speaking_tasks")

@@ -7,9 +7,10 @@ import { useNavigate } from "react-router-dom";
 
 interface ExamStartCardsProps {
     onStartAtTaanal: () => void;
+    onStartSpeakingWriting: () => void;
 }
 
-export function ExamStartCards({ onStartAtTaanal }: ExamStartCardsProps) {
+export function ExamStartCards({ onStartAtTaanal, onStartSpeakingWriting }: ExamStartCardsProps) {
     const navigate = useNavigate();
 
     return (
@@ -51,14 +52,28 @@ export function ExamStartCards({ onStartAtTaanal }: ExamStartCardsProps) {
                                     Bepul
                                 </span>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-6">
-                                Arab tilida gapirish va yozish ko'nikmalarini tekshirish — tez kunlarda
+                            <p className="text-sm text-muted-foreground mb-2">
+                                Arab tilida gapirish va yozish ko'nikmalarini tekshiring
                             </p>
+                            <p className="text-xs text-muted-foreground mb-4">
+                                Kuniga 2 ta bepul urinish
+                            </p>
+                            <ul className="text-xs text-muted-foreground space-y-1 mb-5">
+                                <li className="flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+                                    Yozish — 1 ta vazifa (15 ball)
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+                                    Gapirish — 1 ta savol (5 ball)
+                                </li>
+                            </ul>
                             <button
-                                disabled
-                                className="w-full py-3 px-4 rounded-xl bg-secondary/10 text-secondary font-medium text-sm flex items-center justify-center gap-2 opacity-60 cursor-not-allowed"
+                                onClick={onStartSpeakingWriting}
+                                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-secondary to-secondary/80 text-white font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-secondary/30 transition-all duration-200 active:scale-[0.98]"
                             >
-                                Tez kunlarda
+                                Imtihonni boshlash
+                                <ArrowRight className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
@@ -94,16 +109,16 @@ export function ExamStartCards({ onStartAtTaanal }: ExamStartCardsProps) {
                                     O'qish — 3 ta matn
                                 </li>
                                 <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-                                    Tinglash — tez kunlarda
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    Tinglash — 3 bosqich
                                 </li>
                                 <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-                                    Yozish — tez kunlarda
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    Yozish — 2 ta vazifa
                                 </li>
                                 <li className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-                                    Gapirish — tez kunlarda
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    Gapirish — 6 ta savol
                                 </li>
                             </ul>
                             <button

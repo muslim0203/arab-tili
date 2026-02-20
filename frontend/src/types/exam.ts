@@ -57,6 +57,71 @@ export interface ListeningStage {
     questions: ListeningQuestion[];
 }
 
+// ─── Writing ──────────────────────────────────────
+
+export type WritingDifficulty = "easy" | "hard";
+
+export interface WritingTask {
+    id: string;
+    difficulty: WritingDifficulty;
+    prompt: string; // Arabic text
+    wordLimitMin: number;  // 80
+    wordLimitMax: number;  // 130
+    maxScore: 15;
+}
+
+export type WritingAnswerStatus = "pending" | "processing" | "scored";
+
+export interface WritingRubric {
+    content: number;          // 0-3 Content relevance
+    organization: number;     // 0-3 Organization & coherence
+    grammar: number;          // 0-3 Grammar accuracy
+    vocabulary: number;       // 0-3 Vocabulary range
+    taskAchievement: number;  // 0-3 Task achievement
+}
+
+export interface WritingAnswer {
+    taskId: string;
+    text: string;
+    wordCount: number;
+    score: number | null;           // 0-15
+    feedback?: string | null;
+    rubric?: WritingRubric | null;
+    status: WritingAnswerStatus;
+}
+
+// ─── Speaking ─────────────────────────────────────
+
+export type SpeakingDifficulty = "easy" | "medium" | "hard";
+
+export interface SpeakingQuestion {
+    id: string;
+    difficulty: SpeakingDifficulty;
+    prompt: string; // Arabic text
+    maxScore: 5;
+}
+
+export type SpeakingAnswerStatus = "pending" | "recording" | "recorded" | "processing" | "scored";
+
+export interface SpeakingRubric {
+    fluency: number;      // 0-1
+    grammar: number;      // 0-1
+    vocabulary: number;   // 0-1
+    pronunciation: number;// 0-1
+    coherence: number;    // 0-1
+}
+
+export interface SpeakingAnswer {
+    questionId: string;
+    audioBlob?: Blob | null;
+    audioUrl?: string | null;
+    transcript?: string | null;
+    score: number | null;         // 0-5
+    feedback?: string | null;
+    rubric?: SpeakingRubric | null;
+    status: SpeakingAnswerStatus;
+}
+
 /** An answer record for a single question */
 export interface Answer {
     questionId: string;
@@ -99,6 +164,18 @@ export interface ListeningSectionResult {
     maxScore: 30;
 }
 
+export interface WritingSectionResult {
+    answers: WritingAnswer[];
+    score: number;
+    maxScore: number;
+}
+
+export interface SpeakingSectionResult {
+    answers: SpeakingAnswer[];
+    score: number;
+    maxScore: number;
+}
+
 /** The full exam attempt */
 export interface ExamAttempt {
     id: string;
@@ -110,11 +187,11 @@ export interface ExamAttempt {
         grammar: GrammarSectionResult | null;
         reading: ReadingSectionResult | null;
         listening: ListeningSectionResult | null;
-        writing: null;   // future
-        speaking: null;  // future
+        writing: WritingSectionResult | null;
+        speaking: SpeakingSectionResult | null;
     };
     totalScore: number; // partial sum
-    maxPossibleScore: number; // 150 at full, 90 for now
+    maxPossibleScore: number; // 150 full (grammar 30 + reading 30 + listening 30 + writing 30 + speaking 30)
     level: string | null; // CEFR level
 }
 
@@ -123,11 +200,14 @@ export type CEFRLevel = "A2" | "B1" | "B2" | "C1" | "C2" | "Below A2";
 
 /** State machine for the exam flow */
 export type ExamPhase =
-    | "cards"       // exam selection screen
-    | "grammar"     // grammar section running
-    | "reading"     // reading section running
-    | "listening"   // listening section running
-    | "results";    // showing results
+    | "cards"              // exam selection screen
+    | "grammar"            // grammar section running
+    | "reading"            // reading section running
+    | "listening"          // listening section running
+    | "writing"            // writing section running
+    | "speaking"           // speaking section running
+    | "speaking-writing"   // standalone S+W exam
+    | "results";           // showing results
 
 /** Reading sub-phase within a passage */
 export type PassagePhase = "reading" | "questions";

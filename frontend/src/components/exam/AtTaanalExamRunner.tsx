@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────
 // At-Taanal Exam Runner – main orchestrator (state machine)
-// Grammar -> Reading -> Listening -> Results
+// Grammar -> Reading -> Listening -> Writing -> Speaking -> Results
 // ─────────────────────────────────────────────────
 
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -8,18 +8,25 @@ import { ExamStartCards } from "./ExamStartCards";
 import { GrammarRunner } from "./GrammarRunner";
 import { ReadingRunner } from "./ReadingRunner";
 import { ListeningRunner } from "./ListeningRunner";
+import { WritingRunner } from "./WritingRunner";
+import { SpeakingRunner } from "./SpeakingRunner";
+import { SpeakingWritingExamRunner } from "./SpeakingWritingExamRunner";
 import { ExamResults } from "./ExamResults";
-import { grammarQuestions, readingPassages, listeningStages } from "@/data/at-taanal-seed";
+import { readingPassages, listeningStages, writingTasks, speakingQuestions } from "@/data/at-taanal-seed";
 import { calcGrammarScore, calcReadingScore, calcListeningScore, generateId } from "@/utils/scoring";
+import { api } from "@/lib/api";
 import type {
     ExamPhase,
     ExamAttempt,
     Answer,
+    GrammarQuestion,
     PassageAttempt,
     ListeningStageAttempt,
     GrammarSectionResult,
     ReadingSectionResult,
     ListeningSectionResult,
+    WritingSectionResult,
+    SpeakingSectionResult,
 } from "@/types/exam";
 
 const STORAGE_KEY = "at-taanal-attempt";
@@ -46,6 +53,8 @@ export function AtTaanalExamRunner() {
     const [phase, setPhase] = useState<ExamPhase>("cards");
     const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
     const attemptRef = useRef<ExamAttempt | null>(null);
+    const [dbGrammarQuestions, setDbGrammarQuestions] = useState<GrammarQuestion[]>([]);
+    const [grammarLoading, setGrammarLoading] = useState(false);
 
     // On mount, check for saved attempt
     useEffect(() => {
@@ -59,7 +68,20 @@ export function AtTaanalExamRunner() {
     }, []);
 
     // ═══ Start the exam ═══
-    const handleStart = useCallback(() => {
+    const handleStart = useCallback(async () => {
+        // 1. DB'dan grammar savollarni yuklash
+        setGrammarLoading(true);
+        try {
+            const data = await api<{ questions: GrammarQuestion[] }>("/exams/grammar/mixed");
+            setDbGrammarQuestions(data.questions);
+        } catch (e) {
+            console.error("Grammar savollar yuklanmadi:", e);
+            setGrammarLoading(false);
+            return;
+        }
+        setGrammarLoading(false);
+
+        // 2. Attempt yaratish
         const newAttempt: ExamAttempt = {
             id: generateId(),
             examType: "at-taanal",
@@ -73,7 +95,7 @@ export function AtTaanalExamRunner() {
                 speaking: null,
             },
             totalScore: 0,
-            maxPossibleScore: 90, // grammar(30) + reading(30) + listening(30)
+            maxPossibleScore: 150, // grammar(30) + reading(30) + listening(30) + writing(30) + speaking(30)
             level: null,
         };
         setAttempt(newAttempt);
@@ -192,23 +214,16 @@ export function AtTaanalExamRunner() {
 
             setAttempt((prev) => {
                 if (!prev) return prev;
-                const grammarScore = prev.sections.grammar?.score ?? 0;
-                const readingScore = prev.sections.reading?.score ?? 0;
-                const totalScore = grammarScore + readingScore + scaled;
                 const updated: ExamAttempt = {
                     ...prev,
-                    status: "completed",
-                    completedAt: new Date().toISOString(),
                     sections: { ...prev.sections, listening: listeningResult },
-                    totalScore,
-                    level: null, // Will be computed in results view
                 };
                 attemptRef.current = updated;
                 saveAttempt(updated);
                 return updated;
             });
 
-            setPhase("results");
+            setPhase("writing");
         },
         []
     );
@@ -240,6 +255,53 @@ export function AtTaanalExamRunner() {
         []
     );
 
+    // ═══ Writing complete ═══
+    const handleWritingComplete = useCallback(
+        (writingResult: WritingSectionResult) => {
+            setAttempt((prev) => {
+                if (!prev) return prev;
+                const updated: ExamAttempt = {
+                    ...prev,
+                    sections: { ...prev.sections, writing: writingResult },
+                };
+                attemptRef.current = updated;
+                saveAttempt(updated);
+                return updated;
+            });
+
+            setPhase("speaking");
+        },
+        []
+    );
+
+    // ═══ Speaking complete ═══
+    const handleSpeakingComplete = useCallback(
+        (speakingResult: SpeakingSectionResult) => {
+            setAttempt((prev) => {
+                if (!prev) return prev;
+                const grammarScore = prev.sections.grammar?.score ?? 0;
+                const readingScore = prev.sections.reading?.score ?? 0;
+                const listeningScore = prev.sections.listening?.score ?? 0;
+                const writingScore = prev.sections.writing?.score ?? 0;
+                const totalScore = grammarScore + readingScore + listeningScore + writingScore + speakingResult.score;
+                const updated: ExamAttempt = {
+                    ...prev,
+                    status: "completed",
+                    completedAt: new Date().toISOString(),
+                    sections: { ...prev.sections, speaking: speakingResult },
+                    totalScore,
+                    level: null, // Will be computed in results view
+                };
+                attemptRef.current = updated;
+                saveAttempt(updated);
+                return updated;
+            });
+
+            setPhase("results");
+        },
+        []
+    );
+
     // ═══ Restart ═══
     const handleRestart = useCallback(() => {
         clearAttempt();
@@ -247,15 +309,38 @@ export function AtTaanalExamRunner() {
         setPhase("cards");
     }, []);
 
+    // ═══ Start Speaking & Writing (separate exam) ═══
+    const handleStartSpeakingWriting = useCallback(() => {
+        setPhase("speaking-writing");
+    }, []);
+
     // ═══ Render phases ═══
     switch (phase) {
         case "cards":
-            return <ExamStartCards onStartAtTaanal={handleStart} />;
+            return (
+                <ExamStartCards
+                    onStartAtTaanal={handleStart}
+                    onStartSpeakingWriting={handleStartSpeakingWriting}
+                />
+            );
+
+        case "speaking-writing":
+            return <SpeakingWritingExamRunner />;
 
         case "grammar":
+            if (grammarLoading || dbGrammarQuestions.length === 0) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+                        <div className="text-center">
+                            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                            <p className="text-lg text-muted-foreground">Grammatika savollari yuklanmoqda...</p>
+                        </div>
+                    </div>
+                );
+            }
             return (
                 <GrammarRunner
-                    questions={grammarQuestions}
+                    questions={dbGrammarQuestions}
                     onComplete={handleGrammarComplete}
                     onAnswerChange={handleGrammarAnswerChange}
                 />
@@ -276,6 +361,22 @@ export function AtTaanalExamRunner() {
                     stages={listeningStages}
                     onComplete={handleListeningComplete}
                     onAnswerChange={handleListeningAnswerChange}
+                />
+            );
+
+        case "writing":
+            return (
+                <WritingRunner
+                    tasks={writingTasks}
+                    onComplete={handleWritingComplete}
+                />
+            );
+
+        case "speaking":
+            return (
+                <SpeakingRunner
+                    questions={speakingQuestions}
+                    onComplete={handleSpeakingComplete}
                 />
             );
 

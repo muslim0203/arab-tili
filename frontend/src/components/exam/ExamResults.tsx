@@ -27,14 +27,18 @@ export function ExamResults({ attempt, onRestart }: ExamResultsProps) {
     const grammar = attempt.sections.grammar;
     const reading = attempt.sections.reading;
     const listening = attempt.sections.listening;
+    const writing = attempt.sections.writing;
+    const speaking = attempt.sections.speaking;
 
     const grammarScore = grammar?.score ?? 0;
     const readingRaw = reading?.rawCorrect ?? 0;
     const readingScaled = reading?.score ?? 0;
     const listeningRaw = listening?.rawCorrect ?? 0;
     const listeningScaled = listening?.score ?? 0;
-    const totalPartial = grammarScore + readingScaled + listeningScaled;
-    const maxPartial = 90; // 30 + 30 + 30
+    const writingScore = writing?.score ?? 0;
+    const speakingScore = speaking?.score ?? 0;
+    const totalPartial = grammarScore + readingScaled + listeningScaled + writingScore + speakingScore;
+    const maxPartial = 150; // 30 + 30 + 30 + 30 + 30
     const estimated150 = extrapolateToFull(totalPartial, maxPartial);
     const level = getCEFRLevel(estimated150);
 
@@ -84,7 +88,7 @@ export function ExamResults({ attempt, onRestart }: ExamResultsProps) {
                         {level}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                        ※ Grammatika, O'qish va Tinglash asosida taxminiy ({totalPartial}/{maxPartial})
+                        ※ Grammatika, O'qish, Tinglash, Yozish va Gapirish asosida ({totalPartial}/{maxPartial})
                     </p>
                 </div>
 
@@ -177,31 +181,99 @@ export function ExamResults({ attempt, onRestart }: ExamResultsProps) {
                             </div>
                         </div>
 
-                        {/* Writing – coming soon */}
-                        <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 border border-border opacity-50">
-                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                                <PenTool className="w-5 h-5 text-muted-foreground" />
+                        {/* Writing */}
+                        {writing ? (
+                            <div className="flex items-center gap-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                                <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                                    <PenTool className="w-5 h-5 text-amber-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="font-semibold text-card-foreground">
+                                            Yozish
+                                        </span>
+                                        <span className="font-bold text-amber-500">
+                                            {writingScore}/30
+                                        </span>
+                                    </div>
+                                    <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                                        <div
+                                            className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-1000"
+                                            style={{ width: `${(writingScore / 30) * 100}%` }}
+                                        />
+                                    </div>
+                                    {/* Per-task breakdown */}
+                                    {writing.answers.length > 0 && (
+                                        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                            {writing.answers.map((a, i) => (
+                                                <span key={a.taskId}>
+                                                    Vazifa {i + 1}: {a.score ?? 0}/15
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <span className="font-semibold text-muted-foreground">
-                                    Yozish — tez kunlarda
-                                </span>
+                        ) : (
+                            <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 border border-border opacity-50">
+                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                                    <PenTool className="w-5 h-5 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1">
+                                    <span className="font-semibold text-muted-foreground">
+                                        Yozish — baholanmagan
+                                    </span>
+                                </div>
+                                <span className="text-sm text-muted-foreground">-- / 30</span>
                             </div>
-                            <span className="text-sm text-muted-foreground">-- / 30</span>
-                        </div>
+                        )}
 
-                        {/* Speaking – coming soon */}
-                        <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 border border-border opacity-50">
-                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                                <Mic className="w-5 h-5 text-muted-foreground" />
+                        {/* Speaking */}
+                        {speaking ? (
+                            <div className="flex items-center gap-4 p-4 rounded-xl bg-rose-500/5 border border-rose-500/10">
+                                <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center shrink-0">
+                                    <Mic className="w-5 h-5 text-rose-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="font-semibold text-card-foreground">
+                                            Gapirish
+                                        </span>
+                                        <span className="font-bold text-rose-500">
+                                            {speakingScore}/30
+                                        </span>
+                                    </div>
+                                    <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                                        <div
+                                            className="h-full rounded-full bg-gradient-to-r from-rose-500 to-orange-400 transition-all duration-1000"
+                                            style={{ width: `${(speakingScore / 30) * 100}%` }}
+                                        />
+                                    </div>
+                                    {/* Per-question breakdown */}
+                                    {speaking.answers.length > 0 && (
+                                        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                                            {speaking.answers.map((a, i) => (
+                                                <span key={a.questionId}>
+                                                    Savol {i + 1}: {a.score ?? 0}/5
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <span className="font-semibold text-muted-foreground">
-                                    Gapirish — tez kunlarda
-                                </span>
+                        ) : (
+                            <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 border border-border opacity-50">
+                                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                                    <Mic className="w-5 h-5 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1">
+                                    <span className="font-semibold text-muted-foreground">
+                                        Gapirish — tez kunlarda
+                                    </span>
+                                </div>
+                                <span className="text-sm text-muted-foreground">-- / 30</span>
                             </div>
-                            <span className="text-sm text-muted-foreground">-- / 30</span>
-                        </div>
+                        )}
                     </div>
 
                     {/* Total */}
@@ -214,7 +286,7 @@ export function ExamResults({ attempt, onRestart }: ExamResultsProps) {
                         </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                        To'liq natija 150 balldan iborat — Yozish va Gapirish qo'shilgandan so'ng
+                        To'liq natija 150 balldan iborat
                     </p>
                 </div>
 

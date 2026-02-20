@@ -75,10 +75,12 @@ router.get("/stats", async (_req: AuthRequest, res: Response) => {
   ]);
 
   // Count by difficulty
-  const [grammarByDiff, readingByDiff, listeningByDiff] = await Promise.all([
+  const [grammarByDiff, readingByDiff, listeningByDiff, speakingByDiff, writingByDiff] = await Promise.all([
     prisma.grammarQuestion.groupBy({ by: ["difficulty"], _count: true }),
     prisma.readingPassage.groupBy({ by: ["difficulty"], _count: true }),
     prisma.listeningQuestion.groupBy({ by: ["difficulty"], _count: true }),
+    prisma.speakingTask.groupBy({ by: ["difficulty"], _count: true }),
+    prisma.writingTask.groupBy({ by: ["difficulty"], _count: true }),
   ]);
 
   res.json({
@@ -98,6 +100,8 @@ router.get("/stats", async (_req: AuthRequest, res: Response) => {
       grammar: Object.fromEntries(grammarByDiff.map((g) => [g.difficulty, g._count])),
       reading: Object.fromEntries(readingByDiff.map((g) => [g.difficulty, g._count])),
       listening: Object.fromEntries(listeningByDiff.map((g) => [g.difficulty, g._count])),
+      speaking: Object.fromEntries(speakingByDiff.map((g) => [g.difficulty, g._count])),
+      writing: Object.fromEntries(writingByDiff.map((g) => [g.difficulty, g._count])),
     },
   });
 });
@@ -486,7 +490,7 @@ router.delete("/listening/questions/:id", async (req: AuthRequest, res: Response
 });
 
 // ══════════════════════════════════════════════════
-// WRITING TASKS CRUD
+// WRITING TOPICS CRUD (difficulty + prompt)
 // ══════════════════════════════════════════════════
 
 router.get("/writing", async (req: AuthRequest, res: Response) => {
@@ -511,35 +515,32 @@ router.get("/writing/:id", async (req: AuthRequest, res: Response) => {
 });
 
 router.post("/writing", async (req: AuthRequest, res: Response) => {
-  const { difficulty, prompt, wordLimitMin, wordLimitMax, rubric } = req.body;
-  if (!difficulty || !prompt || wordLimitMin === undefined || wordLimitMax === undefined || !rubric) {
-    res.status(400).json({ message: "Barcha maydonlar to'ldirilishi shart" }); return;
+  const { difficulty, prompt } = req.body;
+  if (!difficulty || !prompt) {
+    res.status(400).json({ message: "difficulty va prompt to'ldirilishi shart" }); return;
+  }
+  if (!DIFFICULTIES.includes(difficulty)) {
+    res.status(400).json({ message: "difficulty faqat easy, medium yoki hard bo'lishi mumkin" }); return;
   }
   const created = await prisma.writingTask.create({
-    data: {
-      difficulty, prompt,
-      wordLimitMin: Number(wordLimitMin),
-      wordLimitMax: Number(wordLimitMax),
-      rubric: typeof rubric === "string" ? rubric : JSON.stringify(rubric),
-    },
+    data: { difficulty, prompt },
   });
-  res.json(created);
+  res.status(201).json(created);
 });
 
 router.put("/writing/:id", async (req: AuthRequest, res: Response) => {
   const existing = await prisma.writingTask.findUnique({ where: { id: req.params.id } });
   if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
-  const { difficulty, prompt, wordLimitMin, wordLimitMax, rubric } = req.body;
-  const updated = await prisma.writingTask.update({
-    where: { id: req.params.id },
-    data: {
-      ...(difficulty !== undefined && { difficulty }),
-      ...(prompt !== undefined && { prompt }),
-      ...(wordLimitMin !== undefined && { wordLimitMin: Number(wordLimitMin) }),
-      ...(wordLimitMax !== undefined && { wordLimitMax: Number(wordLimitMax) }),
-      ...(rubric !== undefined && { rubric: typeof rubric === "string" ? rubric : JSON.stringify(rubric) }),
-    },
-  });
+  const { difficulty, prompt } = req.body;
+
+  const data: Record<string, unknown> = {};
+  if (difficulty !== undefined) {
+    if (!DIFFICULTIES.includes(difficulty)) { res.status(400).json({ message: "Noto'g'ri difficulty" }); return; }
+    data.difficulty = difficulty;
+  }
+  if (prompt !== undefined) data.prompt = prompt;
+
+  const updated = await prisma.writingTask.update({ where: { id: req.params.id }, data });
   res.json(updated);
 });
 
@@ -551,7 +552,7 @@ router.delete("/writing/:id", async (req: AuthRequest, res: Response) => {
 });
 
 // ══════════════════════════════════════════════════
-// SPEAKING TASKS CRUD
+// SPEAKING TOPICS CRUD (difficulty + prompt)
 // ══════════════════════════════════════════════════
 
 router.get("/speaking", async (req: AuthRequest, res: Response) => {
@@ -576,36 +577,32 @@ router.get("/speaking/:id", async (req: AuthRequest, res: Response) => {
 });
 
 router.post("/speaking", async (req: AuthRequest, res: Response) => {
-  const { difficulty, part1Questions, part2Topics, part3Discussion, rubric } = req.body;
-  if (!difficulty || !part1Questions || !part2Topics || !part3Discussion || !rubric) {
-    res.status(400).json({ message: "Barcha maydonlar to'ldirilishi shart" }); return;
+  const { difficulty, prompt } = req.body;
+  if (!difficulty || !prompt) {
+    res.status(400).json({ message: "difficulty va prompt to'ldirilishi shart" }); return;
+  }
+  if (!DIFFICULTIES.includes(difficulty)) {
+    res.status(400).json({ message: "difficulty faqat easy, medium yoki hard bo'lishi mumkin" }); return;
   }
   const created = await prisma.speakingTask.create({
-    data: {
-      difficulty,
-      part1Questions: typeof part1Questions === "string" ? part1Questions : JSON.stringify(part1Questions),
-      part2Topics: typeof part2Topics === "string" ? part2Topics : JSON.stringify(part2Topics),
-      part3Discussion: typeof part3Discussion === "string" ? part3Discussion : JSON.stringify(part3Discussion),
-      rubric: typeof rubric === "string" ? rubric : JSON.stringify(rubric),
-    },
+    data: { difficulty, prompt },
   });
-  res.json(created);
+  res.status(201).json(created);
 });
 
 router.put("/speaking/:id", async (req: AuthRequest, res: Response) => {
   const existing = await prisma.speakingTask.findUnique({ where: { id: req.params.id } });
   if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
-  const { difficulty, part1Questions, part2Topics, part3Discussion, rubric } = req.body;
-  const updated = await prisma.speakingTask.update({
-    where: { id: req.params.id },
-    data: {
-      ...(difficulty !== undefined && { difficulty }),
-      ...(part1Questions !== undefined && { part1Questions: typeof part1Questions === "string" ? part1Questions : JSON.stringify(part1Questions) }),
-      ...(part2Topics !== undefined && { part2Topics: typeof part2Topics === "string" ? part2Topics : JSON.stringify(part2Topics) }),
-      ...(part3Discussion !== undefined && { part3Discussion: typeof part3Discussion === "string" ? part3Discussion : JSON.stringify(part3Discussion) }),
-      ...(rubric !== undefined && { rubric: typeof rubric === "string" ? rubric : JSON.stringify(rubric) }),
-    },
-  });
+  const { difficulty, prompt } = req.body;
+
+  const data: Record<string, unknown> = {};
+  if (difficulty !== undefined) {
+    if (!DIFFICULTIES.includes(difficulty)) { res.status(400).json({ message: "Noto'g'ri difficulty" }); return; }
+    data.difficulty = difficulty;
+  }
+  if (prompt !== undefined) data.prompt = prompt;
+
+  const updated = await prisma.speakingTask.update({ where: { id: req.params.id }, data });
   res.json(updated);
 });
 

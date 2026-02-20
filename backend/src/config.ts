@@ -34,4 +34,8 @@ export const config = {
     pass: env.SMTP_PASS ?? "",
     from: env.SMTP_FROM ?? env.SMTP_USER ?? "noreply@Arab Exam.uz",
   },
+  telegram: {
+    botToken: env.TELEGRAM_BOT_TOKEN ?? "",
+    chatId: env.TELEGRAM_CHAT_ID ?? "",
+  },
 } as const;
