@@ -116,7 +116,8 @@ export function ExamPage() {
       formData.append("audio", file, "recording.webm");
       formData.append("attemptQuestionId", attemptQuestionId);
       const token = useAuthStore.getState().accessToken;
-      const res = await fetch(`/api/attempts/${attemptId}/speaking-audio`, {
+      const apiBase = import.meta.env.VITE_API_URL || "/api";
+      const res = await fetch(`${apiBase}/attempts/${attemptId}/speaking-audio`, {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
