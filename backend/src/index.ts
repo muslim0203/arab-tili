@@ -17,6 +17,7 @@ if (!config.databaseUrl) {
 }
 
 const app = express();
+app.set("trust proxy", 1); // Railway/reverse proxy uchun – rate-limit to'g'ri ishlashi uchun
 const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
