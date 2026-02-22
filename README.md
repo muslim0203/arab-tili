@@ -37,7 +37,14 @@ npm run dev
 
 App runs at `http://localhost:5173`. API proxy: `/api` → backend.
 
-### 3. From repo root (optional)
+**Muhim:** Frontend ishlashi uchun backend avval ishga tushirilgan bo‘lishi kerak. Aks holda kirish/ro‘yxatda "Serverga ulanishda xatolik" chiqadi.
+
+### 3. Muammolarni bartaraf etish
+
+- **"Serverga ulanishda xatolik" / "Failed to fetch"** – backend ishlamayapti. Ikki terminalda: `cd backend && npm run dev` va `cd frontend && npm run dev` bajarilganiga ishonch hosil qiling.
+- **PostgreSQL xatosi** – `.env` da `DATABASE_URL` to‘g‘ri, PostgreSQL ishlayotgani va `attanalpro` bazasi mavjudligini tekshiring.
+
+### 4. From repo root (optional)
 
 ```bash
 npm run dev:backend   # in one terminal

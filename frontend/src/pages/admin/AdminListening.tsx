@@ -325,11 +325,15 @@ export function AdminListening() {
                                                         <label className="text-xs font-medium">
                                                             Variant {String.fromCharCode(65 + i)} {i === qForm.correctIndex && <span className="text-emerald-600">✓</span>}
                                                         </label>
-                                                        <Input dir="rtl" className="mt-1" value={opt} onChange={(e) => {
-                                                            const opts = [...qForm.options]; opts[i] = e.target.value;
-                                                            setQForm((f) => ({ ...f, options: opts }));
-                                                        }} placeholder={`خيار ${String.fromCharCode(65 + i)}`}
-                                                            {...(i === qForm.correctIndex ? { className: "mt-1 border-emerald-500 ring-1 ring-emerald-200" } : {})}
+                                                        <Input
+                                                            dir="rtl"
+                                                            className={i === qForm.correctIndex ? "mt-1 border-emerald-500 ring-1 ring-emerald-200" : "mt-1"}
+                                                            value={opt}
+                                                            onChange={(e) => {
+                                                                const opts = [...qForm.options]; opts[i] = e.target.value;
+                                                                setQForm((f) => ({ ...f, options: opts }));
+                                                            }}
+                                                            placeholder={`خيار ${String.fromCharCode(65 + i)}`}
                                                         />
                                                     </div>
                                                 ))}
