@@ -104,10 +104,9 @@ export function AppLayout({ children, maxWidth = "max-w-4xl" }: AppLayoutProps) 
 
           <Link
             to="/dashboard"
-            className="font-semibold text-primary shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md flex items-center gap-2"
+            className="shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md flex items-center gap-2"
           >
-            <img src="/logo.png" alt="Arab Exam" className="h-8 w-auto object-contain" />
-            <span className="hidden sm:inline-block">Arab Exam</span>
+            <img src="/logo.png" alt="Arab Exam" className="h-10 w-auto object-contain" />
           </Link>
 
           {/* Desktop navigatsiya */}
@@ -202,9 +201,8 @@ export function AppLayout({ children, maxWidth = "max-w-4xl" }: AppLayoutProps) 
         )}
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <Link to="/dashboard" className="font-semibold text-primary text-lg flex items-center gap-2">
-            <img src="/logo.png" alt="Arab Exam" className="h-8 w-auto object-contain" />
-            <span>Arab Exam</span>
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <img src="/logo.png" alt="Arab Exam" className="h-10 w-auto object-contain" />
           </Link>
           <Button
             variant="ghost"

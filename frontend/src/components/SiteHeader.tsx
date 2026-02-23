@@ -66,10 +66,9 @@ export function SiteHeader({
       <div className="container mx-auto flex h-14 items-center px-4 gap-4">
         <Link
           to="/dashboard"
-          className="font-semibold text-primary shrink-0 mr-4 flex items-center gap-2"
+          className="shrink-0 mr-4 flex items-center gap-2"
         >
-          <img src="/logo.png" alt="Arab Exam" className="h-8 w-auto object-contain" />
-          <span className="hidden sm:inline-block">Arab Exam</span>
+          <img src="/logo.png" alt="Arab Exam" className="h-10 w-auto object-contain" />
         </Link>
 
         <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
