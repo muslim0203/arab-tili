@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
@@ -129,12 +130,34 @@ async function main() {
   }
 
   // ══════════════════════════════════════════════════
-  // 4. Create default admin user if not exists
+  // 4. Create/update admin user
   // ══════════════════════════════════════════════════
-  const adminExists = await prisma.user.findFirst({ where: { isAdmin: true } });
-  if (!adminExists) {
-    // Note: password hashing should be done with bcrypt in production
-    console.log("ℹ️  No admin user found. Create one via the auth endpoint.");
+  const ADMIN_EMAIL = "muslimjon3396@gmail.com";
+  const existingAdmin = await prisma.user.findUnique({ where: { email: ADMIN_EMAIL } });
+  if (existingAdmin) {
+    // Mavjud foydalanuvchini admin qilish
+    await prisma.user.update({
+      where: { email: ADMIN_EMAIL },
+      data: { isAdmin: true },
+    });
+    console.log(`✅ ${ADMIN_EMAIL} admin qilib belgilandi`);
+  } else {
+    // Yangi admin yaratish (Google orqali kirganda ishlaydi)
+    const passwordHash = await bcrypt.hash("Admin123!", 10);
+    const adminUser = await prisma.user.create({
+      data: {
+        email: ADMIN_EMAIL,
+        fullName: "Zarifjon Gulomov",
+        passwordHash,
+        isAdmin: true,
+        subscriptionTier: "FREE",
+        languagePreference: "uz",
+      },
+    });
+    await prisma.userProgress.create({
+      data: { userId: adminUser.id },
+    });
+    console.log(`✅ Admin user yaratildi: ${ADMIN_EMAIL} (parol: Admin123!)`);
   }
 
   console.log("🎉 Seed completed!");
