@@ -21,7 +21,23 @@ app.set("trust proxy", 1); // Railway/reverse proxy uchun – rate-limit to'g'ri
 const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-app.use(cors({ origin: config.frontendUrl, credentials: true }));
+const allowedOrigins = [
+  config.frontendUrl,
+  "http://localhost:5173",
+  "http://localhost:4173",
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error("CORS policy: origin not allowed"));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (err instanceof SyntaxError) {
