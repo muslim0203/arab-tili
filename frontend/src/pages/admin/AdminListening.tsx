@@ -392,7 +392,7 @@ export function AdminListening() {
                                             <Plus className="h-4 w-4" /> Savol qo'shish ({stage.questionCount} ta mavjud)
                                         </Button>
                                     </div>
-                                )
+                                )}
                             </div>
                         )}
                     </div>
