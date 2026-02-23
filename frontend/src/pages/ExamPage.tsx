@@ -52,8 +52,17 @@ const SECTION_LABELS: Record<string, string> = {
 function fullAudioUrl(audioUrl: string | null | undefined): string {
   if (!audioUrl) return "";
   if (audioUrl.startsWith("http://") || audioUrl.startsWith("https://")) return audioUrl;
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}${audioUrl.startsWith("/") ? "" : "/"}${audioUrl}`;
+  // Audio fayllar backend (Railway) serverda saqlangan
+  // VITE_API_URL = "https://arab-exam-api-production.up.railway.app/api"
+  // audioUrl = "/api/uploads/audio/filename.mp3"
+  const apiBase = import.meta.env.VITE_API_URL || "/api";
+  // Extract backend origin from VITE_API_URL (remove trailing /api)
+  const backendOrigin = apiBase.replace(/\/api\/?$/, "");
+  if (backendOrigin && backendOrigin.startsWith("http")) {
+    return `${backendOrigin}${audioUrl.startsWith("/") ? "" : "/"}${audioUrl}`;
+  }
+  // Fallback: same origin (local dev)
+  return audioUrl;
 }
 
 export function ExamPage() {

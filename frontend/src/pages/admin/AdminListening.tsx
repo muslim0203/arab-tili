@@ -7,6 +7,18 @@ import {
     AlertTriangle, ChevronDown, ChevronUp, Settings2, Music,
 } from "lucide-react";
 
+/** Audio fayllar backend (Railway) serverda saqlangan — to'liq URL yasash */
+function fullAudioUrl(audioUrl: string | null | undefined): string {
+    if (!audioUrl) return "";
+    if (audioUrl.startsWith("http://") || audioUrl.startsWith("https://")) return audioUrl;
+    const apiBase = import.meta.env.VITE_API_URL || "/api";
+    const backendOrigin = apiBase.replace(/\/api\/?$/, "");
+    if (backendOrigin && backendOrigin.startsWith("http")) {
+        return `${backendOrigin}${audioUrl.startsWith("/") ? "" : "/"}${audioUrl}`;
+    }
+    return audioUrl;
+}
+
 interface ListeningQ {
     id: string; stageId: string; difficulty: string; prompt: string;
     options: string; correctIndex: number; audioUrl: string;
@@ -275,7 +287,7 @@ export function AdminListening() {
                                                         </div>
                                                         {/* Audio player */}
                                                         <audio controls className="w-full h-8 mt-1" preload="none">
-                                                            <source src={q.audioUrl} />
+                                                            <source src={fullAudioUrl(q.audioUrl)} />
                                                         </audio>
                                                     </div>
                                                     <Button variant="ghost" size="sm" onClick={() => deleteQuestion(q.id)} className="h-8 w-8 p-0 text-destructive shrink-0 self-start">
