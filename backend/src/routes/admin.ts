@@ -365,7 +365,7 @@ router.get("/listening/stages", async (_req: AuthRequest, res: Response) => {
   res.json(stages.map((s) => ({
     ...s,
     questionCount: s._count.questions,
-    isComplete: s._count.questions === 5,
+    isComplete: s._count.questions >= 5,
   })));
 });
 
@@ -413,9 +413,7 @@ router.post("/listening/questions", async (req: AuthRequest, res: Response) => {
     include: { _count: { select: { questions: true } } },
   });
   if (!stage) { res.status(404).json({ message: "Stage topilmadi" }); return; }
-  if (stage._count.questions >= 5) {
-    res.status(400).json({ message: "Bu stage da 5 ta savol mavjud. Yangi savol qo'shib bo'lmaydi." }); return;
-  }
+  // Cheksiz savol qo'shish mumkin — imtihonda random 5 ta tanlanadi
 
   if (!DIFFICULTIES.includes(difficulty)) {
     res.status(400).json({ message: "Noto'g'ri difficulty" }); return;
