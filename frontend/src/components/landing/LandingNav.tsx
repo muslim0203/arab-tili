@@ -148,10 +148,11 @@ export function LandingNav() {
         {/* Logo */}
         <Link
           to="/"
-          className="text-xl font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md shrink-0"
+          className="text-xl font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md shrink-0 flex items-center gap-2"
           aria-label="Arab Exam home"
         >
-          Arab Exam
+          <img src="/logo.png" alt="Arab Exam" className="h-8 w-auto object-contain" />
+          <span>Arab Exam</span>
         </Link>
 
         {/* Asosiy navigatsiya */}

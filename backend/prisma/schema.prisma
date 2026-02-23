@@ -369,11 +369,18 @@ model AITutorConversation {
 model Payment {
   id                String        @id @default(cuid())
   userId            String        @map("user_id")
-  amount            Int           // in tiyin/smallest unit (UZS)
+  amount            Int           // in UZS (so'm)
   currency          String        @default("UZS")
-  status            String        @default("PENDING")
+  status            String        @default("PENDING")       // PENDING | COMPLETED | CANCELLED
+  provider          String        @default("click")          // click | payme
   planId            String?       @map("plan_id")
-  paymentProviderId String?      @unique @map("payment_provider_id")
+  paymentProviderId String?       @unique @map("payment_provider_id") // Click trans id
+  paymeTransId      String?       @unique @map("payme_trans_id")      // Payme transaction id
+  paymeState        Int?          @map("payme_state")                  // Payme state: 1=created, 2=completed, -1=cancelled_before, -2=cancelled_after
+  paymeCreateTime   DateTime?     @map("payme_create_time")
+  paymePerformTime  DateTime?     @map("payme_perform_time")
+  paymeCancelTime   DateTime?     @map("payme_cancel_time")
+  cancelReason      Int?          @map("cancel_reason")
   paidAt            DateTime?     @map("paid_at")
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt @map("updated_at")

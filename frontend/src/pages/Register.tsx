@@ -96,7 +96,10 @@ export function Register() {
       <SEO title="Ro'yxatdan o'tish" description="Bepul ro'yxatdan o'ting va arab tili CEFR mock imtihoniga tayyorlaning. Arab Exam platformasi." canonicalPath="/register" />
       <Card className="w-full max-w-md rounded-xl border-border shadow-lg">
         <CardHeader>
-          <CardTitle className="text-xl">Hisob yaratish</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <img src="/logo.png" alt="Arab Exam" className="h-8 w-auto object-contain" />
+            <span>Hisob yaratish</span>
+          </CardTitle>
           <CardDescription>Arab Exam – Arab tili imtihoniga tayyorgarlik</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

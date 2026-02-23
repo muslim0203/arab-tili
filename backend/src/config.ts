@@ -25,6 +25,10 @@ export const config = {
     secretKey: env.CLICK_SECRET_KEY ?? "",
     merchantUserId: env.CLICK_MERCHANT_USER_ID ?? "",
   },
+  payme: {
+    merchantId: env.PAYME_MERCHANT_ID ?? "",
+    merchantKey: env.PAYME_MERCHANT_KEY ?? "",
+  },
   // Email (SMTP) – parol tiklash va obuna eslatma uchun
   smtp: {
     host: env.SMTP_HOST ?? "",
