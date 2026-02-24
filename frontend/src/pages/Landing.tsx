@@ -10,6 +10,7 @@ import { KeyFeatures } from "@/components/landing/KeyFeatures";
 import { Pricing } from "@/components/landing/Pricing";
 import { FAQ } from "@/components/landing/FAQ";
 import { Footer } from "@/components/landing/Footer";
+import { SarfComingSoon } from "@/components/landing/SarfComingSoon";
 import { SEO } from "@/components/SEO";
 import {
   StructuredData,
@@ -85,6 +86,7 @@ export function Landing() {
         <HowItWorks />
         <KeyFeatures />
         <Pricing />
+        <SarfComingSoon />
         <FAQ />
         <Footer />
       </main>
