@@ -103,7 +103,7 @@ export function AppLayout({ children, maxWidth = "max-w-4xl" }: AppLayoutProps) 
           </Button>
 
           <Link
-            to="/dashboard"
+            to="/"
             className="shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md flex items-center gap-2"
           >
             <img src="/logo.png" alt="Arab Exam" className="h-10 w-auto object-contain" />
@@ -201,7 +201,7 @@ export function AppLayout({ children, maxWidth = "max-w-4xl" }: AppLayoutProps) 
         )}
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <Link to="/dashboard" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <img src="/logo.png" alt="Arab Exam" className="h-10 w-auto object-contain" />
           </Link>
           <Button

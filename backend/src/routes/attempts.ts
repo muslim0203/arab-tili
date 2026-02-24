@@ -54,9 +54,12 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
       maxPossibleScore: true,
       percentage: true,
       cefrLevelAchieved: true,
+      sectionScores: true,
       startedAt: true,
       completedAt: true,
-      mockExam: { select: { id: true, title: true } },
+      mockExam: { select: { id: true, title: true, durationMinutes: true } },
+      _count: { select: { attemptQuestions: true } },
+      answers: { select: { isCorrect: true, answerText: true } },
     },
   });
 
@@ -65,18 +68,62 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   const nextCursor = hasMore ? items[items.length - 1].id : null;
 
   res.json({
-    items: items.map((a) => ({
-      id: a.id,
-      status: a.status,
-      level: a.level,
-      totalScore: a.totalScore,
-      maxPossibleScore: a.maxPossibleScore,
-      percentage: a.percentage,
-      cefrLevelAchieved: a.cefrLevelAchieved,
-      startedAt: a.startedAt,
-      completedAt: a.completedAt,
-      examTitle: a.mockExam?.title ?? (a.level ? `CEFR ${a.level}` : null),
-    })),
+    items: items.map((a) => {
+      // Parse sectionScores from JSON string
+      let sectionScores: Record<string, { score: number; max: number }> | null = null;
+      if (a.sectionScores) {
+        try {
+          sectionScores = typeof a.sectionScores === "string"
+            ? JSON.parse(a.sectionScores)
+            : (a.sectionScores as Record<string, { score: number; max: number }>);
+        } catch { sectionScores = null; }
+      }
+
+      // Count correct / wrong / unanswered
+      const questionsCount = a._count.attemptQuestions;
+      let correctCount = 0;
+      let wrongCount = 0;
+      let unansweredCount = 0;
+      for (const ans of a.answers) {
+        if (ans.answerText == null || ans.answerText.trim() === "") {
+          unansweredCount++;
+        } else if (ans.isCorrect === true) {
+          correctCount++;
+        } else if (ans.isCorrect === false) {
+          wrongCount++;
+        }
+        // writing/speaking don't have isCorrect, they're scored separately
+      }
+      unansweredCount = Math.max(0, questionsCount - a.answers.length) + unansweredCount;
+
+      // Duration in minutes
+      let durationMinutes: number | null = null;
+      if (a.completedAt && a.startedAt) {
+        durationMinutes = Math.round(
+          (new Date(a.completedAt).getTime() - new Date(a.startedAt).getTime()) / 60000
+        );
+      }
+
+      return {
+        id: a.id,
+        status: a.status,
+        level: a.level,
+        totalScore: a.totalScore,
+        maxPossibleScore: a.maxPossibleScore,
+        percentage: a.percentage,
+        cefrLevelAchieved: a.cefrLevelAchieved,
+        sectionScores,
+        startedAt: a.startedAt,
+        completedAt: a.completedAt,
+        examTitle: a.mockExam?.title ?? (a.level ? `CEFR ${a.level}` : null),
+        examDurationMinutes: a.mockExam?.durationMinutes ?? null,
+        actualDurationMinutes: durationMinutes,
+        questionsCount,
+        correctCount,
+        wrongCount,
+        unansweredCount,
+      };
+    }),
     nextCursor,
   });
 });

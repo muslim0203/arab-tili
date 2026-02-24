@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,10 +9,12 @@ import {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { ChevronDown, LayoutDashboard, Settings, LogOut } from "lucide-react";
+import { useAuthStore } from "@/store/auth";
 
 const LANGUAGES = [
   { code: "uz", label: "Oʻzbekcha" },
@@ -125,12 +127,21 @@ function NavDropdown({ item }: { item: NavItem }) {
 export function LandingNav() {
   const { t, i18n } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const isLoggedIn = useAuthStore((s) => s.isAuthenticated());
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const handleLogout = useCallback(() => {
+    logout();
+    navigate("/", { replace: true });
+  }, [logout, navigate]);
 
   const currentLang =
     LANGUAGES.find((l) => l.code === i18n.language) ?? LANGUAGES[0];
@@ -161,7 +172,7 @@ export function LandingNav() {
           ))}
         </nav>
 
-        {/* O'ng tomon: til + login + start */}
+        {/* O'ng tomon: til + auth */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Til tanlash */}
           <DropdownMenu>
@@ -189,18 +200,67 @@ export function LandingNav() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link
-            to="/login"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
-          >
-            {t("nav.login")}
-          </Link>
+          {/* Auth qismi: login holatda — user dropdown, aks holda — Login/Register */}
+          {isLoggedIn && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 rounded-lg min-w-[100px] sm:min-w-[120px] justify-between"
+                  aria-label="Profil menyusi"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs shrink-0">
+                      {user.fullName?.charAt(0)?.toUpperCase() ?? "?"}
+                    </div>
+                    <span className="truncate max-w-[80px] sm:max-w-[120px] text-sm font-medium">
+                      {user.fullName}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-xl">
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center gap-2 cursor-pointer">
+                    <Settings className="h-4 w-4" />
+                    Sozlamalar
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-destructive focus:text-destructive cursor-pointer"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Chiqish
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
+              >
+                {t("nav.login")}
+              </Link>
 
-          <Button asChild size="default" className="rounded-lg shadow-sm">
-            <Link to="/register">{t("nav.startDemo")}</Link>
-          </Button>
+              <Button asChild size="default" className="rounded-lg shadow-sm">
+                <Link to="/register">{t("nav.startDemo")}</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
   );
 }
+

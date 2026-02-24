@@ -36,6 +36,9 @@ const Landing = lazy(() => import("@/pages/Landing").then((m) => ({ default: m.L
 const NotFound = lazy(() => import("@/pages/NotFound").then((m) => ({ default: m.NotFound })));
 const Settings = lazy(() => import("@/pages/Settings").then((m) => ({ default: m.Settings })));
 const AtTaanalExam = lazy(() => import("@/pages/AtTaanalExam").then((m) => ({ default: m.AtTaanalExam })));
+const AttemptHistory = lazy(() => import("@/pages/AttemptHistory").then((m) => ({ default: m.AttemptHistory })));
+const AttemptResults = lazy(() => import("@/pages/AttemptResults").then((m) => ({ default: m.AttemptResults })));
+const ExamPage = lazy(() => import("@/pages/ExamPage").then((m) => ({ default: m.ExamPage })));
 
 function PageFallback() {
   return (
@@ -63,6 +66,9 @@ export default function App() {
             <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
             <Route path="/payment/return" element={<ProtectedRoute><PaymentReturn /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/attempts/history" element={<ProtectedRoute><AttemptHistory /></ProtectedRoute>} />
+            <Route path="/attempts/:attemptId/results" element={<ProtectedRoute><AttemptResults /></ProtectedRoute>} />
+            <Route path="/exam/:attemptId" element={<ProtectedRoute><ExamPage /></ProtectedRoute>} />
             {/* Tizim haqida, Foydalanuvchilarga, Tashkilotlarga, Yordam (dropdown: Bog'lanish, Qo'llanmalar, Video) */}
             <Route path="/tizim-haqida" element={<TizimHaqida />} />
             <Route path="/foydalanuvchilarga" element={<Foydalanuvchilarga />} />

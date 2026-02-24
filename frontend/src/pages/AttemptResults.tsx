@@ -300,6 +300,9 @@ export function AttemptResults() {
             <Link to="/exams">Boshqa imtihon</Link>
           </Button>
           <Button variant="outline" asChild size="default" className="rounded-xl">
+            <Link to="/attempts/history">Tarix</Link>
+          </Button>
+          <Button variant="ghost" asChild size="default" className="rounded-xl">
             <Link to="/dashboard">Dashboard</Link>
           </Button>
         </div>
