@@ -12,7 +12,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 const Dashboard = lazy(() => import("@/pages/Dashboard").then((m) => ({ default: m.Dashboard })));
 
 const AITutor = lazy(() => import("@/pages/AITutor").then((m) => ({ default: m.AITutor })));
-const Pricing = lazy(() => import("@/pages/Pricing").then((m) => ({ default: m.Pricing })));
+const PricingPage = lazy(() => import("@/pages/PricingPage").then((m) => ({ default: m.PricingPage })));
 const PaymentReturn = lazy(() => import("@/pages/PaymentReturn").then((m) => ({ default: m.PaymentReturn })));
 const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout").then((m) => ({ default: m.AdminLayout })));
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard").then((m) => ({ default: m.AdminDashboard })));
@@ -63,7 +63,7 @@ export default function App() {
             <Route path="/exams" element={<AtTaanalExam />} />
             <Route path="/at-taanal" element={<AtTaanalExam />} />
             <Route path="/ai-tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
-            <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+            <Route path="/pricing" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
             <Route path="/payment/return" element={<ProtectedRoute><PaymentReturn /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/attempts/history" element={<ProtectedRoute><AttemptHistory /></ProtectedRoute>} />

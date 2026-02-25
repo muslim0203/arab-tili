@@ -15,8 +15,9 @@ import { config } from "../config.js";
 const router = Router();
 
 export const SUBSCRIPTION_PLANS = [
-  { id: "premium", tier: "PREMIUM" as const, name: "Premium", nameUz: "Premium", durationMonths: 1, amount: 99_000, description: "AI Tutor 100 suhbat/oy" },
-  { id: "intensive", tier: "INTENSIVE" as const, name: "Intensive", nameUz: "Intensive", durationMonths: 3, amount: 249_000, description: "AI Tutor cheksiz, 3 oy" },
+  { id: "mock_exam", type: "purchase", durationMonths: 0, amount: 50_000, description: "1 ta to'liq imtihon (7 kun)", name: "Mock Imtihon", nameUz: "Mock Imtihon", tier: "MOCK" as const },
+  { id: "pro_basic", type: "subscription", planType: "pro", durationMonths: 1, amount: 89_000, description: "Pro aylik obuna", name: "Pro Asosiy", nameUz: "Pro Asosiy", tier: "PRO" as const },
+  { id: "pro_premium", type: "subscription", planType: "pro", durationMonths: 1, amount: 119_000, description: "Pro yillik/premium", name: "Pro Premium", nameUz: "Pro Premium", tier: "PRO" as const },
 ] as const;
 
 // ════════════════════════════════════════════
@@ -43,7 +44,7 @@ router.get("/plans", (_req, res: Response) => {
 router.post("/create-payment", authenticateToken, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
   const parsed = z.object({
-    planId: z.enum(["premium", "intensive"]),
+    planId: z.enum(["mock_exam", "pro_basic", "pro_premium"]),
     provider: z.enum(["click", "payme"]).default("click"),
   }).safeParse(req.body);
 
@@ -521,16 +522,57 @@ async function activateSubscription(
   userId: string,
   plan: (typeof SUBSCRIPTION_PLANS)[number],
 ) {
-  const expiresAt = new Date();
-  expiresAt.setMonth(expiresAt.getMonth() + plan.durationMonths);
+  if (plan.id === "mock_exam") {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    await prisma.purchase.create({
+      data: {
+        userId,
+        productType: "mock_exam",
+        quantity: 1,
+        remainingUses: 1,
+        expiresAt,
+      },
+    });
+  } else {
+    // Pro subscription
+    const startedAt = new Date();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      subscriptionTier: plan.tier,
-      subscriptionExpiresAt: expiresAt,
-    },
-  });
+    // Cancel existing active subscription
+    await prisma.subscription.updateMany({
+      where: { userId, status: "active" },
+      data: { status: "cancelled" },
+    });
+
+    await prisma.subscription.create({
+      data: {
+        userId,
+        planType: "pro",
+        startedAt,
+        expiresAt,
+        status: "active",
+      },
+    });
+
+    await prisma.usageTracking.createMany({
+      data: [
+        { userId, type: "mock" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
+        { userId, type: "writing" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
+        { userId, type: "speaking" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
+        { userId, type: "aiTutor" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
+      ],
+    });
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        subscriptionTier: "PRO",
+        subscriptionExpiresAt: expiresAt,
+      },
+    });
+  }
 }
 
 export const subscriptionRoutes = router;
