@@ -1,12 +1,13 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { X, Crown, Zap, Loader2, ShieldCheck } from "lucide-react";
+import { X, Crown, Zap, Loader2, ShieldCheck, Wallet, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type UpgradeModalProps = {
     target: "standard" | "pro";
     onClose: () => void;
-    onPurchaseMock: () => void;
-    onSubscribePro: (level: "basic" | "premium") => void;
+    onPurchaseMock: (provider: "click" | "payme") => void;
+    onSubscribePro: (level: "basic" | "premium", provider: "click" | "payme") => void;
     isPending: boolean;
 };
 
@@ -17,6 +18,8 @@ export function UpgradeModal({
     onSubscribePro,
     isPending,
 }: UpgradeModalProps) {
+    const [provider, setProvider] = useState<"click" | "payme">("click");
+
     return (
         <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -64,6 +67,24 @@ export function UpgradeModal({
                             </div>
                         </div>
 
+                        {/* Provider Selector inside the Modal */}
+                        <div className="bg-muted/30 p-4 border-b border-border flex justify-center gap-2">
+                            <button
+                                onClick={() => setProvider("click")}
+                                className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${provider === "click" ? "bg-[#00B4E6] text-white shadow-md shadow-[#00B4E6]/25" : "text-muted-foreground hover:text-foreground hover:bg-background/80 border border-transparent hover:border-border"}`}
+                            >
+                                <CreditCard className="h-4 w-4" />
+                                Click
+                            </button>
+                            <button
+                                onClick={() => setProvider("payme")}
+                                className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${provider === "payme" ? "bg-[#00CCCC] text-white shadow-md shadow-[#00CCCC]/25" : "text-muted-foreground hover:text-foreground hover:bg-background/80 border border-transparent hover:border-border"}`}
+                            >
+                                <Wallet className="h-4 w-4" />
+                                Payme
+                            </button>
+                        </div>
+
                         <div className="p-6 space-y-5">
                             <div className="flex items-baseline justify-between">
                                 <div>
@@ -94,7 +115,7 @@ export function UpgradeModal({
 
                             <Button
                                 className="w-full rounded-xl h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all hover:shadow-lg hover:shadow-blue-600/25"
-                                onClick={onPurchaseMock}
+                                onClick={() => onPurchaseMock(provider)}
                                 disabled={isPending}
                             >
                                 {isPending ? (
@@ -120,11 +141,29 @@ export function UpgradeModal({
                             </div>
                         </div>
 
+                        {/* Provider Selector inside the Modal */}
+                        <div className="bg-muted/30 p-4 border-b border-border flex justify-center gap-2">
+                            <button
+                                onClick={() => setProvider("click")}
+                                className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${provider === "click" ? "bg-[#00B4E6] text-white shadow-md shadow-[#00B4E6]/25" : "text-muted-foreground hover:text-foreground hover:bg-background/80 border border-transparent hover:border-border"}`}
+                            >
+                                <CreditCard className="h-4 w-4" />
+                                Click
+                            </button>
+                            <button
+                                onClick={() => setProvider("payme")}
+                                className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${provider === "payme" ? "bg-[#00CCCC] text-white shadow-md shadow-[#00CCCC]/25" : "text-muted-foreground hover:text-foreground hover:bg-background/80 border border-transparent hover:border-border"}`}
+                            >
+                                <Wallet className="h-4 w-4" />
+                                Payme
+                            </button>
+                        </div>
+
                         <div className="p-6 space-y-5">
                             {/* Price options */}
                             <div className="grid grid-cols-2 gap-3">
                                 <button
-                                    onClick={() => onSubscribePro("basic")}
+                                    onClick={() => onSubscribePro("basic", provider)}
                                     disabled={isPending}
                                     className="rounded-xl border-2 border-amber-200 dark:border-amber-800 hover:border-amber-400 dark:hover:border-amber-600 p-4 text-left transition-all hover:shadow-md group disabled:opacity-50"
                                 >
@@ -138,7 +177,7 @@ export function UpgradeModal({
                                     )}
                                 </button>
                                 <button
-                                    onClick={() => onSubscribePro("premium")}
+                                    onClick={() => onSubscribePro("premium", provider)}
                                     disabled={isPending}
                                     className="rounded-xl border-2 border-orange-200 dark:border-orange-800 hover:border-orange-400 dark:hover:border-orange-600 p-4 text-left transition-all hover:shadow-md relative overflow-hidden disabled:opacity-50"
                                 >

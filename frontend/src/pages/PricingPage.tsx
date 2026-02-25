@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { AppLayout } from "@/components/app/AppLayout";
 import { PageHeader } from "@/components/app/PageHeader";
 import { api } from "@/lib/api";
-import { useAuthStore } from "@/store/auth";
 import { UpgradeModal } from "@/components/pricing/UpgradeModal";
 import { UsageDashboard } from "@/components/pricing/UsageDashboard";
 import { QuotaIndicator } from "@/components/pricing/QuotaIndicator";
@@ -57,7 +56,6 @@ const fadeUp = {
 export function PricingPage() {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [upgradeTarget, setUpgradeTarget] = useState<"standard" | "pro">("pro");
-    const queryClient = useQueryClient();
 
     const { data: status, isLoading } = useQuery<AccessStatus>({
         queryKey: ["access-status"],
@@ -66,27 +64,24 @@ export function PricingPage() {
     });
 
     const purchaseMock = useMutation({
-        mutationFn: () => api("/access/purchase/mock", { method: "POST", body: {} }),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["access-status"] });
-            setShowUpgradeModal(false);
+        mutationFn: (provider: "click" | "payme") =>
+            api<{ redirectUrl: string }>("/subscriptions/create-payment", {
+                method: "POST",
+                body: { planId: "mock_exam", provider },
+            }),
+        onSuccess: (data) => {
+            window.location.href = data.redirectUrl;
         },
     });
 
     const subscribePro = useMutation({
-        mutationFn: (priceLevel: "basic" | "premium") =>
-            api("/access/subscribe/pro", { method: "POST", body: { priceLevel } }),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["access-status"] });
-            setShowUpgradeModal(false);
-            const currentUser = useAuthStore.getState().user;
-            if (currentUser) {
-                useAuthStore.getState().setAuth(
-                    { ...currentUser, subscriptionTier: "PRO" },
-                    useAuthStore.getState().accessToken!,
-                    useAuthStore.getState().refreshToken!
-                );
-            }
+        mutationFn: ({ priceLevel, provider }: { priceLevel: "basic" | "premium"; provider: "click" | "payme" }) =>
+            api<{ redirectUrl: string }>("/subscriptions/create-payment", {
+                method: "POST",
+                body: { planId: priceLevel === "premium" ? "pro_premium" : "pro_basic", provider },
+            }),
+        onSuccess: (data) => {
+            window.location.href = data.redirectUrl;
         },
     });
 
@@ -420,8 +415,8 @@ export function PricingPage() {
                     <UpgradeModal
                         target={upgradeTarget}
                         onClose={() => setShowUpgradeModal(false)}
-                        onPurchaseMock={() => purchaseMock.mutate()}
-                        onSubscribePro={(level) => subscribePro.mutate(level)}
+                        onPurchaseMock={(provider) => purchaseMock.mutate(provider)}
+                        onSubscribePro={(level, provider) => subscribePro.mutate({ priceLevel: level, provider })}
                         isPending={purchaseMock.isPending || subscribePro.isPending}
                     />
                 )}
