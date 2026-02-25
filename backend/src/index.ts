@@ -72,6 +72,7 @@ import { profileRoutes } from "./routes/profile.js";
 import { contactRoutes } from "./routes/contact.js";
 import { speakingRoutes } from "./routes/speaking.js";
 import { writingRoutes } from "./routes/writing.js";
+import { accessRoutes } from "./routes/access.js";
 app.use("/api/auth", authRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/attempts", attemptRoutes);
@@ -83,6 +84,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/speaking", speakingRoutes);
 app.use("/api/writing", writingRoutes);
+app.use("/api/access", accessRoutes);
 
 // Global error handler (async route xatolarini ushlaydi)
 import multer from "multer";

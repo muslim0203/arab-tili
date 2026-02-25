@@ -4,15 +4,14 @@ import { prisma } from "../lib/prisma.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
 import { aiLimiter } from "../middleware/rate-limit.js";
 import { chatWithTutor } from "../services/ai-tutor.js";
-import { effectiveTier } from "../lib/subscription.js";
+import {
+  canUseAITutor,
+  recordAITutorUsage,
+  getUserPlanType,
+  PRO_LIMITS,
+} from "../services/access-control.js";
 
 const router = Router();
-
-const QUOTA: Record<string, number> = {
-  FREE: 0,
-  PREMIUM: 100,
-  INTENSIVE: 99999,
-};
 
 function startOfMonth(date: Date): Date {
   const d = new Date(date);
@@ -21,25 +20,40 @@ function startOfMonth(date: Date): Date {
   return d;
 }
 
-async function getMonthlyUsage(userId: string): Promise<number> {
-  const start = startOfMonth(new Date());
-  const count = await prisma.aITutorConversation.count({
-    where: { userId, createdAt: { gte: start } },
-  });
-  return count;
-}
-
-// GET /api/ai-tutor/quota – oylik limit va ishlatilgan
+// GET /api/ai-tutor/quota – oylik limit va ishlatilgan (yangi access-control tizimi)
 router.get("/quota", authenticateToken, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { subscriptionTier: true, subscriptionExpiresAt: true },
+  const planType = await getUserPlanType(userId);
+  const accessResult = await canUseAITutor(userId);
+
+  // Pro users get their usage from access control
+  if (planType === "pro") {
+    const start = startOfMonth(new Date());
+    const usage = await prisma.usageTracking.findFirst({
+      where: {
+        userId,
+        type: "aiTutor",
+        periodStart: { gte: start },
+      },
+    });
+
+    res.json({
+      used: usage?.usedCount ?? 0,
+      limit: PRO_LIMITS.aiTutor,
+      tier: "PRO",
+      allowed: accessResult.allowed,
+    });
+    return;
+  }
+
+  // Free/Standard users: AI Tutor not available
+  res.json({
+    used: 0,
+    limit: 0,
+    tier: planType.toUpperCase(),
+    allowed: false,
+    reason: accessResult.reason,
   });
-  const tier = effectiveTier(user?.subscriptionTier ?? "FREE", user?.subscriptionExpiresAt ?? null);
-  const limit = QUOTA[tier] ?? 0;
-  const used = await getMonthlyUsage(userId);
-  res.json({ used, limit, tier });
 });
 
 // POST /api/ai-tutor/chat – xabar yuborish, AI javob
@@ -52,21 +66,21 @@ router.post("/chat", authenticateToken, aiLimiter, async (req: AuthRequest, res:
   }
   const { message } = parsed.data;
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { subscriptionTier: true, subscriptionExpiresAt: true, languagePreference: true },
-  });
-  const tier = effectiveTier(user?.subscriptionTier ?? "FREE", user?.subscriptionExpiresAt ?? null);
-  const limit = QUOTA[tier] ?? 0;
-  const used = await getMonthlyUsage(userId);
-  if (used >= limit) {
+  // Check access using new access control system
+  const accessResult = await canUseAITutor(userId);
+  if (!accessResult.allowed) {
     res.status(403).json({
-      message: "Oylik limit tugadi. Premium yoki Intensive tarifga o'ting.",
-      used,
-      limit,
+      message: accessResult.reason,
+      planType: accessResult.planType,
+      upgradeRequired: true,
     });
     return;
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { languagePreference: true },
+  });
 
   const progress = await prisma.userProgress.findUnique({
     where: { userId },
@@ -89,13 +103,26 @@ router.post("/chat", authenticateToken, aiLimiter, async (req: AuthRequest, res:
       },
     });
 
+    // Record usage in access control system
+    await recordAITutorUsage(userId);
+
+    // Get updated quota info
+    const start = startOfMonth(new Date());
+    const usage = await prisma.usageTracking.findFirst({
+      where: {
+        userId,
+        type: "aiTutor",
+        periodStart: { gte: start },
+      },
+    });
+
     res.json({
       id: conv.id,
       questionAsked: conv.questionAsked,
       aiResponse: conv.aiResponse,
       createdAt: conv.createdAt,
-      used: used + 1,
-      limit,
+      used: usage?.usedCount ?? 1,
+      limit: PRO_LIMITS.aiTutor,
     });
   } catch (e) {
     res.status(503).json({

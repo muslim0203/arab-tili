@@ -6,7 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  // Local: "sqlite" | Production: "postgresql"
+  // Deploy qilganda "postgresql" ga o'zgartiring va DATABASE_URL ni yangilang
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -168,8 +170,64 @@ model User {
   progress            UserProgress?
   aiTutorConversations AITutorConversation[]
   payments            Payment[]
+  subscriptions       Subscription[]
+  purchases           Purchase[]
+  usageTracking       UsageTracking[]
 
   @@map("users")
+}
+
+// ══════════════════════════════════════════════════
+// SUBSCRIPTION + ACCESS CONTROL TABLES
+// ══════════════════════════════════════════════════
+
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  planType  String   @map("plan_type")            // "free" | "pro"
+  startedAt DateTime @default(now()) @map("started_at")
+  expiresAt DateTime @map("expires_at")
+  status    String   @default("active") @map("status") // "active" | "expired" | "cancelled"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("subscriptions")
+}
+
+model Purchase {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  productType    String    @map("product_type")      // "mock_exam"
+  quantity       Int       @default(1) @map("quantity")
+  remainingUses  Int       @default(1) @map("remaining_uses")
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, productType])
+  @@map("purchases")
+}
+
+model UsageTracking {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  type        String   @map("type")             // "mock" | "writing" | "speaking"
+  usedCount   Int      @default(0) @map("used_count")
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, periodStart])
+  @@index([userId, type])
+  @@map("usage_tracking")
 }
 
 // ══════════════════════════════════════════════════

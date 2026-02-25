@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppLayout } from "@/components/app/AppLayout";
 import { PageHeader } from "@/components/app/PageHeader";
 import { api } from "@/lib/api";
-import { Loader2, Send, MessageCircle } from "lucide-react";
+import { QuotaIndicator } from "@/components/pricing/QuotaIndicator";
+import { Loader2, Send, MessageCircle, Crown, Lock } from "lucide-react";
 
-type Quota = { used: number; limit: number; tier: string };
+type Quota = { used: number; limit: number; tier: string; allowed: boolean; reason?: string };
 type HistoryItem = { id: string; questionAsked: string; aiResponse: string; createdAt: string };
 
 export function AITutor() {
@@ -42,14 +43,19 @@ export function AITutor() {
       queryClient.invalidateQueries({ queryKey: ["ai-tutor-quota"] });
       setMessage("");
     },
-    onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "AI tutor javob bermadi");
+    onError: (err: any) => {
+      if (err?.upgradeRequired) {
+        toast.error("AI Tutor faqat Pro rejada mavjud. Tariflar sahifasidan o'ting.");
+      } else {
+        toast.error(err instanceof Error ? err.message : "AI tutor javob bermadi");
+      }
     },
   });
 
   const items = history?.items ?? [];
-  const canSend =
-    (quota?.limit ?? 0) > (quota?.used ?? 0) && message.trim().length > 0;
+  const isProUser = quota?.tier === "PRO";
+  const hasAccess = quota?.allowed ?? false;
+  const canSend = hasAccess && (quota?.used ?? 0) < (quota?.limit ?? 0) && message.trim().length > 0;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,6 +80,7 @@ export function AITutor() {
           subtitle="Savolingizni yozing, CEFR darajangizga mos javob olasiz (grammatika, so'z boyligi, imtihon tayyorgarlik)."
         />
 
+        {/* Quota Card */}
         <Card className="rounded-xl border-border shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -83,25 +90,60 @@ export function AITutor() {
             <CardContent className="pt-0">
               {quotaLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : isProUser ? (
+                <QuotaIndicator
+                  label="AI Tutor xabarlari"
+                  used={quota?.used ?? 0}
+                  limit={quota?.limit ?? 0}
+                  color="amber"
+                  showBar
+                />
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  <strong>{quota?.used ?? 0}</strong> / <strong>{quota?.limit ?? 0}</strong>
-                  {quota?.tier === "FREE" && quota?.limit === 0 && (
-                    <span className="ml-2 text-destructive">
-                      AI Tutor Premium yoki Intensive tarifda ishlatiladi.
-                    </span>
-                  )}
-                </p>
+                <div className="flex items-center gap-3 py-2">
+                  <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                    <Lock className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      AI Tutor — faqat Pro rejada
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Pro obunada oyiga 50 ta xabar yuborishingiz mumkin
+                    </p>
+                  </div>
+                </div>
               )}
             </CardContent>
           </CardHeader>
         </Card>
 
+        {/* Chat Area */}
         <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-border bg-card shadow-sm">
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {historyLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : !hasAccess ? (
+              // Non-Pro users see upgrade prompt
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                  <Crown className="h-8 w-8 text-white" />
+                </div>
+                <div className="text-center space-y-2">
+                  <h3 className="text-lg font-bold text-foreground">AI Tutor — Pro xizmati</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm">
+                    AI Tutor arab tili grammatikasi, so'z boyligi va imtihon tayyorgarligida yordam beradi.
+                    Foydalanish uchun Pro rejaga o'ting.
+                  </p>
+                </div>
+                <Link
+                  to="/pricing"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm hover:from-amber-600 hover:to-orange-600 transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/25"
+                >
+                  <Crown className="h-4 w-4" />
+                  Pro rejaga o'tish
+                </Link>
               </div>
             ) : items.length === 0 && !sendMutation.isPending ? (
               <p className="py-8 text-center text-muted-foreground">
@@ -142,14 +184,20 @@ export function AITutor() {
             )}
           </div>
 
+          {/* Input Area */}
           <div className="border-t border-border bg-muted/20 p-4">
-            {quota?.tier === "FREE" && quota?.limit === 0 ? (
+            {!hasAccess ? (
               <p className="py-2 text-center text-sm text-muted-foreground">
                 AI Tutor dan foydalanish uchun{" "}
                 <Link to="/pricing" className="font-medium text-primary underline hover:no-underline">
-                  Premium yoki Intensive tarifga o'ting
+                  Pro rejaga o'ting
                 </Link>
                 .
+              </p>
+            ) : (quota?.used ?? 0) >= (quota?.limit ?? 0) ? (
+              <p className="py-2 text-center text-sm text-amber-600 dark:text-amber-400 font-medium">
+                Oylik AI Tutor limiti tugadi ({quota?.limit}/{quota?.limit}).
+                Keyingi oy boshida yangilanadi.
               </p>
             ) : (
               <div className="flex gap-2">
