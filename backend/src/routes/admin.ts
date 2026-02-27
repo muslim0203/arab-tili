@@ -8,25 +8,9 @@ import { authenticateToken, requireAdmin, type AuthRequest } from "../middleware
 
 const router = Router();
 
-// ── Audio upload setup ──
-const audioUploadDir = path.join(process.cwd(), "uploads", "audio");
-if (!fs.existsSync(audioUploadDir)) fs.mkdirSync(audioUploadDir, { recursive: true });
+import { createAudioUpload, getUploadedFileUrl } from "../lib/s3.js";
 
-const audioUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, audioUploadDir),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname) || ".mp3";
-      const name = `${crypto.randomBytes(8).toString("hex")}${ext}`;
-      cb(null, name);
-    },
-  }),
-  limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    const allowed = /\.(mp3|m4a|wav|ogg|webm|mpga|mpeg)$/i.test(file.originalname) || file.mimetype?.startsWith("audio/");
-    cb(null, !!allowed);
-  },
-});
+const audioUpload = createAudioUpload("audio");
 
 router.use(authenticateToken, requireAdmin);
 
@@ -41,7 +25,7 @@ router.post("/upload-audio", audioUpload.single("audio"), (req: AuthRequest, res
     res.status(400).json({ message: "audio fayl yuborilmadi" });
     return;
   }
-  const audioUrl = `/api/uploads/audio/${req.file.filename}`;
+  const audioUrl = getUploadedFileUrl(req.file, "audio");
   res.json({ audioUrl });
 });
 
@@ -459,11 +443,11 @@ router.delete("/listening/questions/:id", async (req: AuthRequest, res: Response
   const existing = await prisma.listeningQuestion.findUnique({ where: { id: req.params.id } });
   if (!existing) { res.status(404).json({ message: "Savol topilmadi" }); return; }
 
-  // Delete audio file if exists
-  if (existing.audioUrl) {
+  // Delete local audio file if exists (S3 objects are ignored for now, cleanup might be deferred)
+  if (existing.audioUrl && !existing.audioUrl.startsWith("http")) {
     const filename = existing.audioUrl.split("/").pop();
     if (filename) {
-      const filePath = path.join(audioUploadDir, filename);
+      const filePath = path.join(process.cwd(), "uploads", "audio", filename);
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
   }

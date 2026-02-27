@@ -18,6 +18,7 @@ export const config = {
     secretAccessKey: env.AWS_SECRET_ACCESS_KEY ?? "",
     region: env.AWS_REGION ?? "us-east-1",
     s3Bucket: env.AWS_S3_BUCKET ?? "",
+    endpoint: env.AWS_ENDPOINT ?? "",
   },
   click: {
     merchantId: env.CLICK_MERCHANT_ID ?? "",
