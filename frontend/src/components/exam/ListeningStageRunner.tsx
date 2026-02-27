@@ -51,6 +51,9 @@ export function ListeningStageRunner({
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const completedRef = useRef(false);
     const answersRef = useRef<Answer[]>([]);
+    // Refs to avoid stale closures in audio event listeners
+    const phaseRef = useRef<StagePhase>("ready");
+    const isPerQuestionRef = useRef(stage.timeMode === "per_question");
 
     const isPerQuestion = stage.timeMode === "per_question";
     const question = stage.questions[currentIndex];
@@ -63,19 +66,54 @@ export function ListeningStageRunner({
         answersRef.current = answers;
     }, [answers]);
 
+    // Keep phase ref in sync
+    useEffect(() => {
+        phaseRef.current = phase;
+    }, [phase]);
+
+    // Keep isPerQuestion ref in sync
+    useEffect(() => {
+        isPerQuestionRef.current = isPerQuestion;
+    }, [isPerQuestion]);
+
     // Notify parent on answer change
     useEffect(() => {
         onAnswerChange?.(answers);
     }, [answers, onAnswerChange]);
 
+    // ── Audio URL helper: per-question URL takes priority ──
+    const getAudioUrl = useCallback((questionIndex: number): string => {
+        const q = stage.questions[questionIndex];
+        // Per-question audioUrl (from DB) takes priority over stage-level audioUrl
+        const url = q?.audioUrl || stage.audioUrl || "";
+        // If relative URL (/api/uploads/...), prefix with backend origin
+        if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
+            // VITE_API_URL = "https://backend-xxx.vercel.app/api" → origin = "https://backend-xxx.vercel.app"
+            const apiBase = import.meta.env.VITE_API_URL || "";
+            let backendOrigin = "";
+            if (apiBase && apiBase.startsWith("http")) {
+                try {
+                    backendOrigin = new URL(apiBase).origin;
+                } catch {
+                    backendOrigin = "";
+                }
+            }
+            if (!backendOrigin) {
+                backendOrigin = "http://localhost:3001";
+            }
+            return `${backendOrigin}${url.startsWith("/") ? "" : "/"}${url}`;
+        }
+        return url;
+    }, [stage.questions, stage.audioUrl]);
+
     // ── Audio Management ──
-    const createAudio = useCallback(() => {
+    const createAudio = useCallback((audioUrl: string) => {
         if (audioRef.current) {
             audioRef.current.pause();
             audioRef.current.removeAttribute("src");
             audioRef.current.load();
         }
-        const audio = new Audio(stage.audioUrl);
+        const audio = new Audio(audioUrl);
         audio.preload = "auto";
         audioRef.current = audio;
 
@@ -83,15 +121,15 @@ export function ListeningStageRunner({
             setIsPlaying(false);
         });
 
+        // Use refs to read current phase/isPerQuestion — avoids stale closure bug
         audio.addEventListener("error", () => {
             setAudioError(true);
             setIsPlaying(false);
-            // If audio fails to load, skip to answering phase
-            if (phase === "first_listen") {
-                if (isPerQuestion) {
+            // If audio fails to load, immediately skip to answering phase
+            if (phaseRef.current === "first_listen" || phaseRef.current === "ready") {
+                if (isPerQuestionRef.current) {
                     setDeadline(createDeadline(stage.perQuestionTimeSec ?? 60));
-                } else if (playsUsed === 0) {
-                    // First play failed, start timer anyway
+                } else {
                     setDeadline(createDeadline(stage.totalTimeSec ?? 420));
                 }
                 setPhase("answering");
@@ -99,7 +137,8 @@ export function ListeningStageRunner({
         });
 
         return audio;
-    }, [stage.audioUrl, stage.perQuestionTimeSec, stage.totalTimeSec, isPerQuestion, phase, playsUsed]);
+    }, [stage.perQuestionTimeSec, stage.totalTimeSec]);
+
 
     // Cleanup audio on unmount
     useEffect(() => {
@@ -115,8 +154,22 @@ export function ListeningStageRunner({
 
     // ── Begin stage: create audio + auto-play first listen ──
     const handleBeginStage = useCallback(() => {
-        const audio = createAudio();
+        const url = getAudioUrl(0);
         setPhase("first_listen");
+
+        if (!url) {
+            // No audio: skip straight to answering
+            if (isPerQuestion) {
+                setDeadline(createDeadline(stage.perQuestionTimeSec ?? 60));
+            } else {
+                setDeadline(createDeadline(stage.totalTimeSec ?? 420));
+            }
+            setAudioError(true);
+            setPhase("answering");
+            return;
+        }
+
+        const audio = createAudio(url);
 
         // Auto-play first listen
         audio.addEventListener(
@@ -171,7 +224,8 @@ export function ListeningStageRunner({
             setIsPlaying(true);
             setPlaysUsed(1);
         }
-    }, [createAudio, isPerQuestion, stage.perQuestionTimeSec, stage.totalTimeSec]);
+    }, [createAudio, getAudioUrl, isPerQuestion, stage.perQuestionTimeSec, stage.totalTimeSec]);
+
 
     // ── Listen Again ──
     const handleListenAgain = useCallback(() => {
@@ -210,7 +264,8 @@ export function ListeningStageRunner({
             }
             onComplete(newAnswers);
         } else {
-            setCurrentIndex((prev) => prev + 1);
+            const nextIndex = currentIndex + 1;
+            setCurrentIndex(nextIndex);
             setSelectedOption(null);
 
             if (isPerQuestion) {
@@ -219,9 +274,19 @@ export function ListeningStageRunner({
                 setIsPlaying(false);
                 setAudioError(false);
 
-                // For stage 1: each question gets its own first listen + timer
-                const audio = createAudio();
+                // For stage 1: each question gets its own audio (per-question URL)
+                const nextUrl = getAudioUrl(nextIndex);
+
+                if (!nextUrl) {
+                    // No audio for this question
+                    setAudioError(true);
+                    setDeadline(createDeadline(stage.perQuestionTimeSec ?? 60));
+                    setPhase("answering");
+                    return;
+                }
+
                 setPhase("first_listen");
+                const audio = createAudio(nextUrl);
 
                 audio.addEventListener(
                     "canplaythrough",
@@ -265,11 +330,14 @@ export function ListeningStageRunner({
         question,
         selectedOption,
         isLastQuestion,
+        currentIndex,
         onComplete,
         isPerQuestion,
         createAudio,
+        getAudioUrl,
         stage.perQuestionTimeSec,
     ]);
+
 
     // ── Timer expired ──
     const handleTimerExpire = useCallback(() => {

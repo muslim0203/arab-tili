@@ -12,7 +12,7 @@ import { WritingRunner } from "./WritingRunner";
 import { SpeakingRunner } from "./SpeakingRunner";
 import { SpeakingWritingExamRunner } from "./SpeakingWritingExamRunner";
 import { ExamResults } from "./ExamResults";
-import { readingPassages, listeningStages, writingTasks, speakingQuestions } from "@/data/at-taanal-seed";
+import { readingPassages, listeningStages as seedListeningStages, writingTasks, speakingQuestions } from "@/data/at-taanal-seed";
 import { calcGrammarScore, calcReadingScore, calcListeningScore, generateId } from "@/utils/scoring";
 import { api } from "@/lib/api";
 import type {
@@ -20,6 +20,7 @@ import type {
     ExamAttempt,
     Answer,
     GrammarQuestion,
+    ListeningStage,
     PassageAttempt,
     ListeningStageAttempt,
     GrammarSectionResult,
@@ -55,6 +56,8 @@ export function AtTaanalExamRunner() {
     const attemptRef = useRef<ExamAttempt | null>(null);
     const [dbGrammarQuestions, setDbGrammarQuestions] = useState<GrammarQuestion[]>([]);
     const [grammarLoading, setGrammarLoading] = useState(false);
+    const [dbListeningStages, setDbListeningStages] = useState<ListeningStage[]>([]);
+    const [listeningLoading, setListeningLoading] = useState(false);
 
     // On mount, check for saved attempt
     useEffect(() => {
@@ -81,7 +84,23 @@ export function AtTaanalExamRunner() {
         }
         setGrammarLoading(false);
 
-        // 2. Attempt yaratish
+        // 3. Listening stages ni DB dan yuklash
+        setListeningLoading(true);
+        try {
+            const lisData = await api<{ stages: ListeningStage[] }>("/exams/listening/stages");
+            if (lisData.stages && lisData.stages.length > 0) {
+                setDbListeningStages(lisData.stages);
+            } else {
+                // DB da stage yo'q — seed ma'lumotlaridan foydalanish
+                setDbListeningStages(seedListeningStages);
+            }
+        } catch (e) {
+            console.warn("Listening stages DB dan yuklanmadi, seed ishlatiladi:", e);
+            setDbListeningStages(seedListeningStages);
+        }
+        setListeningLoading(false);
+
+        // 4. Attempt yaratish
         const newAttempt: ExamAttempt = {
             id: generateId(),
             examType: "at-taanal",
@@ -356,9 +375,19 @@ export function AtTaanalExamRunner() {
             );
 
         case "listening":
+            if (listeningLoading) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-background via-background to-emerald-500/5 flex items-center justify-center p-4">
+                        <div className="text-center">
+                            <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                            <p className="text-lg text-muted-foreground">Tinglash savollari yuklanmoqda...</p>
+                        </div>
+                    </div>
+                );
+            }
             return (
                 <ListeningRunner
-                    stages={listeningStages}
+                    stages={dbListeningStages.length > 0 ? dbListeningStages : seedListeningStages}
                     onComplete={handleListeningComplete}
                     onAnswerChange={handleListeningAnswerChange}
                 />

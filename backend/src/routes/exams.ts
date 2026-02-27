@@ -119,6 +119,57 @@ router.get("/cefr/levels", authenticateToken, (_req: AuthRequest, res: Response)
   res.json({ levels: ["A1", "A2", "B1", "B2", "C1", "C2"] });
 });
 
+// GET /api/exams/listening/stages – At-Taanal imtihoni uchun listening bosqichlari (DB dan)
+// Har bir bosqich uchun random 5 ta savol tanlanadi (har bir savolda o'z audio URL i bor)
+router.get("/listening/stages", authenticateToken, async (_req: AuthRequest, res: Response) => {
+  try {
+    const stages = await prisma.listeningStage.findMany({
+      orderBy: { createdAt: "asc" },
+      include: {
+        questions: { orderBy: { orderIndex: "asc" } },
+      },
+    });
+
+    // Fisher-Yates shuffle
+    function shuffle<T>(arr: T[]): T[] {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    const result = stages.map((stage, idx) => {
+      // Har bosqichdan 5 ta random savol tanlaymiz
+      const shuffled = shuffle(stage.questions).slice(0, 5);
+      return {
+        stageIndex: idx + 1,
+        type: stage.stageType,
+        title: stage.titleArabic,
+        timeMode: stage.timingMode,
+        perQuestionTimeSec: stage.perQuestionSeconds ?? 60,
+        totalTimeSec: stage.totalSeconds ?? 420,
+        questions: shuffled.map((q) => ({
+          id: q.id,
+          prompt: q.prompt,
+          options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
+          correctIndex: q.correctIndex,
+          audioUrl: q.audioUrl,
+          maxPlays: q.maxPlays,
+        })),
+        // maxPlays from first question (all questions in a stage share same maxPlays)
+        maxPlays: shuffled[0]?.maxPlays ?? 2,
+      };
+    });
+
+    res.json({ stages: result });
+  } catch (e) {
+    console.error("Listening stages error:", e);
+    res.status(500).json({ message: "Listening bosqichlari yuklanmadi" });
+  }
+});
+
 // GET /api/exams – ro‘yxat (auth kerak)
 router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   const exams = await prisma.mockExam.findMany({

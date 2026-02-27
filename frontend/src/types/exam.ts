@@ -33,6 +33,10 @@ export interface ListeningQuestion {
     prompt: string; // Arabic prompt
     options: [string, string, string, string];
     correctIndex: 0 | 1 | 2 | 3;
+    /** Per-question audio URL (from DB) */
+    audioUrl?: string;
+    /** Max plays for this question */
+    maxPlays?: number;
 }
 
 /** Listening stage type */
@@ -47,8 +51,9 @@ export interface ListeningStage {
     type: ListeningStageType;
     /** Arabic title */
     title: string;
-    audioUrl: string;
-    maxPlays: 2;
+    /** Stage-level audio URL (optional — per-question audio takes priority) */
+    audioUrl?: string;
+    maxPlays: number;
     timeMode: ListeningTimeMode;
     /** Per-question time in seconds (stage 1 only) */
     perQuestionTimeSec?: number;
