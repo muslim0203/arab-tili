@@ -124,7 +124,6 @@ router.post("/subscribe/pro", authenticateToken, async (req: AuthRequest, res: R
             { userId, type: "writing", usedCount: 0, periodStart: startedAt, periodEnd },
             { userId, type: "speaking", usedCount: 0, periodStart: startedAt, periodEnd },
         ],
-        skipDuplicates: true,
     });
 
     // Update user's subscription tier
