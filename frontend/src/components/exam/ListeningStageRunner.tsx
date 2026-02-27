@@ -82,28 +82,23 @@ export function ListeningStageRunner({
     }, [answers, onAnswerChange]);
 
     // ── Audio URL helper: per-question URL takes priority ──
+    // Same approach as fullAudioUrl in AdminListening.tsx and ExamPage.tsx
     const getAudioUrl = useCallback((questionIndex: number): string => {
         const q = stage.questions[questionIndex];
         // Per-question audioUrl (from DB) takes priority over stage-level audioUrl
-        const url = q?.audioUrl || stage.audioUrl || "";
-        // If relative URL (/api/uploads/...), prefix with backend origin
-        if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
-            // VITE_API_URL = "https://backend-xxx.vercel.app/api" → origin = "https://backend-xxx.vercel.app"
-            const apiBase = import.meta.env.VITE_API_URL || "";
-            let backendOrigin = "";
-            if (apiBase && apiBase.startsWith("http")) {
-                try {
-                    backendOrigin = new URL(apiBase).origin;
-                } catch {
-                    backendOrigin = "";
-                }
-            }
-            if (!backendOrigin) {
-                backendOrigin = "http://localhost:3001";
-            }
-            return `${backendOrigin}${url.startsWith("/") ? "" : "/"}${url}`;
+        const audioUrl = q?.audioUrl || stage.audioUrl || "";
+        if (!audioUrl) return "";
+        // Already absolute URL
+        if (audioUrl.startsWith("http://") || audioUrl.startsWith("https://")) return audioUrl;
+        // Audio fayllar backend serverda saqlangan — to'liq URL yasash
+        const apiBase = import.meta.env.VITE_API_URL || "/api";
+        // Extract backend origin: "https://backend.vercel.app/api" → "https://backend.vercel.app"
+        const backendOrigin = apiBase.replace(/\/api\/?$/, "");
+        if (backendOrigin && backendOrigin.startsWith("http")) {
+            return `${backendOrigin}${audioUrl.startsWith("/") ? "" : "/"}${audioUrl}`;
         }
-        return url;
+        // Fallback: same origin (local dev yoki Vercel rewrite orqali)
+        return audioUrl;
     }, [stage.questions, stage.audioUrl]);
 
     // ── Audio Management ──
@@ -214,6 +209,7 @@ export function ListeningStageRunner({
             audio.play().catch(() => {
                 // fallback
                 setAudioError(true);
+                setIsPlaying(false);
                 if (isPerQuestion) {
                     setDeadline(createDeadline(stage.perQuestionTimeSec ?? 60));
                 } else {
@@ -235,6 +231,7 @@ export function ListeningStageRunner({
         audio.currentTime = 0;
         audio.play().catch(() => {
             setAudioError(true);
+            setIsPlaying(false);
         });
         setIsPlaying(true);
         setPlaysUsed((p) => p + 1);
@@ -294,6 +291,7 @@ export function ListeningStageRunner({
                         audio.currentTime = 0;
                         audio.play().catch(() => {
                             setAudioError(true);
+                            setIsPlaying(false);
                             setDeadline(createDeadline(stage.perQuestionTimeSec ?? 60));
                             setPhase("answering");
                         });
@@ -317,6 +315,7 @@ export function ListeningStageRunner({
                     audio.currentTime = 0;
                     audio.play().catch(() => {
                         setAudioError(true);
+                        setIsPlaying(false);
                         setDeadline(createDeadline(stage.perQuestionTimeSec ?? 60));
                         setPhase("answering");
                     });
