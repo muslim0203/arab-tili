@@ -15,7 +15,16 @@ const s3ClientConfig: any = {
 }
 
 if (config.aws.endpoint) {
-    s3ClientConfig.endpoint = config.aws.endpoint
+    let ep = config.aws.endpoint
+    // Agar foydalanuvchi bilmasdan bucket nomini ham ulab qo'ygan bo'lsa (DO Spaces: https://bucket.fra1.digitaloceanspaces.com)
+    // Uni tozalab olamiz.
+    if (ep.includes(".digitaloceanspaces.com")) {
+        const urlMatches = ep.match(/https?:\/\/([^.]+)\.([^.]+)\.digitaloceanspaces\.com/)
+        if (urlMatches && urlMatches.length === 3 && config.aws.s3Bucket && urlMatches[1] === config.aws.s3Bucket) {
+            ep = ep.replace(`${config.aws.s3Bucket}.`, "")
+        }
+    }
+    s3ClientConfig.endpoint = ep
     // Required for DO Spaces or S3-compatible endpoints
     s3ClientConfig.forcePathStyle = false
 }
