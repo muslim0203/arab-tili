@@ -8,10 +8,13 @@ import { config } from "../config.js"
 
 const s3ClientConfig: any = {
     region: config.aws.region,
-    credentials: {
+}
+
+if (config.aws.accessKeyId && config.aws.secretAccessKey) {
+    s3ClientConfig.credentials = {
         accessKeyId: config.aws.accessKeyId,
         secretAccessKey: config.aws.secretAccessKey,
-    },
+    }
 }
 
 if (config.aws.endpoint) {
