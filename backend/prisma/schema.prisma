@@ -8,7 +8,7 @@ generator client {
 datasource db {
   // Local: "sqlite" | Production: "postgresql"
   // Deploy qilganda "postgresql" ga o'zgartiring va DATABASE_URL ni yangilang
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
