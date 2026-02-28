@@ -68,7 +68,7 @@ export function Register() {
       setGoogleLoading(true);
       setError("");
       try {
-        const res = await api<{ user: unknown; accessToken: string; refreshToken: string }>("/auth/google", {
+        const res = await api<{ user: unknown; accessToken: string; refreshToken: string }>("/auth/social/google", {
           method: "POST",
           body: { idToken: tokenResponse.access_token },
           skipAuth: true,

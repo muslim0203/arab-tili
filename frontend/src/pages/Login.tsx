@@ -79,7 +79,7 @@ export function Login() {
       try {
         // Google access_token bilan userinfo olish, keyin id_token o'rniga
         // server'ga access_token yuboramiz
-        const res = await api<{ user: unknown; accessToken: string; refreshToken: string }>("/auth/google", {
+        const res = await api<{ user: unknown; accessToken: string; refreshToken: string }>("/auth/social/google", {
           method: "POST",
           body: { idToken: tokenResponse.access_token },
           skipAuth: true,

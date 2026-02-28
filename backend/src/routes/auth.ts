@@ -216,12 +216,12 @@ router.post("/reset-password", async (req, res: Response) => {
   }
 });
 
-// POST /api/auth/google – Google OAuth (frontend sends idToken)
+// POST /api/auth/social/google – Google OAuth (frontend sends idToken)
 const googleSchema = z.object({
   idToken: z.string().min(1, "Google token kerak"),
 });
 
-router.post("/google", authLimiter, async (req, res: Response) => {
+router.post("/social/google", authLimiter, async (req, res: Response) => {
   const parsed = googleSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: "idToken kerak" });
