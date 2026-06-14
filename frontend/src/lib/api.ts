@@ -2,21 +2,50 @@ import { useAuthStore } from "@/store/auth";
 
 const BASE = import.meta.env.VITE_API_URL || "/api";
 
-async function refreshAccess(): Promise<string | null> {
-  const { refreshToken, setAccessToken, logout } = useAuthStore.getState();
-  if (!refreshToken) return null;
-  const res = await fetch(`${BASE}/auth/refresh-token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  });
-  if (!res.ok) {
-    logout();
-    return null;
+// Bir vaqtning o'zida bir nechta 401 kelganda faqat bitta refresh so'rovi yuboriladi.
+let refreshInFlight: Promise<string | null> | null = null;
+
+function redirectToLogin() {
+  if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.assign(`/login?next=${next}`);
   }
-  const data = await res.json();
-  setAccessToken(data.accessToken);
-  return data.accessToken;
+}
+
+async function refreshAccess(): Promise<string | null> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    const { refreshToken, setAccessToken, logout } = useAuthStore.getState();
+    if (!refreshToken) {
+      logout();
+      redirectToLogin();
+      return null;
+    }
+    try {
+      const res = await fetch(`${BASE}/auth/refresh-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (!res.ok) {
+        logout();
+        redirectToLogin();
+        return null;
+      }
+      const data = await res.json();
+      setAccessToken(data.accessToken);
+      return data.accessToken as string;
+    } catch {
+      logout();
+      redirectToLogin();
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
 }
 
 export type RequestConfig = Omit<RequestInit, "body"> & { body?: BodyInit | object | null; skipAuth?: boolean };

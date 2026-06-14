@@ -6,6 +6,8 @@
 import { Router, Response } from "express";
 import { z } from "zod";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
+import { requireWritingAccess } from "../middleware/access-control.js";
+import { recordWritingUsage } from "../services/access-control.js";
 import { aiGenerateJson, isAiAvailable } from "../lib/ai-client.js";
 
 const router = Router();
@@ -50,7 +52,7 @@ MUHIM:
  * POST /api/writing/analyze
  * JSON body: { taskId, difficulty, prompt, text, maxScore }
  */
-router.post("/analyze", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post("/analyze", authenticateToken, requireWritingAccess, async (req: AuthRequest, res: Response) => {
     const parsed = analyzeBodySchema.safeParse(req.body);
     if (!parsed.success) {
         res.status(400).json({ message: "taskId, difficulty, prompt, text va maxScore kerak", errors: parsed.error.issues });
@@ -58,6 +60,11 @@ router.post("/analyze", authenticateToken, async (req: AuthRequest, res: Respons
     }
 
     const { taskId, difficulty, prompt, text, maxScore } = parsed.data;
+
+    // Server tomonda quota hisobga olinadi (best-effort: baholashni bloklamaydi).
+    if (req.userId) {
+        try { await recordWritingUsage(req.userId); } catch (e) { console.error("[Writing] recordWritingUsage xatosi:", (e as Error).message); }
+    }
 
     // Quick word count
     const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;

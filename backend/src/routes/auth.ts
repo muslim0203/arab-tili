@@ -186,13 +186,17 @@ router.post("/forgot-password", forgotPasswordLimiter, async (req, res: Response
   if (isEmailConfigured()) {
     await sendPasswordResetEmail(user.email, resetLink);
     res.json({ message: "Agar bunday email ro'yxatdan o'tgan bo'lsa, parolni tiklash havolasi emailga yuborildi." });
-  } else {
-    // Development: token qaytariladi (email sozlanmaganida)
+  } else if (config.nodeEnv === "development") {
+    // FAQAT development: email sozlanmaganida havolani qaytaramiz (productionda hech qachon).
     res.json({
       message: "Email sozlanmagan. Development rejimida havola:",
       token,
-      resetLink: config.nodeEnv === "development" ? resetLink : undefined,
+      resetLink,
     });
+  } else {
+    // Production: token hech qachon javobda qaytarilmaydi (akkaunt egallab olish xavfi).
+    console.error("[Auth] SMTP sozlanmagan — parol tiklash emaili yuborilmadi:", user.email);
+    res.json({ message: "Agar bunday email ro'yxatdan o'tgan bo'lsa, parolni tiklash havolasi emailga yuborildi." });
   }
 });
 

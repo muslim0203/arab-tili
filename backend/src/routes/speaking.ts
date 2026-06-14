@@ -9,6 +9,8 @@ import path from "path";
 import fs from "fs";
 import { z } from "zod";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
+import { requireSpeakingAccess } from "../middleware/access-control.js";
+import { recordSpeakingUsage } from "../services/access-control.js";
 import { transcribeAudio } from "../services/transcribe.js";
 import { aiGenerateJson, isAiAvailable } from "../lib/ai-client.js";
 
@@ -72,7 +74,7 @@ Faqat valid JSON qaytaring.`;
  * POST /api/speaking/analyze
  * multipart/form-data: audio (file), questionId, difficulty, prompt, maxScore
  */
-router.post("/analyze", authenticateToken, upload.single("audio"), async (req: AuthRequest, res: Response) => {
+router.post("/analyze", authenticateToken, requireSpeakingAccess, upload.single("audio"), async (req: AuthRequest, res: Response) => {
     const parsed = analyzeBodySchema.safeParse(req.body);
     if (!parsed.success) {
         if (req.file) fs.unlink(req.file.path, () => { });
@@ -81,6 +83,11 @@ router.post("/analyze", authenticateToken, upload.single("audio"), async (req: A
     }
 
     const { questionId, difficulty, prompt, maxScore } = parsed.data;
+
+    // Server tomonda quota hisobga olinadi (best-effort: baholashni bloklamaydi).
+    if (req.userId) {
+        try { await recordSpeakingUsage(req.userId); } catch (e) { console.error("[Speaking] recordSpeakingUsage xatosi:", (e as Error).message); }
+    }
 
     // 1. Save audio file with proper extension
     let audioPath = "";

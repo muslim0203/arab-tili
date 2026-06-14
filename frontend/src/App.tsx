@@ -60,8 +60,8 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/exams" element={<AtTaanalExam />} />
-            <Route path="/at-taanal" element={<AtTaanalExam />} />
+            <Route path="/exams" element={<ProtectedRoute><AtTaanalExam /></ProtectedRoute>} />
+            <Route path="/at-taanal" element={<ProtectedRoute><AtTaanalExam /></ProtectedRoute>} />
             <Route path="/ai-tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
             <Route path="/pricing" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
             <Route path="/payment/return" element={<ProtectedRoute><PaymentReturn /></ProtectedRoute>} />

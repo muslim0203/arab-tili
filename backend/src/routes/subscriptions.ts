@@ -138,7 +138,8 @@ router.post("/click/prepare", async (req: express.Request, res: Response) => {
     });
   }
 
-  const payment = await prisma.payment.findUnique({ where: { id: merchant_trans_id, status: "PENDING" } });
+  // Eslatma: `status` unique maydon emas, shuning uchun findFirst ishlatiladi.
+  const payment = await prisma.payment.findFirst({ where: { id: merchant_trans_id, status: "PENDING" } });
   if (!payment) {
     return res.status(200).json({
       click_trans_id, merchant_trans_id, merchant_prepare_id: 0,
@@ -146,8 +147,17 @@ router.post("/click/prepare", async (req: express.Request, res: Response) => {
     });
   }
 
+  // Summani serverdagi reja narxi bilan solishtirish (mijoz yuborgan summaga ishonmaymiz).
+  const plan = SUBSCRIPTION_PLANS.find((p) => p.id === payment.planId);
+  if (!plan || Math.abs(payment.amount - plan.amount) > 0.01) {
+    return res.status(200).json({
+      click_trans_id, merchant_trans_id, merchant_prepare_id: 0,
+      error: -6, error_note: "Invalid plan",
+    });
+  }
+
   const amountNum = parseFloat(amount);
-  if (Math.abs(amountNum - payment.amount) > 0.01) {
+  if (Math.abs(amountNum - plan.amount) > 0.01) {
     return res.status(200).json({
       click_trans_id, merchant_trans_id, merchant_prepare_id: 0,
       error: -2, error_note: "Amount mismatch",
@@ -188,12 +198,26 @@ router.post("/click/complete", async (req: express.Request, res: Response) => {
   }
 
   const payment = await prisma.payment.findUnique({ where: { id: merchant_trans_id } });
-  if (!payment || payment.status === "COMPLETED") {
+  if (!payment) {
     return res.status(200).json({
-      click_trans_id, merchant_trans_id,
-      merchant_confirm_id: payment?.status === "COMPLETED" ? 1 : 0,
-      error: payment?.status === "COMPLETED" ? -4 : -5,
-      error_note: payment?.status === "COMPLETED" ? "Already confirmed" : "Order not found",
+      click_trans_id, merchant_trans_id, merchant_confirm_id: 0,
+      error: -5, error_note: "Order not found",
+    });
+  }
+
+  // Idempotentlik: allaqachon yakunlangan bo'lsa, qayta faollashtirmaymiz.
+  if (payment.status === "COMPLETED") {
+    return res.status(200).json({
+      click_trans_id, merchant_trans_id, merchant_confirm_id: 1,
+      error: -4, error_note: "Already confirmed",
+    });
+  }
+
+  // Faqat PENDING holatdagi to'lov yakunlanishi mumkin (CANCELLED bo'lsa rad etiladi).
+  if (payment.status !== "PENDING") {
+    return res.status(200).json({
+      click_trans_id, merchant_trans_id, merchant_confirm_id: 0,
+      error: -9, error_note: "Transaction cancelled",
     });
   }
 
@@ -205,12 +229,41 @@ router.post("/click/complete", async (req: express.Request, res: Response) => {
     });
   }
 
-  await activateSubscription(payment.id, payment.userId, plan);
+  // Summani qayta tekshirish (complete bosqichida ham).
+  const amountNum = parseFloat(amount);
+  if (Math.abs(amountNum - plan.amount) > 0.01 || Math.abs(payment.amount - plan.amount) > 0.01) {
+    return res.status(200).json({
+      click_trans_id, merchant_trans_id, merchant_confirm_id: 0,
+      error: -2, error_note: "Amount mismatch",
+    });
+  }
 
-  await prisma.payment.update({
-    where: { id: payment.id },
+  // Yagona bajarilishni kafolatlash: faqat PENDING -> COMPLETED ni atomik o'tkazamiz.
+  const claimed = await prisma.payment.updateMany({
+    where: { id: payment.id, status: "PENDING" },
     data: { status: "COMPLETED", paymentProviderId: click_trans_id, paidAt: new Date() },
   });
+
+  if (claimed.count !== 1) {
+    return res.status(200).json({
+      click_trans_id, merchant_trans_id, merchant_confirm_id: 1,
+      error: -4, error_note: "Already confirmed",
+    });
+  }
+
+  try {
+    await activateSubscription(payment.id, payment.userId, plan);
+  } catch (e) {
+    await prisma.payment.updateMany({
+      where: { id: payment.id, status: "COMPLETED" },
+      data: { status: "PENDING", paidAt: null },
+    });
+    console.error("[Click] activateSubscription xatosi:", (e as Error).message);
+    return res.status(200).json({
+      click_trans_id, merchant_trans_id, merchant_confirm_id: 0,
+      error: -7, error_note: "Activation failed",
+    });
+  }
 
   res.status(200).json({
     click_trans_id, merchant_trans_id, merchant_confirm_id: 1,
@@ -442,7 +495,18 @@ async function handleCancelTransaction(id: unknown, params: any, res: Response) 
         cancelReason: reason,
       },
     });
-    // Obunani FREE ga qaytarish
+    // Obunani FREE ga qaytarish + active subscription / purchase larni bekor qilish.
+    // Aks holda getActiveSubscription hali ham PRO ruxsat berib qoladi.
+    await prisma.subscription.updateMany({
+      where: { userId: payment.userId, status: "active" },
+      data: { status: "cancelled" },
+    });
+    if (payment.planId === "mock_exam") {
+      await prisma.purchase.updateMany({
+        where: { userId: payment.userId, productType: "mock_exam", remainingUses: { gt: 0 } },
+        data: { remainingUses: 0 },
+      });
+    }
     await prisma.user.update({
       where: { id: payment.userId },
       data: { subscriptionTier: "FREE", subscriptionExpiresAt: null },
