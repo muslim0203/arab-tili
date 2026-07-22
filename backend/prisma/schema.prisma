@@ -6,9 +6,21 @@ generator client {
 }
 
 datasource db {
-  // Local: "sqlite" | Production: "postgresql"
-  // Deploy qilganda "postgresql" ga o'zgartiring va DATABASE_URL ni yangilang
-  provider = "sqlite"
+  // PostgreSQL — lokal dev'da ham, production'da ham.
+  //
+  // Ilgari bu yerda lokal uchun "sqlite" turardi va deploy oldidan qo'lda
+  // "postgresql" ga o'zgartirish kerak edi. Bu tuzoq edi: unutilsa production
+  // ishga tushmaydi, esda tutilsa ham migratsiyalar (migration_lock.toml =
+  // postgresql) lokalda ishlamas edi. Endi ikkala muhit bir xil.
+  //
+  // Lokal sozlash (bu mashinada PostgreSQL 16 Homebrew orqali allaqachon ishlaydi,
+  // `attanalpro` bazasi ham mavjud):
+  //   brew services start postgresql@16      # ishlamayotgan bo'lsa
+  //   createdb attanalpro                    # baza yo'q bo'lsa
+  // .env:
+  //   DATABASE_URL="postgresql://<user>@localhost:5432/attanalpro"
+  // Keyin: npx prisma migrate deploy && npx prisma db seed
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
