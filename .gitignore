@@ -27,3 +27,6 @@ backend/test-audio.mp3
 # Qayta yaratish: npx prisma db push && npx prisma db seed
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
+
+# Claude Code vaqtinchalik worktree'lari (ichida alohida git repo bor)
+.claude/worktrees/
