@@ -10,6 +10,7 @@ import { isAnswerCorrect } from "../services/cefr-attempt.js";
 import { gradeWriting, gradeSpeaking } from "../services/ai-writing-speaking.js";
 import { transcribeAudio } from "../services/transcribe.js";
 import { safeAudioExt } from "../lib/sanitize.js";
+import { isObjectStorageEnabled, uploadLocalFileToSpaces } from "../lib/s3.js";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -292,7 +293,17 @@ router.post("/:id/speaking-audio", authenticateToken, upload.single("audio"), as
     res.status(500).json({ message: "Fayl saqlanmadi" });
     return;
   }
-  const audioUrl = `/api/uploads/${finalName}`;
+  // Audioni doimiy saqlashga (DO Spaces) ko'chiramiz. Sozlanmagan bo'lsa lokal
+  // URL qoladi. Baholash keyinroq bo'lgani uchun fayl o'sha paytgacha yashashi
+  // shart — Railway diskida u deploy'da yo'qolishi mumkin edi.
+  let audioUrl = `/api/uploads/${finalName}`;
+  if (isObjectStorageEnabled()) {
+    const remoteUrl = await uploadLocalFileToSpaces(finalPath, `attempts/${finalName}`);
+    if (remoteUrl) {
+      audioUrl = remoteUrl;
+      fs.unlink(finalPath, () => { });
+    }
+  }
   await prisma.userAnswer.upsert({
     where: { attemptId_attemptQuestionId: { attemptId, attemptQuestionId: qId } },
     create: { attemptId, attemptQuestionId: qId, answerText: "[Audio yuklandi]", audioUrl },
@@ -388,9 +399,13 @@ router.post("/:id/submit", authenticateToken, async (req: AuthRequest, res: Resp
       if (q.section === "speaking") {
         let transcript = userText ?? "";
         if (ans?.audioUrl && (!transcript || transcript === "[Audio yuklandi]")) {
-          const basename = path.basename(ans.audioUrl);
-          const localPath = path.join(UPLOADS_DIR, basename);
-          const transcribed = await transcribeAudio(localPath);
+          // audioUrl ikki xil bo'lishi mumkin:
+          //   - to'liq URL (DO Spaces) -> transcribeAudio o'zi yuklab oladi
+          //   - eski lokal yo'l (/api/uploads/...) -> diskdagi faylga aylantiramiz
+          const source = /^https?:\/\//i.test(ans.audioUrl)
+            ? ans.audioUrl
+            : path.join(UPLOADS_DIR, path.basename(ans.audioUrl));
+          const transcribed = await transcribeAudio(source);
           if (transcribed) transcript = transcribed;
         }
         const rubric = q.rubric ? (JSON.parse(q.rubric) as Record<string, unknown>) : {};

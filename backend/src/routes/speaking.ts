@@ -14,6 +14,7 @@ import { recordSpeakingUsage } from "../services/access-control.js";
 import { transcribeAudio } from "../services/transcribe.js";
 import { aiGenerateJson, isAiAvailable } from "../lib/ai-client.js";
 import { safeAudioExt } from "../lib/sanitize.js";
+import { isObjectStorageEnabled, uploadLocalFileToSpaces } from "../lib/s3.js";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads", "speaking");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -106,13 +107,25 @@ router.post("/analyze", authenticateToken, requireSpeakingAccess, upload.single(
         }
     }
 
-    // 2. Transcribe audio
+    // 2. Transcribe audio (lokal fayl ustida — Whisper fayl oqimini talab qiladi)
     let transcript = "";
     if (audioPath && fs.existsSync(audioPath)) {
         try {
             transcript = await transcribeAudio(audioPath);
         } catch (err) {
             console.warn("[Speaking] Transcription xatosi:", (err as Error).message);
+        }
+    }
+
+    // 2b. Audioni doimiy saqlashga (DO Spaces) ko'chirish.
+    // Transkripsiyadan KEYIN bajariladi — shundagina lokal faylni o'chirsa bo'ladi.
+    // Spaces sozlanmagan bo'lsa lokal URL o'z holicha qoladi (eski xatti-harakat).
+    if (audioPath && isObjectStorageEnabled()) {
+        const key = `speaking/${path.basename(audioPath)}`;
+        const remoteUrl = await uploadLocalFileToSpaces(audioPath, key);
+        if (remoteUrl) {
+            audioUrl = remoteUrl;
+            fs.unlink(audioPath, () => { }); // Railway diskini band qilmasin
         }
     }
 

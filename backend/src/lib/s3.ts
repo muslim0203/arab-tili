@@ -1,9 +1,10 @@
-import { S3Client } from "@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3"
 import multer from "multer"
 import multerS3 from "multer-s3"
 import crypto from "crypto"
 import path from "path"
 import fs from "fs"
+import fsp from "fs/promises"
 import { config } from "../config.js"
 import { safeAudioExt } from "./sanitize.js"
 
@@ -75,4 +76,65 @@ export const getUploadedFileUrl = (file: Express.Multer.File, folder: string): s
     }
     // Fallback to local API endpoint format
     return `/api/uploads/${folder}/${file.filename}`
+}
+
+/** Obyekt saqlash sozlanganmi (DO Spaces / S3). */
+export const isObjectStorageEnabled = (): boolean => Boolean(config.aws.s3Bucket)
+
+/**
+ * Lokal faylni DO Spaces'ga ko'chiradi va public URL qaytaradi.
+ *
+ * Nega multer-s3 emas: gapirish/imtihon audiolari avval diskka tushishi kerak,
+ * chunki Whisper transkripsiyasi fayl oqimini talab qiladi. Shuning uchun
+ * ketma-ketlik: diskka yoz -> transkript qil -> Spaces'ga ko'chir -> lokalni o'chir.
+ *
+ * Saqlash sozlanmagan yoki xato bo'lsa `null` qaytaradi — chaqiruvchi lokal
+ * URL bilan davom etadi (degradatsiya, sinish emas).
+ */
+export async function uploadLocalFileToSpaces(localPath: string, key: string): Promise<string | null> {
+    if (!isObjectStorageEnabled()) return null
+    try {
+        const body = await fsp.readFile(localPath)
+        await s3Client.send(new PutObjectCommand({
+            Bucket: config.aws.s3Bucket,
+            Key: key,
+            Body: body,
+            ACL: "public-read",
+            ContentType: audioContentType(key),
+        }))
+        return publicUrlFor(key)
+    } catch (e) {
+        console.error("[Spaces] Yuklashda xato:", (e as Error).message)
+        return null
+    }
+}
+
+/** Spaces'dagi obyektni o'chirish (best-effort). */
+export async function deleteFromSpaces(key: string): Promise<void> {
+    if (!isObjectStorageEnabled()) return
+    try {
+        await s3Client.send(new DeleteObjectCommand({ Bucket: config.aws.s3Bucket, Key: key }))
+    } catch (e) {
+        console.warn("[Spaces] O'chirishda xato:", (e as Error).message)
+    }
+}
+
+/** Kalitdan public URL. DO Spaces virtual-hosted uslubda: https://<bucket>.<region>.digitaloceanspaces.com/<key> */
+function publicUrlFor(key: string): string {
+    const endpoint = config.aws.endpoint.replace(/\/+$/, "")
+    if (!endpoint) return key
+    const u = new URL(endpoint)
+    return `${u.protocol}//${config.aws.s3Bucket}.${u.host}/${key}`
+}
+
+function audioContentType(key: string): string {
+    const ext = path.extname(key).toLowerCase()
+    const map: Record<string, string> = {
+        ".mp3": "audio/mpeg",
+        ".m4a": "audio/mp4",
+        ".wav": "audio/wav",
+        ".ogg": "audio/ogg",
+        ".webm": "audio/webm",
+    }
+    return map[ext] ?? "application/octet-stream"
 }
