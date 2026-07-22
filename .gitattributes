@@ -1,0 +1,13 @@
+# Barcha matn fayllar repozitoriyda LF bilan saqlanadi (CRLF aralashuvining oldini oladi)
+* text=auto eol=lf
+
+# Binar fayllar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mp3 binary
+*.wav binary
+*.pdf binary
+*.db binary

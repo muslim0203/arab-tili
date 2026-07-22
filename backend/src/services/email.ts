@@ -80,3 +80,30 @@ export async function sendSubscriptionReminder(
     return false;
   }
 }
+
+/**
+ * Ro'yxatdan o'tganda email manzilni tasdiqlash havolasini yuboradi.
+ */
+export async function sendVerificationEmail(to: string, verifyLink: string): Promise<boolean> {
+  const trans = getTransporter();
+  if (!trans) return false;
+  try {
+    await trans.sendMail({
+      from: config.smtp.from,
+      to,
+      subject: "Arab Exam – Email manzilingizni tasdiqlang",
+      text: `Arab Exam'ga xush kelibsiz! Email manzilingizni tasdiqlash uchun quyidagi havolani bosing (24 soat amal qiladi):\n\n${verifyLink}\n\nAgar siz ro'yxatdan o'tmagan bo'lsangiz, bu xatni e'tiborsiz qoldiring.`,
+      html: `
+        <p>Arab Exam'ga xush kelibsiz!</p>
+        <p>Email manzilingizni tasdiqlash uchun quyidagi tugmani bosing (havola 24 soat amal qiladi):</p>
+        <p><a href="${verifyLink}" style="display:inline-block; padding:10px 20px; background:#0d9488; color:white; text-decoration:none; border-radius:6px;">Emailni tasdiqlash</a></p>
+        <p>Yoki havolani brauzerga nusxalang: ${verifyLink}</p>
+        <p>Agar siz ro'yxatdan o'tmagan bo'lsangiz, bu xatni e'tiborsiz qoldiring.</p>
+      `,
+    });
+    return true;
+  } catch (err) {
+    console.error("Email (verification) xatosi:", err);
+    return false;
+  }
+}

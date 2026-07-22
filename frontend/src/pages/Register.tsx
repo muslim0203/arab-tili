@@ -27,7 +27,7 @@ function GoogleIcon({ className }: { className?: string }) {
 const schema = z.object({
   fullName: z.string().min(1, "Ism kiritilishi shart"),
   email: z.string().email("To'g'ri email kiriting"),
-  password: z.string().min(6, "Parol kamida 6 belgi"),
+  password: z.string().min(8, "Parol kamida 8 belgi"),
   languagePreference: z.enum(["uz", "ru", "ar"]).optional().default("uz"),
 });
 
@@ -68,7 +68,7 @@ export function Register() {
       setGoogleLoading(true);
       setError("");
       try {
-        const res = await api<{ user: unknown; accessToken: string; refreshToken: string }>("/auth/social/google", {
+        const res = await api<{ user: unknown; accessToken: string; refreshToken: string }>("/auth/social/oauth", {
           method: "POST",
           body: { idToken: tokenResponse.access_token },
           skipAuth: true,

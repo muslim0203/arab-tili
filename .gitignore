@@ -14,3 +14,10 @@ frontend/dist
 # Backend
 backend/dist
 backend/uploads
+
+# Qo'lda sinash uchun vaqtinchalik skriptlar (S3/multer debug)
+backend/test_*.ts
+backend/test-audio.mp3
+
+# FUSE mount qoldiqlari
+.fuse_hidden*

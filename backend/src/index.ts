@@ -2,13 +2,43 @@ import "dotenv/config";
 import "express-async-errors";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import path from "path";
 import fs from "fs";
 import { config } from "./config.js";
 
-// Startup: required env for auth
-if (!config.jwtSecret || !config.jwtRefreshSecret) {
-  console.error("Xato: .env da JWT_SECRET va JWT_REFRESH_SECRET belgilangan bo‘lishi kerak.");
+const isProd = config.nodeEnv === "production";
+
+// ── Startup: maxfiy kalitlarni qat'iy tekshirish ──
+const PLACEHOLDER_SECRETS = [
+  "your-super-secret-jwt-key-min-32-chars",
+  "your-refresh-secret-key-min-32-chars",
+  "your-super-secret-refresh-key-min-32-chars",
+  "CHANGE_ME_min_32_random_chars________________",
+  "CHANGE_ME_different_32_random_chars__________",
+  "change-me",
+  "secret",
+];
+
+function assertStrongSecret(name: string, value: string): void {
+  if (!value) {
+    console.error(`Xato: .env da ${name} belgilangan bo‘lishi kerak.`);
+    process.exit(1);
+  }
+  if (value.length < 32) {
+    console.error(`Xato: ${name} kamida 32 ta belgidan iborat bo‘lishi kerak.`);
+    process.exit(1);
+  }
+  if (PLACEHOLDER_SECRETS.includes(value)) {
+    console.error(`Xato: ${name} namunaviy (placeholder) qiymatga teng. Haqiqiy maxfiy kalit kiriting.`);
+    process.exit(1);
+  }
+}
+
+assertStrongSecret("JWT_SECRET", config.jwtSecret);
+assertStrongSecret("JWT_REFRESH_SECRET", config.jwtRefreshSecret);
+if (config.jwtSecret === config.jwtRefreshSecret) {
+  console.error("Xato: JWT_SECRET va JWT_REFRESH_SECRET bir xil bo‘lmasligi kerak.");
   process.exit(1);
 }
 if (!config.databaseUrl) {
@@ -16,21 +46,33 @@ if (!config.databaseUrl) {
   process.exit(1);
 }
 
+// To'lov kalitlari bo'sh bo'lsa webhooklar fail-closed rejimda rad etiladi (lib/click.ts, lib/payme.ts).
+if (isProd) {
+  if (!config.click.secretKey) console.warn("Ogohlantirish: CLICK_SECRET_KEY o'rnatilmagan — Click webhooklari rad etiladi (to'lovlar ishlamaydi).");
+  if (!config.payme.merchantKey) console.warn("Ogohlantirish: PAYME_MERCHANT_KEY o'rnatilmagan — Payme webhooklari rad etiladi (to'lovlar ishlamaydi).");
+}
+
 const app = express();
 app.set("trust proxy", 1); // Railway/reverse proxy uchun – rate-limit to'g'ri ishlashi uchun
 const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
+// Xavfsizlik sarlavhalari (HSTS, X-Content-Type-Options, X-Frame-Options, va h.k.)
+app.use(helmet({
+  // Cross-origin resurslar (audio fayllar) frontenddan yuklanishi uchun.
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
+
+// Productionda faqat haqiqiy frontend origin ruxsat etiladi; localhost faqat dev uchun.
 const allowedOrigins = [
   config.frontendUrl,
-  "http://localhost:5173",
-  "http://localhost:4173",
+  ...(isProd ? [] : ["http://localhost:5173", "http://localhost:4173"]),
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
+    // Origin'siz so'rovlar (mobil app, Postman) faqat dev rejimda ruxsat etiladi.
+    if (!origin) return callback(null, !isProd);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
@@ -38,7 +80,7 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (err instanceof SyntaxError) {
     res.status(400).json({ message: "Noto'g'ri so'rov formati. JSON kutilmoqda." });
@@ -47,7 +89,13 @@ app.use((err: unknown, _req: express.Request, res: express.Response, next: expre
   next(err);
 });
 app.use(express.urlencoded({ extended: true }));
-app.use("/api/uploads", express.static(uploadsDir));
+app.use("/api/uploads", express.static(uploadsDir, {
+  setHeaders: (res) => {
+    // Yuklangan fayllar brauzerda bajarilmasligi uchun (stored XSS himoyasi).
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Disposition", "attachment");
+  },
+}));
 
 // XSS sanitizatsiya – barcha body ma'lumotlarini tozalash
 import { sanitizeBody } from "./middleware/sanitize.js";
@@ -105,7 +153,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
     return;
   }
 
-  console.error("API xatosi:", err.message, err.stack);
+  logger.error("API xatosi", err);
   const isDev = config.nodeEnv === "development";
   const message =
     err.message?.includes("secret") || err.message?.includes("JWT")
@@ -116,7 +164,12 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   res.status(500).json({ message });
 });
 
+import { logger } from "./lib/logger.js";
+import { startSchedulers } from "./lib/scheduler.js";
+
 const PORT = config.port;
 app.listen(PORT, () => {
-  console.log(`Arab Exam API running at http://localhost:${PORT}`);
+  logger.info(`Arab Exam API running at http://localhost:${PORT}`);
+  // Kunlik fon vazifalari: PENDING to'lovlarni tozalash + obuna eslatmalari
+  startSchedulers();
 });

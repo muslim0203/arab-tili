@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
 import { aiLimiter } from "../middleware/rate-limit.js";
+import { aiDailyQuota } from "../middleware/ai-quota.js";
 import { chatWithTutor } from "../services/ai-tutor.js";
 import {
   canUseAITutor,
@@ -57,7 +58,7 @@ router.get("/quota", authenticateToken, async (req: AuthRequest, res: Response) 
 });
 
 // POST /api/ai-tutor/chat – xabar yuborish, AI javob
-router.post("/chat", authenticateToken, aiLimiter, async (req: AuthRequest, res: Response) => {
+router.post("/chat", authenticateToken, aiLimiter, aiDailyQuota, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
   const parsed = z.object({ message: z.string().min(1).max(2000) }).safeParse(req.body);
   if (!parsed.success) {

@@ -1,6 +1,8 @@
 import { Router, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
+import { requireMockAccess } from "../middleware/access-control.js";
+import { recordMockUsage } from "../services/access-control.js";
 import { generateMcqQuestions } from "../services/openai-exam.js";
 import { isValidCefrLevel, type CefrLevel } from "../services/openai-cefr-exam.js";
 import { createCefrAttempt } from "../services/cefr-attempt.js";
@@ -215,7 +217,7 @@ router.get("/:id", authenticateToken, async (req: AuthRequest, res: Response) =>
 });
 
 // POST /api/exams/cefr/start – Question Bank (L/R/LU) + AI (Writing/Speaking only). No correctAnswer in response.
-router.post("/cefr/start", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post("/cefr/start", authenticateToken, requireMockAccess, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
   const level = (req.body?.level ?? req.query?.level) as string;
   if (!level || !isValidCefrLevel(level)) {
@@ -224,6 +226,8 @@ router.post("/cefr/start", authenticateToken, async (req: AuthRequest, res: Resp
   }
   try {
     const { attempt } = await createCefrAttempt(userId, level as CefrLevel);
+    // Quota hisobga olinadi (Pro limit / Standard purchase).
+    try { await recordMockUsage(userId); } catch (e) { console.error("[Exams] recordMockUsage (cefr) xatosi:", (e as Error).message); }
     const questions = await prisma.attemptQuestion.findMany({
       where: { attemptId: attempt.id },
       orderBy: { order: "asc" },
@@ -265,7 +269,7 @@ router.post("/cefr/start", authenticateToken, async (req: AuthRequest, res: Resp
 });
 
 // POST /api/exams/:id/start – imtihonni boshlash, savollar AI dan yoki DB dan
-router.post("/:id/start", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post("/:id/start", authenticateToken, requireMockAccess, async (req: AuthRequest, res: Response) => {
   const userId = req.userId!;
   const examId = req.params.id;
   if (examId === "cefr" || examId === "cefr/start") {
@@ -326,6 +330,7 @@ router.post("/:id/start", authenticateToken, async (req: AuthRequest, res: Respo
       orderBy: { order: "asc" },
     });
     const questionsPublic = attemptQuestions.map((q) => toPublicQuestion(q));
+    try { await recordMockUsage(userId); } catch (e) { console.error("[Exams] recordMockUsage xatosi:", (e as Error).message); }
     res.status(201).json({
       attemptId: attempt.id,
       exam: {
@@ -343,6 +348,7 @@ router.post("/:id/start", authenticateToken, async (req: AuthRequest, res: Respo
     return;
   }
   const questionsPublic = exam.questions.map((mq) => toPublicQuestion(mq.question));
+  try { await recordMockUsage(userId); } catch (e) { console.error("[Exams] recordMockUsage xatosi:", (e as Error).message); }
   res.status(201).json({
     attemptId: attempt.id,
     exam: { id: exam.id, title: exam.title, durationMinutes: exam.durationMinutes },

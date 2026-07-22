@@ -7,7 +7,7 @@
  * POST /api/access/usage/record    – Record feature usage
  */
 
-import { Router, Response } from "express";
+import { Router, Response, NextFunction } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
@@ -19,6 +19,23 @@ import {
 } from "../services/access-control.js";
 
 const router = Router();
+
+/**
+ * Guard: bu endpointlar to'lovni "simulyatsiya" qiladi va tekin PRO/mock beradi.
+ * Faqat development uchun. Productionda ALLOW_SIMULATED_PAYMENTS=true bo'lmasa bloklanadi.
+ * Real to'lov faqat verifikatsiyalangan Click/Payme webhook orqali tier beradi.
+ */
+function blockSimulatedPaymentsInProd(_req: AuthRequest, res: Response, next: NextFunction): void {
+    const isProd = process.env.NODE_ENV === "production";
+    const explicitlyAllowed = process.env.ALLOW_SIMULATED_PAYMENTS === "true";
+    if (isProd && !explicitlyAllowed) {
+        res.status(403).json({
+            message: "Bu endpoint o'chirilgan. To'lov faqat Click yoki Payme orqali amalga oshiriladi.",
+        });
+        return;
+    }
+    next();
+}
 
 // ═══════════════════════════════════════════════
 // GET /status – Full access status for current user
@@ -32,7 +49,7 @@ router.get("/status", authenticateToken, async (req: AuthRequest, res: Response)
 // ═══════════════════════════════════════════════
 // POST /purchase/mock – Simulate mock exam purchase (50,000 UZS)
 // ═══════════════════════════════════════════════
-router.post("/purchase/mock", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post("/purchase/mock", authenticateToken, blockSimulatedPaymentsInProd, async (req: AuthRequest, res: Response) => {
     const userId = req.userId!;
 
     // Simulate payment – in production, Stripe/Click/Payme would verify first
@@ -77,7 +94,7 @@ router.post("/purchase/mock", authenticateToken, async (req: AuthRequest, res: R
 // ═══════════════════════════════════════════════
 // POST /subscribe/pro – Simulate Pro subscription (89,000–119,000 UZS/month)
 // ═══════════════════════════════════════════════
-router.post("/subscribe/pro", authenticateToken, async (req: AuthRequest, res: Response) => {
+router.post("/subscribe/pro", authenticateToken, blockSimulatedPaymentsInProd, async (req: AuthRequest, res: Response) => {
     const userId = req.userId!;
 
     const parsed = z.object({

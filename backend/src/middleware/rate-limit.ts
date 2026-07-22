@@ -2,11 +2,11 @@ import rateLimit from "express-rate-limit";
 
 /**
  * Umumiy API rate limiter – barcha endpointlar uchun.
- * 15 daqiqada 100 so'rov.
+ * 15 daqiqada 300 so'rov (faol imtihon topshiruvchi uchun yetarli).
  */
 export const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 min
-    max: 100,
+    max: 300,
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: "Juda ko'p so'rov. Iltimos, biroz kuting." },

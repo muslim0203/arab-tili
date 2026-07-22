@@ -17,8 +17,10 @@ function getGeminiModel(model: string = "gemini-2.0-flash"): GenerativeModel | n
 }
 
 // ========== OpenAI (zaxira) ==========
-let openaiModule: typeof import("openai") | null = null;
-let openaiClient: InstanceType<typeof import("openai").default> | null = null;
+// Eslatma: openai moduli dinamik import qilinadi (faqat kerak bo'lganda).
+// TS "resolution-mode" type ziddiyati tufayli any ishlatiladi — runtime'ga ta'sir qilmaydi.
+let openaiModule: any = null;
+let openaiClient: any = null;
 
 async function getOpenAI() {
     if (openaiClient) return openaiClient;

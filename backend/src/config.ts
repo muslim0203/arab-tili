@@ -6,6 +6,8 @@ export const config = {
   databaseUrl: env.DATABASE_URL ?? "",
   jwtSecret: env.JWT_SECRET ?? "",
   jwtRefreshSecret: env.JWT_REFRESH_SECRET ?? "",
+  // Parol tiklash uchun alohida secret — reset token access token sifatida ishlatilmasligi uchun.
+  jwtResetSecret: env.JWT_RESET_SECRET ?? ((env.JWT_SECRET ?? "") + "::reset"),
   jwtAccessExpiresIn: env.JWT_ACCESS_EXPIRES_IN ?? "15m",
   jwtRefreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN ?? "7d",
   frontendUrl: env.FRONTEND_URL ?? "http://localhost:5173",

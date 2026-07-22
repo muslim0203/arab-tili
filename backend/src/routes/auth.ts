@@ -2,17 +2,18 @@ import { Router, Response } from "express";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { signAccess, signRefresh, verifyRefresh, signPasswordResetToken, verifyPasswordResetToken } from "../lib/jwt.js";
+import { signAccess, signRefresh, verifyRefresh, signPasswordResetToken, verifyPasswordResetToken, passwordVersion, signEmailVerifyToken, verifyEmailVerifyToken } from "../lib/jwt.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
 import { authLimiter, registerLimiter, forgotPasswordLimiter } from "../middleware/rate-limit.js";
-import { isEmailConfigured, sendPasswordResetEmail, sendSubscriptionReminder } from "../services/email.js";
+import { isEmailConfigured, sendPasswordResetEmail, sendSubscriptionReminder, sendVerificationEmail } from "../services/email.js";
+import { setRefreshCookie, clearRefreshCookie, getRefreshCookie } from "../lib/cookies.js";
 import { config } from "../config.js";
 
 const router = Router();
 
 const registerSchema = z.object({
   email: z.string().email("To‘g‘ri email kiriting"),
-  password: z.string().min(6, "Parol kamida 6 belgi"),
+  password: z.string().min(8, "Parol kamida 8 belgi"),
   fullName: z.string().min(1, "Ism kiritilishi shart"),
   languagePreference: z.enum(["uz", "ru", "ar"]).optional().default("uz"),
 });
@@ -22,8 +23,9 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+// refreshToken body'da ixtiyoriy — asosiy manba httpOnly cookie.
 const refreshSchema = z.object({
-  refreshToken: z.string().min(1),
+  refreshToken: z.string().min(1).optional(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -32,7 +34,7 @@ const forgotPasswordSchema = z.object({
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1),
-  newPassword: z.string().min(6, "Parol kamida 6 belgi"),
+  newPassword: z.string().min(8, "Parol kamida 8 belgi"),
 });
 
 // POST /api/auth/register
@@ -65,8 +67,16 @@ router.post("/register", registerLimiter, async (req, res: Response) => {
     data: { userId: user.id },
   });
 
+  // Email tasdiqlash havolasini yuborish (email sozlangan bo'lsa; javobni kutmaymiz).
+  if (isEmailConfigured()) {
+    const verifyToken = signEmailVerifyToken({ email: user.email, purpose: "verify-email" });
+    const verifyLink = `${config.backendUrl}/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
+    sendVerificationEmail(user.email, verifyLink).catch(() => { });
+  }
+
   const accessToken = signAccess({ userId: user.id, email: user.email });
-  const refreshToken = signRefresh({ userId: user.id });
+  const refreshToken = signRefresh({ userId: user.id, pwv: passwordVersion(passwordHash) });
+  setRefreshCookie(res, refreshToken);
 
   res.status(201).json({
     user: {
@@ -124,7 +134,8 @@ router.post("/login", authLimiter, async (req, res: Response) => {
   }
 
   const accessToken = signAccess({ userId: user.id, email: user.email });
-  const refreshToken = signRefresh({ userId: user.id });
+  const refreshToken = signRefresh({ userId: user.id, pwv: passwordVersion(user.passwordHash) });
+  setRefreshCookie(res, refreshToken);
   const tier = user.subscriptionExpiresAt && new Date() > user.subscriptionExpiresAt ? "FREE" : user.subscriptionTier;
 
   res.json({
@@ -144,21 +155,29 @@ router.post("/login", authLimiter, async (req, res: Response) => {
 });
 
 // POST /api/auth/refresh-token
+// Token manbai: httpOnly cookie (asosiy) yoki body (eski mijozlar uchun fallback).
 router.post("/refresh-token", async (req, res: Response) => {
   const parsed = refreshSchema.safeParse(req.body);
-  if (!parsed.success) {
+  const bodyToken = parsed.success ? parsed.data.refreshToken : undefined;
+  const token = getRefreshCookie(req) ?? bodyToken;
+  if (!token) {
     res.status(400).json({ message: "refreshToken kerak" });
     return;
   }
 
   try {
-    const payload = verifyRefresh(parsed.data.refreshToken);
+    const payload = verifyRefresh(token);
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, email: true },
+      select: { id: true, email: true, passwordHash: true },
     });
     if (!user) {
       res.status(401).json({ message: "User not found" });
+      return;
+    }
+    // Parol o'zgargan bo'lsa (yoki eski formatdagi token bo'lsa) refresh token yaroqsiz.
+    if (payload.pwv !== passwordVersion(user.passwordHash)) {
+      res.status(401).json({ message: "Invalid or expired refresh token" });
       return;
     }
     const accessToken = signAccess({ userId: user.id, email: user.email });
@@ -166,6 +185,12 @@ router.post("/refresh-token", async (req, res: Response) => {
   } catch {
     res.status(401).json({ message: "Invalid or expired refresh token" });
   }
+});
+
+// POST /api/auth/logout – refresh cookie'ni o'chirish
+router.post("/logout", (_req, res: Response) => {
+  clearRefreshCookie(res);
+  res.json({ message: "Chiqildi" });
 });
 
 // POST /api/auth/forgot-password
@@ -180,19 +205,24 @@ router.post("/forgot-password", forgotPasswordLimiter, async (req, res: Response
     res.json({ message: "Agar bunday email ro'yxatdan o'tgan bo'lsa, parolni tiklash havolasi yuborildi." });
     return;
   }
-  const token = signPasswordResetToken({ email: user.email, purpose: "reset" });
+  // pwv: token joriy parolga bog'lanadi — parol o'zgargach token yaroqsiz (bir martalik).
+  const token = signPasswordResetToken({ email: user.email, purpose: "reset", pwv: passwordVersion(user.passwordHash) });
   const resetLink = `${config.frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
 
   if (isEmailConfigured()) {
     await sendPasswordResetEmail(user.email, resetLink);
     res.json({ message: "Agar bunday email ro'yxatdan o'tgan bo'lsa, parolni tiklash havolasi emailga yuborildi." });
-  } else {
-    // Development: token qaytariladi (email sozlanmaganida)
+  } else if (config.nodeEnv === "development") {
+    // FAQAT development: email sozlanmaganida havolani qaytaramiz (productionda hech qachon).
     res.json({
       message: "Email sozlanmagan. Development rejimida havola:",
       token,
-      resetLink: config.nodeEnv === "development" ? resetLink : undefined,
+      resetLink,
     });
+  } else {
+    // Production: token hech qachon javobda qaytarilmaydi (akkaunt egallab olish xavfi).
+    console.error("[Auth] SMTP sozlanmagan — parol tiklash emaili yuborilmadi:", user.email);
+    res.json({ message: "Agar bunday email ro'yxatdan o'tgan bo'lsa, parolni tiklash havolasi emailga yuborildi." });
   }
 });
 
@@ -200,11 +230,21 @@ router.post("/forgot-password", forgotPasswordLimiter, async (req, res: Response
 router.post("/reset-password", async (req, res: Response) => {
   const parsed = resetPasswordSchema.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ message: "Token va yangi parol (kamida 6 belgi) kerak" });
+    res.status(400).json({ message: "Token va yangi parol (kamida 8 belgi) kerak" });
     return;
   }
   try {
-    const { email } = verifyPasswordResetToken(parsed.data.token);
+    const { email, pwv } = verifyPasswordResetToken(parsed.data.token);
+    const user = await prisma.user.findUnique({ where: { email }, select: { passwordHash: true } });
+    if (!user) {
+      res.status(400).json({ message: "Noto‘g‘ri yoki muddati o‘tgan token" });
+      return;
+    }
+    // Bir martalik: token berilgandan keyin parol o'zgargan bo'lsa, token qabul qilinmaydi.
+    if (pwv !== passwordVersion(user.passwordHash)) {
+      res.status(400).json({ message: "Noto‘g‘ri yoki muddati o‘tgan token" });
+      return;
+    }
     const hash = await bcrypt.hash(parsed.data.newPassword, 10);
     await prisma.user.update({
       where: { email },
@@ -216,12 +256,55 @@ router.post("/reset-password", async (req, res: Response) => {
   }
 });
 
-// POST /api/auth/social/google – Google OAuth (frontend sends idToken)
+// GET /api/auth/verify-email?token=... – email tasdiqlash (xatdagi havola shu yerga keladi)
+router.get("/verify-email", async (req, res: Response) => {
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  if (!token) {
+    res.redirect(`${config.frontendUrl}/login?verified=0`);
+    return;
+  }
+  try {
+    const { email } = verifyEmailVerifyToken(token);
+    await prisma.user.updateMany({
+      where: { email, emailVerifiedAt: null },
+      data: { emailVerifiedAt: new Date() },
+    });
+    res.redirect(`${config.frontendUrl}/login?verified=1`);
+  } catch {
+    res.redirect(`${config.frontendUrl}/login?verified=0`);
+  }
+});
+
+// POST /api/auth/resend-verification – tasdiqlash xatini qayta yuborish (login qilingan foydalanuvchi)
+router.post("/resend-verification", authenticateToken, forgotPasswordLimiter, async (req: AuthRequest, res: Response) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.userId! },
+    select: { email: true, emailVerifiedAt: true },
+  });
+  if (!user) {
+    res.status(404).json({ message: "Foydalanuvchi topilmadi" });
+    return;
+  }
+  if (user.emailVerifiedAt) {
+    res.json({ message: "Email allaqachon tasdiqlangan" });
+    return;
+  }
+  if (!isEmailConfigured()) {
+    res.status(503).json({ message: "Email xizmati sozlanmagan" });
+    return;
+  }
+  const verifyToken = signEmailVerifyToken({ email: user.email, purpose: "verify-email" });
+  const verifyLink = `${config.backendUrl}/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
+  await sendVerificationEmail(user.email, verifyLink);
+  res.json({ message: "Tasdiqlash havolasi emailga yuborildi" });
+});
+
+// POST /api/auth/social/oauth (eski nom: /social/google, orqaga moslik uchun) – Google OAuth
 const googleSchema = z.object({
   idToken: z.string().min(1, "Google token kerak"),
 });
 
-router.post("/social/google", authLimiter, async (req, res: Response) => {
+router.post(["/social/oauth", "/social/google"], authLimiter, async (req, res: Response) => {
   const parsed = googleSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: "idToken kerak" });
@@ -256,6 +339,8 @@ router.post("/social/google", authLimiter, async (req, res: Response) => {
         data: {
           googleId: googleUser.sub,
           avatarUrl: googleUser.picture ?? user.avatarUrl,
+          // Google email tasdiqlangan — bizda ham tasdiqlangan deb belgilaymiz.
+          emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
         },
       });
     } else {
@@ -269,6 +354,8 @@ router.post("/social/google", authLimiter, async (req, res: Response) => {
           passwordHash: "", // Google foydalanuvchisida parol yo'q
           subscriptionTier: "FREE",
           languagePreference: "uz",
+          emailVerifiedAt: new Date(), // Google email tasdiqlangan
+
         },
       });
 
@@ -286,7 +373,8 @@ router.post("/social/google", authLimiter, async (req, res: Response) => {
   });
 
   const accessToken = signAccess({ userId: user.id, email: user.email });
-  const refreshToken = signRefresh({ userId: user.id });
+  const refreshToken = signRefresh({ userId: user.id, pwv: passwordVersion(user.passwordHash) });
+  setRefreshCookie(res, refreshToken);
   const tier = user.subscriptionExpiresAt && new Date() > user.subscriptionExpiresAt ? "FREE" : user.subscriptionTier;
 
   res.json({

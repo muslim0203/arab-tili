@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
+
 export type User = {
   id: string;
   email: string;
@@ -29,9 +31,18 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       setAuth: (user, accessToken, refreshToken) => set({ user, accessToken, refreshToken }),
       setAccessToken: (accessToken) => set({ accessToken }),
-      logout: () => set({ user: null, accessToken: null, refreshToken: null }),
+      logout: () => {
+        // Serverdagi httpOnly refresh cookie'ni ham o'chiramiz (javobni kutmaymiz).
+        fetch(`${API_BASE}/auth/logout`, { method: "POST", credentials: "include" }).catch(() => {});
+        set({ user: null, accessToken: null, refreshToken: null });
+      },
       isAuthenticated: () => !!get().accessToken,
     }),
-    { name: "arabexam-auth", partialize: (s) => ({ user: s.user, accessToken: s.accessToken, refreshToken: s.refreshToken }) }
+    {
+      name: "arabexam-auth",
+      // XAVFSIZLIK: refreshToken localStorage'ga YOZILMAYDI — u httpOnly cookie'da saqlanadi
+      // (XSS hujumida o'g'irlanmasligi uchun). Xotiradagi nusxa faqat eski sessiyalar uchun fallback.
+      partialize: (s) => ({ user: s.user, accessToken: s.accessToken }),
+    }
   )
 );

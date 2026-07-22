@@ -3,6 +3,17 @@ import { config } from "../config.js";
 
 const BASE_PAY_URL = "https://my.click.uz/services/pay";
 
+/**
+ * Timing-hujumdan himoyalangan solishtirish.
+ * Oddiy === birinchi farq topilganda to'xtaydi va vaqt farqi orqali imzoni taxmin qilishga imkon beradi.
+ */
+export function timingSafeEqualStr(a: string, b: string): boolean {
+  const ab = Buffer.from(a, "utf-8");
+  const bb = Buffer.from(b, "utf-8");
+  if (ab.length !== bb.length) return false;
+  return crypto.timingSafeEqual(ab, bb);
+}
+
 export function getClickPayUrl(params: {
   amount: number;
   merchantTransId: string;
@@ -31,6 +42,9 @@ export function verifyPrepareSign(params: {
   sign_time: string;
   sign_string: string;
 }): boolean {
+  // Kalit sozlanmagan bo'lsa, imzo hech qachon qabul qilinmaydi (fail closed) —
+  // aks holda bo'sh kalit bilan hisoblangan MD5 ni har kim yasay olardi.
+  if (!config.click.secretKey) return false;
   const expected = crypto
     .createHash("md5")
     .update(
@@ -45,7 +59,7 @@ export function verifyPrepareSign(params: {
       ].join("")
     )
     .digest("hex");
-  return expected === params.sign_string;
+  return timingSafeEqualStr(expected, params.sign_string);
 }
 
 /** Complete: sign_string = md5(click_trans_id + service_id + SECRET_KEY + merchant_trans_id + merchant_prepare_id + amount + action + sign_time) */
@@ -59,6 +73,7 @@ export function verifyCompleteSign(params: {
   sign_time: string;
   sign_string: string;
 }): boolean {
+  if (!config.click.secretKey) return false; // fail closed
   const expected = crypto
     .createHash("md5")
     .update(
@@ -74,5 +89,5 @@ export function verifyCompleteSign(params: {
       ].join("")
     )
     .digest("hex");
-  return expected === params.sign_string;
+  return timingSafeEqualStr(expected, params.sign_string);
 }

@@ -37,7 +37,7 @@ type ProfileForm = z.infer<typeof profileSchema>;
 // Password form
 const passwordSchema = z.object({
     currentPassword: z.string().min(1, "Joriy parol kiritilishi shart"),
-    newPassword: z.string().min(6, "Kamida 6 belgi"),
+    newPassword: z.string().min(8, "Kamida 8 belgi"),
     confirmPassword: z.string().min(6, "Tasdiqlash parolini kiriting"),
 }).refine((d) => d.newPassword === d.confirmPassword, {
     message: "Parollar mos kelmaydi",

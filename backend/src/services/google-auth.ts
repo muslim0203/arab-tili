@@ -24,13 +24,25 @@ export async function verifyGoogleToken(token: string): Promise<GoogleUserInfo> 
         throw new Error("GOOGLE_CLIENT_ID sozlanmagan. .env da GOOGLE_CLIENT_ID ni belgilang.");
     }
 
-    // Avval access_token sifatida userinfo endpoint'idan foydalanib ko'ramiz
+    // Avval access_token sifatida tekshiramiz.
+    // MUHIM (xavfsizlik): userinfo'dan oldin tokeninfo orqali token AYNAN SHU ilovaga
+    // berilganini (aud) tekshiramiz — aks holda boshqa Google-ilovaning access tokeni
+    // bilan hisobga kirish mumkin bo'lardi (token substitution hujumi).
     try {
-        const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-            headers: { Authorization: `Bearer ${token}` },
-        });
+        const accessInfoRes = await fetch(
+            `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(token)}`
+        );
+        if (accessInfoRes.ok) {
+            const info = await accessInfoRes.json() as Record<string, unknown>;
+            if (info.aud !== clientId && info.azp !== clientId) {
+                throw new Error("Google token noto'g'ri ilovaga tegishli");
+            }
 
-        if (userInfoRes.ok) {
+            const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (userInfoRes.ok) {
             const payload = await userInfoRes.json() as Record<string, unknown>;
 
             if (!payload.sub || !payload.email) {
@@ -51,10 +63,12 @@ export async function verifyGoogleToken(token: string): Promise<GoogleUserInfo> 
                 given_name: payload.given_name ? String(payload.given_name) : undefined,
                 family_name: payload.family_name ? String(payload.family_name) : undefined,
             };
+            }
         }
     } catch (e) {
-        // userinfo ishlamasa, id_token sifatida tekshirib ko'ramiz
-        if (e instanceof Error && e.message.includes("email")) throw e;
+        // userinfo ishlamasa, id_token sifatida tekshirib ko'ramiz.
+        // Lekin aud/email xatolari qayta id_token sifatida urinilmaydi — darhol rad etiladi.
+        if (e instanceof Error && (e.message.includes("email") || e.message.includes("ilovaga"))) throw e;
     }
 
     // Fallback: id_token sifatida tokeninfo endpoint

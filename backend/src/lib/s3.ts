@@ -5,6 +5,7 @@ import crypto from "crypto"
 import path from "path"
 import fs from "fs"
 import { config } from "../config.js"
+import { safeAudioExt } from "./sanitize.js"
 
 const s3ClientConfig: any = {
     region: config.aws.region,
@@ -34,7 +35,7 @@ export const createAudioUpload = (folder: string) => {
                 acl: "public-read",
                 contentType: multerS3.AUTO_CONTENT_TYPE,
                 key: function (_req: any, file: any, cb: any) {
-                    const ext = path.extname(file.originalname) || ""
+                    const ext = safeAudioExt(file.originalname, "")
                     const name = `${folder}/${crypto.randomBytes(12).toString("hex")}${ext}`
                     cb(null, name)
                 },
@@ -52,7 +53,7 @@ export const createAudioUpload = (folder: string) => {
         storage: multer.diskStorage({
             destination: (_req, _file, cb) => cb(null, localTarget),
             filename: (_req, file, cb) => {
-                const ext = path.extname(file.originalname) || ""
+                const ext = safeAudioExt(file.originalname, "")
                 const name = `${crypto.randomBytes(8).toString("hex")}${ext}`
                 cb(null, name)
             },

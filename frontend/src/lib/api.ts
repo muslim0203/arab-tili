@@ -1,22 +1,69 @@
 import { useAuthStore } from "@/store/auth";
 
-const BASE = import.meta.env.VITE_API_URL || "/api";
+function isLocalHostname(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
+
+function resolveApiBase(): string {
+  const raw = import.meta.env.VITE_API_URL?.trim();
+  if (!raw) return "/api";
+  if (typeof window === "undefined") return raw;
+  try {
+    const target = new URL(raw, window.location.origin);
+    const appIsLocal = isLocalHostname(window.location.hostname);
+    const targetIsLocal = isLocalHostname(target.hostname);
+    // Production domenida turib localhost API'ga urilib qolmaslik uchun fallback.
+    if (!appIsLocal && targetIsLocal) return "/api";
+  } catch {
+    return "/api";
+  }
+  return raw;
+}
+
+const BASE = resolveApiBase();
+
+// Bir vaqtning o'zida bir nechta 401 kelganda faqat bitta refresh so'rovi yuboriladi.
+let refreshInFlight: Promise<string | null> | null = null;
+
+function redirectToLogin() {
+  if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.assign(`/login?next=${next}`);
+  }
+}
 
 async function refreshAccess(): Promise<string | null> {
-  const { refreshToken, setAccessToken, logout } = useAuthStore.getState();
-  if (!refreshToken) return null;
-  const res = await fetch(`${BASE}/auth/refresh-token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  });
-  if (!res.ok) {
-    logout();
-    return null;
-  }
-  const data = await res.json();
-  setAccessToken(data.accessToken);
-  return data.accessToken;
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    const { refreshToken, setAccessToken, logout } = useAuthStore.getState();
+    try {
+      // Refresh token asosan httpOnly cookie'da (credentials: "include" bilan yuboriladi).
+      // Xotirada eski token bo'lsa, fallback sifatida body'da ham yuboramiz.
+      const res = await fetch(`${BASE}/auth/refresh-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(refreshToken ? { refreshToken } : {}),
+      });
+      if (!res.ok) {
+        logout();
+        redirectToLogin();
+        return null;
+      }
+      const data = await res.json();
+      setAccessToken(data.accessToken);
+      return data.accessToken as string;
+    } catch {
+      logout();
+      redirectToLogin();
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
 }
 
 export type RequestConfig = Omit<RequestInit, "body"> & { body?: BodyInit | object | null; skipAuth?: boolean };
@@ -33,7 +80,8 @@ export async function api<T = unknown>(path: string, config: RequestConfig = {})
       headers.set("Content-Type", "application/json");
       body = JSON.stringify(body);
     }
-    return fetch(url, { ...init, headers, body });
+    // credentials: "include" — login/register'da server httpOnly refresh cookie o'rnatadi.
+    return fetch(url, { ...init, headers, body, credentials: "include" });
   };
 
   let token = skipAuth ? null : useAuthStore.getState().accessToken;

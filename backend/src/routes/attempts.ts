@@ -9,6 +9,7 @@ import { evaluateCefrLevel } from "../services/openai-exam.js";
 import { isAnswerCorrect } from "../services/cefr-attempt.js";
 import { gradeWriting, gradeSpeaking } from "../services/ai-writing-speaking.js";
 import { transcribeAudio } from "../services/transcribe.js";
+import { safeAudioExt } from "../lib/sanitize.js";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -281,7 +282,7 @@ router.post("/:id/speaking-audio", authenticateToken, upload.single("audio"), as
     res.status(404).json({ message: "Attempt yoki speaking savoli topilmadi" });
     return;
   }
-  const ext = path.extname(req.file.originalname) || ".webm";
+  const ext = safeAudioExt(req.file.originalname);
   const finalName = `${attemptId}_${qId}${ext}`;
   const finalPath = path.join(UPLOADS_DIR, finalName);
   try {

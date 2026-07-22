@@ -13,7 +13,7 @@ const updateProfileSchema = z.object({
 
 const changePasswordSchema = z.object({
     currentPassword: z.string().min(1, "Joriy parol kiritilishi shart"),
-    newPassword: z.string().min(6, "Yangi parol kamida 6 belgi"),
+    newPassword: z.string().min(8, "Yangi parol kamida 8 belgi"),
 });
 
 // GET /api/profile – foydalanuvchi profili

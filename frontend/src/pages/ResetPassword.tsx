@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 
 const schema = z.object({
   token: z.string().min(1, "Token kerak"),
-  newPassword: z.string().min(6, "Parol kamida 6 belgi"),
+  newPassword: z.string().min(8, "Parol kamida 8 belgi"),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -44,7 +44,7 @@ export function ResetPassword() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Yangi parol</CardTitle>
-          <CardDescription>Yangi parolni kiriting (kamida 6 belgi).</CardDescription>
+          <CardDescription>Yangi parolni kiriting (kamida 8 belgi).</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {success ? (

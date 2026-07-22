@@ -8,7 +8,7 @@ generator client {
 datasource db {
   // Local: "sqlite" | Production: "postgresql"
   // Deploy qilganda "postgresql" ga o'zgartiring va DATABASE_URL ni yangilang
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -162,6 +162,7 @@ model User {
   subscriptionExpiresAt DateTime? @map("subscription_expires_at")
   languagePreference    String    @default("uz") @map("language_preference")
   lastLogin             DateTime? @map("last_login")
+  emailVerifiedAt       DateTime? @map("email_verified_at")
   isAdmin               Boolean   @default(false) @map("is_admin")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")

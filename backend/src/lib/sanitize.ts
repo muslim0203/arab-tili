@@ -1,4 +1,17 @@
 import xssFilter from "xss";
+import path from "path";
+
+// Yuklangan audio fayllar uchun ruxsat etilgan kengaytmalar (allowlist).
+const ALLOWED_AUDIO_EXTS = new Set([".webm", ".mp3", ".ogg", ".oga", ".wav", ".m4a", ".aac", ".opus", ".mp4", ".flac"]);
+
+/**
+ * Foydalanuvchi yuborgan fayl nomidan xavfsiz audio kengaytma oladi.
+ * Ro'yxatda bo'lmagan kengaytma (masalan .php, .html) fallback bilan almashtiriladi.
+ */
+export function safeAudioExt(originalname: string | undefined, fallback = ".webm"): string {
+    const ext = path.extname(originalname ?? "").toLowerCase();
+    return ALLOWED_AUDIO_EXTS.has(ext) ? ext : fallback;
+}
 
 /**
  * XSS va HTML injection'dan himoya qiladi.

@@ -1,4 +1,5 @@
 import { config } from "../config.js";
+import { timingSafeEqualStr } from "./click.js";
 
 const CHECKOUT_URL = "https://checkout.paycom.uz";
 
@@ -29,10 +30,15 @@ export function getPaymeCheckoutUrl(params: {
  * Authorization header: "Basic base64(Paycom:MERCHANT_KEY)"
  */
 export function verifyPaymeAuth(authHeader: string | undefined): boolean {
+    // Kalit sozlanmagan bo'lsa, callback hech qachon qabul qilinmaydi (fail closed).
+    if (!config.payme.merchantKey) return false;
     if (!authHeader || !authHeader.startsWith("Basic ")) return false;
     const decoded = Buffer.from(authHeader.slice(6), "base64").toString("utf-8");
-    const [login, password] = decoded.split(":");
-    return login === "Paycom" && password === config.payme.merchantKey;
+    const idx = decoded.indexOf(":");
+    if (idx < 0) return false;
+    const login = decoded.slice(0, idx);
+    const password = decoded.slice(idx + 1);
+    return login === "Paycom" && timingSafeEqualStr(password, config.payme.merchantKey);
 }
 
 // ── Payme JSON-RPC Error kodlari ──
