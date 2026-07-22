@@ -64,8 +64,28 @@ app.use(helmet({
 }));
 
 // Productionda faqat haqiqiy frontend origin ruxsat etiladi; localhost faqat dev uchun.
+/**
+ * Domenning www va www'siz variantlarini birga qaytaradi.
+ *
+ * Nega kerak: FRONTEND_URL da "https://arabexam.uz" turgan, sayt esa
+ * "https://www.arabexam.uz" da ochiladi (apex o'sha yerga redirect qiladi).
+ * Brauzer POST so'rovlarida Origin sarlavhasini yuboradi va u www bilan
+ * keladi — natijada barcha so'rovlar rad etilardi.
+ */
+function withWwwVariant(url: string): string[] {
+  try {
+    const u = new URL(url);
+    const host = u.host.startsWith("www.") ? u.host.slice(4) : `www.${u.host}`;
+    return [u.origin, `${u.protocol}//${host}`];
+  } catch {
+    return [url];
+  }
+}
+
 const allowedOrigins = [
-  config.frontendUrl,
+  ...(config.frontendUrl ? withWwwVariant(config.frontendUrl) : []),
+  // Qo'shimcha originlar (vergul bilan ajratilgan) — masalan alohida admin panel domeni.
+  ...(process.env.CORS_EXTRA_ORIGINS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
   ...(isProd ? [] : ["http://localhost:5173", "http://localhost:4173"]),
 ].filter(Boolean);
 
@@ -76,7 +96,12 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    callback(new Error("CORS policy: origin not allowed"));
+    // Ruxsatsiz origin — xato TASHLAMAYMIZ. Ilgari shu yerda new Error() bo'lgani
+    // uchun oddiy CORS rad etishi 500 "Internal Server Error" ga aylanardi.
+    // To'g'ri xatti-harakat: CORS sarlavhalarini qo'shmaslik — brauzer javobni
+    // o'zi bloklaydi. (CORS himoya emas, u faqat brauzer siyosati.)
+    logger.warn("CORS: ruxsat etilmagan origin", { origin });
+    callback(null, false);
   },
   credentials: true,
 }));
