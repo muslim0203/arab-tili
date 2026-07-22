@@ -1,0 +1,24 @@
+# `railway up` bilan yuklanmaydigan fayllar.
+#
+# Nega kerak: `railway up` backend/ papkasidan ishga tushadi, .gitignore esa
+# repo ildizida. CLI uni ko'rmasligi mumkin — natijada .env (maxfiy kalitlar
+# bilan) yoki lokal baza production'ga yuklanib ketishi mumkin edi.
+
+.env
+.env.*
+!.env.example
+
+node_modules
+dist
+
+# Lokal SQLite bazasi (endi ishlatilmaydi, lekin diskda qolgan bo'lishi mumkin)
+prisma/dev.db
+prisma/dev.db-journal
+
+# Qo'lda sinash uchun vaqtinchalik skriptlar
+test_*.ts
+test-audio.mp3
+
+uploads
+*.log
+.DS_Store
