@@ -2,7 +2,8 @@ import { Router, Response } from "express";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { signAccess, signRefresh, verifyRefresh, signPasswordResetToken, verifyPasswordResetToken, passwordVersion, signEmailVerifyToken, verifyEmailVerifyToken } from "../lib/jwt.js";
+import { signAccess, signPasswordResetToken, verifyPasswordResetToken, passwordVersion, signEmailVerifyToken, verifyEmailVerifyToken } from "../lib/jwt.js";
+import { issueRefreshToken, consumeRefreshToken, revokeRefreshToken, revokeAllForUser } from "../lib/refresh-tokens.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
 import { authLimiter, registerLimiter, forgotPasswordLimiter } from "../middleware/rate-limit.js";
 import { isEmailConfigured, sendPasswordResetEmail, sendSubscriptionReminder, sendVerificationEmail } from "../services/email.js";
@@ -75,7 +76,7 @@ router.post("/register", registerLimiter, async (req, res: Response) => {
   }
 
   const accessToken = signAccess({ userId: user.id, email: user.email });
-  const refreshToken = signRefresh({ userId: user.id, pwv: passwordVersion(passwordHash) });
+  const refreshToken = await issueRefreshToken(user.id, passwordVersion(passwordHash));
   setRefreshCookie(res, refreshToken);
 
   res.status(201).json({
@@ -134,7 +135,7 @@ router.post("/login", authLimiter, async (req, res: Response) => {
   }
 
   const accessToken = signAccess({ userId: user.id, email: user.email });
-  const refreshToken = signRefresh({ userId: user.id, pwv: passwordVersion(user.passwordHash) });
+  const refreshToken = await issueRefreshToken(user.id, passwordVersion(user.passwordHash));
   setRefreshCookie(res, refreshToken);
   const tier = user.subscriptionExpiresAt && new Date() > user.subscriptionExpiresAt ? "FREE" : user.subscriptionTier;
 
@@ -165,30 +166,42 @@ router.post("/refresh-token", async (req, res: Response) => {
     return;
   }
 
-  try {
-    const payload = verifyRefresh(token);
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: { id: true, email: true, passwordHash: true },
-    });
-    if (!user) {
-      res.status(401).json({ message: "User not found" });
-      return;
-    }
-    // Parol o'zgargan bo'lsa (yoki eski formatdagi token bo'lsa) refresh token yaroqsiz.
-    if (payload.pwv !== passwordVersion(user.passwordHash)) {
-      res.status(401).json({ message: "Invalid or expired refresh token" });
-      return;
-    }
-    const accessToken = signAccess({ userId: user.id, email: user.email });
-    res.json({ accessToken, expiresIn: 900 });
-  } catch {
+  // Tokenni bazada tekshirib, darhol bekor qilamiz (rotatsiya).
+  // Bekor qilingan token qayta kelsa — o'g'irlik belgisi, barcha sessiyalar yopiladi.
+  const consumed = await consumeRefreshToken(token);
+  if (!consumed.ok) {
+    clearRefreshCookie(res);
     res.status(401).json({ message: "Invalid or expired refresh token" });
+    return;
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: consumed.payload.userId },
+    select: { id: true, email: true, passwordHash: true },
+  });
+  if (!user) {
+    clearRefreshCookie(res);
+    res.status(401).json({ message: "User not found" });
+    return;
+  }
+  // Parol o'zgargan bo'lsa refresh token yaroqsiz.
+  if (consumed.payload.pwv !== passwordVersion(user.passwordHash)) {
+    clearRefreshCookie(res);
+    res.status(401).json({ message: "Invalid or expired refresh token" });
+    return;
+  }
+
+  const accessToken = signAccess({ userId: user.id, email: user.email });
+  const newRefreshToken = await issueRefreshToken(user.id, passwordVersion(user.passwordHash));
+  setRefreshCookie(res, newRefreshToken);
+  res.json({ accessToken, refreshToken: newRefreshToken, expiresIn: 900 });
 });
 
-// POST /api/auth/logout – refresh cookie'ni o'chirish
-router.post("/logout", (_req, res: Response) => {
+// POST /api/auth/logout – refresh tokenni bazada bekor qilish + cookie'ni o'chirish
+router.post("/logout", async (req, res: Response) => {
+  const parsed = refreshSchema.safeParse(req.body);
+  const token = getRefreshCookie(req) ?? (parsed.success ? parsed.data.refreshToken : undefined);
+  if (token) await revokeRefreshToken(token);
   clearRefreshCookie(res);
   res.json({ message: "Chiqildi" });
 });
@@ -235,7 +248,7 @@ router.post("/reset-password", async (req, res: Response) => {
   }
   try {
     const { email, pwv } = verifyPasswordResetToken(parsed.data.token);
-    const user = await prisma.user.findUnique({ where: { email }, select: { passwordHash: true } });
+    const user = await prisma.user.findUnique({ where: { email }, select: { id: true, passwordHash: true } });
     if (!user) {
       res.status(400).json({ message: "Noto‘g‘ri yoki muddati o‘tgan token" });
       return;
@@ -250,6 +263,9 @@ router.post("/reset-password", async (req, res: Response) => {
       where: { email },
       data: { passwordHash: hash },
     });
+    // Parol tiklandi — barcha eski sessiyalar (shu jumladan hujumchiniki) yopiladi.
+    await revokeAllForUser(user.id);
+    clearRefreshCookie(res);
     res.json({ message: "Parol yangilandi. Endi yangi parol bilan kiring." });
   } catch {
     res.status(400).json({ message: "Noto‘g‘ri yoki muddati o‘tgan token" });
@@ -373,7 +389,7 @@ router.post(["/social/oauth", "/social/google"], authLimiter, async (req, res: R
   });
 
   const accessToken = signAccess({ userId: user.id, email: user.email });
-  const refreshToken = signRefresh({ userId: user.id, pwv: passwordVersion(user.passwordHash) });
+  const refreshToken = await issueRefreshToken(user.id, passwordVersion(user.passwordHash));
   setRefreshCookie(res, refreshToken);
   const tier = user.subscriptionExpiresAt && new Date() > user.subscriptionExpiresAt ? "FREE" : user.subscriptionTier;
 

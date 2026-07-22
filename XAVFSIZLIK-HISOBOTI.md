@@ -124,3 +124,45 @@ cd frontend && npm install   # lockfile'dagi tuzatishlar qo'llanadi
 Eslatmalar:
 - Barcha foydalanuvchilar bir marta qaytadan login qilishi kerak bo'ladi (eski refresh tokenlar formatı o'zgardi — bu xavfsizlik uchun ataylab qilingan).
 - `tsc` tekshiruvidan o'tdi. `ai-client.ts`dagi bitta type xatosi oldindan mavjud bo'lgan (openai kutubxonasi bilan bog'liq), ishga ta'sir qilmaydi.
+
+---
+
+## ✅ IKKINCHI BOSQICH (2026-07-22) — qolgan topilmalar yopildi
+
+| # | Topilma | Holat | Qayerda |
+|---|---------|-------|---------|
+| 2 | Refresh revocation (to'liq) | ✅ Tugallandi | Yangi `refresh_tokens` jadvali + `lib/refresh-tokens.ts`. Endi `pwv` bilan cheklanmaydi — quyida batafsil |
+| 4 | Dependencylar | ✅ Tugallandi | `npm audit fix`: backend prod **0 zaiflik**, frontend prod **0 zaiflik**. Qolgani faqat `esbuild` (dev-server, Windows) |
+| 5 | httpOnly cookie | ✅ Tugallandi | `lib/cookies.ts` + `store/auth.ts` — refresh token localStorage'ga umuman yozilmaydi |
+
+### 2-topilma qanday yopildi
+
+Ilgari refresh tokenni faqat **parol o'zgarganda** bekor qilish mumkin edi. Endi:
+
+- **Bazada saqlanadi** — tokenning o'zi emas, `sha256` hash'i (`refresh_tokens.token_hash`). Baza sizib chiqsa ham tokenlar bilan kirib bo'lmaydi.
+- **Rotatsiya** — har `refresh-token` chaqiruvida eski token bekor qilinadi, yangisi beriladi. O'g'irlangan tokenning "yashash oynasi" 7 kundan bir necha daqiqagacha qisqaradi.
+- **Qayta ishlatishni aniqlash** — allaqachon rotatsiya qilingan token qaytib kelsa, bu o'g'irlik belgisi: foydalanuvchining **barcha** sessiyalari yopiladi va `WARN` log yoziladi.
+- **30 soniyalik leeway** — ko'p tabli brauzerda ikki tab bir vaqtda refresh yuborsa, bu noto'g'ri "o'g'irlik" deb baholanmaydi. Leeway faqat rotatsiyaga tegishli; **logout va majburiy bekor qilish darhol kuchga kiradi** (`rotated` bayrog'i orqali ajratiladi).
+- **Logout endi haqiqiy** — ilgari faqat cookie o'chirilardi, token esa 7 kun amal qilaverardi.
+- **Parol tiklanganda** barcha sessiyalar majburan yopiladi.
+- **Avtomatik tozalash** — kunlik scheduler muddati o'tgan yozuvlarni o'chiradi.
+
+**Tekshiruv:** 28 ta unit test (`tests/refresh-tokens.test.ts` — 12 ta yangi) + ishlayotgan serverda uchdan-uchga sinov: rotatsiya, leeway ichida qabul, leeway tashqarisida o'g'irlik aniqlash va barcha sessiyalarni yopish, logout'dan keyin darhol 401.
+
+### Diqqat — deploy qilishdan oldin
+
+1. **Migratsiya** production'da qo'lda qo'llanadi:
+   ```bash
+   cd backend && npx prisma migrate deploy
+   ```
+   (`prisma/migrations/20260722_add_refresh_token_revocation/`)
+
+2. **Barcha foydalanuvchilar yana bir marta qaytadan login qilishi kerak** — eski tokenlar bazada yo'q, shuning uchun rad etiladi. Bu ataylab.
+
+3. **Lokal dev SQLite, production PostgreSQL** (`schema.prisma` da `provider = "sqlite"`). Shu sabab `prisma migrate dev` lokalda ishlamaydi — migratsiya SQL'i qo'lda yozildi, lokal baza `prisma db push` bilan yangilandi. Deploy oldidan `provider` ni `postgresql` ga o'zgartirishni unutmang. Bu tuzoq: ikkala provider bitta schema faylida boshqarilishi ertami-kechmi xatoga olib keladi.
+
+### Hali ochiq qolgan (past ustuvorlik)
+
+- **8** — rate limiting xotirada; masshtablashda Redis store kerak. `refresh-token` uchun alohida limiter ham yo'q.
+- Yuklangan audio fayllar autentifikatsiyasiz ochiq (`/api/uploads/...`).
+- Parol siyosati: minimal 8 belgi, murakkablik talab qilinmaydi.

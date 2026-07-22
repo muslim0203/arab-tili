@@ -36,7 +36,7 @@ async function refreshAccess(): Promise<string | null> {
   if (refreshInFlight) return refreshInFlight;
 
   refreshInFlight = (async () => {
-    const { refreshToken, setAccessToken, logout } = useAuthStore.getState();
+    const { refreshToken, setTokens, logout } = useAuthStore.getState();
     try {
       // Refresh token asosan httpOnly cookie'da (credentials: "include" bilan yuboriladi).
       // Xotirada eski token bo'lsa, fallback sifatida body'da ham yuboramiz.
@@ -52,7 +52,8 @@ async function refreshAccess(): Promise<string | null> {
         return null;
       }
       const data = await res.json();
-      setAccessToken(data.accessToken);
+      // Server tokenni rotatsiya qiladi — yangi refresh tokenni ham saqlaymiz.
+      setTokens(data.accessToken, data.refreshToken ?? null);
       return data.accessToken as string;
     } catch {
       logout();

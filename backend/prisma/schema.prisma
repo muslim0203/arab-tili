@@ -174,8 +174,31 @@ model User {
   subscriptions       Subscription[]
   purchases           Purchase[]
   usageTracking       UsageTracking[]
+  refreshTokens       RefreshToken[]
 
   @@map("users")
+}
+
+// Refresh tokenlarni bekor qilish (revocation) uchun.
+// Tokenning o'zi emas, sha256 hash'i saqlanadi — baza sizib chiqsa ham
+// tokenlar bilan kirib bo'lmaydi. Har refresh'da token rotatsiya qilinadi:
+// eski yozuv revokedAt bilan belgilanadi, yangisi yaratiladi.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique @map("token_hash")
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  // true — token normal rotatsiya natijasida bekor qilingan (leeway qo'llaniladi).
+  // false — logout yoki majburiy bekor qilish (darhol va qat'iy rad etiladi).
+  rotated   Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 // ══════════════════════════════════════════════════

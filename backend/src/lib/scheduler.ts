@@ -12,6 +12,7 @@
  */
 import { prisma } from "./prisma.js";
 import { logger } from "./logger.js";
+import { cleanupExpiredRefreshTokens } from "./refresh-tokens.js";
 import { isEmailConfigured, sendSubscriptionReminder } from "../services/email.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -72,6 +73,11 @@ async function runDailyTasks(): Promise<void> {
     } catch (e) {
         logger.error("Obuna eslatma vazifasi xatosi", e);
     }
+    try {
+        await cleanupExpiredRefreshTokens();
+    } catch (e) {
+        logger.error("Refresh token tozalash xatosi", e);
+    }
 }
 
 /** Server ishga tushganda chaqiriladi. */
@@ -86,5 +92,5 @@ export function startSchedulers(): void {
         void runDailyTasks();
     }, DAY_MS);
 
-    logger.info("Kunlik scheduler ishga tushdi (PENDING tozalash + obuna eslatmalari)");
+    logger.info("Kunlik scheduler ishga tushdi (PENDING tozalash + obuna eslatmalari + refresh token tozalash)");
 }

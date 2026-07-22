@@ -10,7 +10,10 @@ const JWT_ALG: jwt.Algorithm = "HS256";
 export type AccessPayload = { userId: string; email: string };
 // pwv (password version) – passwordHash'dan hosil qilingan qisqa barmoq izi.
 // Parol o'zgarsa pwv ham o'zgaradi va eski refresh/reset tokenlar avtomatik yaroqsiz bo'ladi.
-export type RefreshPayload = { userId: string; pwv: string };
+// jti – har bir refresh token uchun tasodifiy noyob identifikator.
+// Ikki token bir soniyada berilsa ham (bir xil userId/pwv/iat) ular har xil bo'lishini
+// kafolatlaydi, ya'ni bazadagi tokenHash unique cheklovi buzilmaydi.
+export type RefreshPayload = { userId: string; pwv: string; jti: string };
 export type ResetPayload = { email: string; purpose: "reset"; pwv: string };
 export type VerifyEmailPayload = { email: string; purpose: "verify-email" };
 
@@ -30,8 +33,14 @@ export function signAccess(payload: AccessPayload): string {
   return jwt.sign(payload, jwtSecret as jwt.Secret, { algorithm: JWT_ALG, expiresIn: jwtAccessExpiresIn as any });
 }
 
-export function signRefresh(payload: RefreshPayload): string {
-  return jwt.sign(payload, jwtRefreshSecret as jwt.Secret, { algorithm: JWT_ALG, expiresIn: jwtRefreshExpiresIn as any });
+export function signRefresh(payload: Omit<RefreshPayload, "jti"> & { jti?: string }): string {
+  const full: RefreshPayload = { ...payload, jti: payload.jti ?? crypto.randomUUID() };
+  return jwt.sign(full, jwtRefreshSecret as jwt.Secret, { algorithm: JWT_ALG, expiresIn: jwtRefreshExpiresIn as any });
+}
+
+/** Refresh tokenning bazada saqlanadigan sha256 hash'i (tokenning o'zi hech qachon saqlanmaydi). */
+export function hashRefreshToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 export function signPasswordResetToken(payload: ResetPayload): string {
