@@ -21,3 +21,9 @@ backend/test-audio.mp3
 
 # FUSE mount qoldiqlari
 .fuse_hidden*
+
+# Lokal SQLite dev bazasi — har ishga tushirishda o'zgaradi va vaqt o'tib
+# haqiqiy foydalanuvchi ma'lumotlari to'planib qolishi mumkin.
+# Qayta yaratish: npx prisma db push && npx prisma db seed
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
