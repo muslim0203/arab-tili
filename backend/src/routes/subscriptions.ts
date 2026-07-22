@@ -20,6 +20,20 @@ export const SUBSCRIPTION_PLANS = [
   { id: "pro_premium", type: "subscription", planType: "pro", durationMonths: 1, amount: 119_000, description: "Pro yillik/premium", name: "Pro Premium", nameUz: "Pro Premium", tier: "PRO" as const },
 ] as const;
 
+/**
+ * To'lov provayderi to'liq sozlanganmi.
+ *
+ * Faqat maxfiy kalit emas, redirect URL'ini qurish uchun kerak bo'lgan
+ * barcha qiymatlar tekshiriladi — aks holda foydalanuvchi bo'sh parametrli
+ * buzuq to'lov sahifasiga tushadi.
+ */
+function isProviderConfigured(provider: "click" | "payme"): boolean {
+  if (provider === "payme") {
+    return Boolean(config.payme.merchantId && config.payme.merchantKey);
+  }
+  return Boolean(config.click.merchantId && config.click.serviceId && config.click.secretKey);
+}
+
 // ════════════════════════════════════════════
 // PLANS
 // ════════════════════════════════════════════
@@ -35,6 +49,12 @@ router.get("/plans", (_req, res: Response) => {
       currency: "UZS",
       description: p.description,
     })),
+    // Frontend shu bo'yicha "sotib olish" tugmasini oldindan o'chirib qo'yishi
+    // va sababini tushuntirishi mumkin — foydalanuvchi buzuq sahifaga tushmasin.
+    providers: {
+      click: isProviderConfigured("click"),
+      payme: isProviderConfigured("payme"),
+    },
   });
 });
 
@@ -57,6 +77,20 @@ router.post("/create-payment", authenticateToken, async (req: AuthRequest, res: 
   const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId);
   if (!plan) {
     res.status(400).json({ message: "Bunday tarif yo'q" });
+    return;
+  }
+
+  // To'lov provayderi sozlanmagan bo'lsa — DARHOL to'xtaymiz.
+  //
+  // Ilgari bu holatda ham PENDING yozuv yaratilib, foydalanuvchi bo'sh
+  // merchant_id bilan qurilgan buzuq Click/Payme sahifasiga yo'naltirilardi:
+  // tushuntirishsiz "o'lik" oyna va bazada keraksiz yozuvlar.
+  if (!isProviderConfigured(provider)) {
+    res.status(503).json({
+      message: "To'lov tizimi hozircha ulanmagan. Iltimos, biz bilan bog'laning.",
+      code: "PAYMENT_PROVIDER_UNCONFIGURED",
+      provider,
+    });
     return;
   }
 
