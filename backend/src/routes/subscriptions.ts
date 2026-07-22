@@ -615,7 +615,10 @@ async function handleGetStatement(id: unknown, params: any, res: Response) {
 // ════════════════════════════════════════════
 // SHARED: Activate subscription
 // ════════════════════════════════════════════
-async function activateSubscription(
+// Eksport qilingan, chunki admin panel ham (qo'lda faollashtirish) AYNAN shu
+// yo'ldan borishi kerak — aks holda to'lov orqali va qo'lda ochilgan obunalar
+// boshqa-boshqa holatda bo'lib qoladi (usageTracking, subscriptionTier va h.k.).
+export async function activateSubscription(
   paymentId: string,
   userId: string,
   plan: (typeof SUBSCRIPTION_PLANS)[number],

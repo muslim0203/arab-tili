@@ -3,8 +3,11 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import multer from "multer";
+import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { authenticateToken, requireAdmin, type AuthRequest } from "../middleware/auth.js";
+import { logger } from "../lib/logger.js";
+import { SUBSCRIPTION_PLANS, activateSubscription } from "./subscriptions.js";
 
 const router = Router();
 
@@ -122,6 +125,105 @@ router.get("/users", async (req: AuthRequest, res: Response) => {
     })),
     total, page, pageSize, totalPages: Math.ceil(total / pageSize),
   });
+});
+
+// ══════════════════════════════════════════════════
+// OBUNANI QO'LDA FAOLLASHTIRISH / BEKOR QILISH
+//
+// Click/Payme biznes hisobi ochilmagunicha to'lovlarni bank o'tkazmasi yoki
+// naqd orqali qabul qilib, obunani shu yerdan ochish mumkin.
+//
+// Muhim: faollashtirish AYNAN to'lov webhook'i chaqiradigan
+// activateSubscription() orqali bajariladi — shunda qo'lda ochilgan obuna
+// to'lov orqali ochilganidan farq qilmaydi (usageTracking, subscriptionTier,
+// eski obunani bekor qilish — hammasi bir xil).
+// ══════════════════════════════════════════════════
+
+const grantSchema = z.object({
+  planId: z.enum(["mock_exam", "pro_basic", "pro_premium"]),
+  // Ixtiyoriy izoh: "naqd", "bank o'tkazmasi #123", "sovg'a" va h.k.
+  note: z.string().max(200).optional(),
+});
+
+router.post("/users/:id/grant-subscription", async (req: AuthRequest, res: Response) => {
+  const parsed = grantSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "planId kerak: mock_exam | pro_basic | pro_premium" });
+    return;
+  }
+
+  const userId = req.params.id;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true } });
+  if (!user) {
+    res.status(404).json({ message: "Foydalanuvchi topilmadi" });
+    return;
+  }
+
+  const plan = SUBSCRIPTION_PLANS.find((p) => p.id === parsed.data.planId);
+  if (!plan) {
+    res.status(400).json({ message: "Bunday tarif yo'q" });
+    return;
+  }
+
+  // Audit izi: qo'lda berilgan obuna ham to'lovlar tarixida ko'rinsin, aks holda
+  // keyinchalik "bu obuna qayerdan paydo bo'ldi?" degan savol javobsiz qoladi.
+  const payment = await prisma.payment.create({
+    data: {
+      userId,
+      amount: plan.amount,
+      currency: "UZS",
+      status: "COMPLETED",
+      provider: "manual",
+      planId: plan.id,
+      paidAt: new Date(),
+    },
+  });
+
+  await activateSubscription(payment.id, userId, plan);
+
+  logger.info("Obuna qo'lda faollashtirildi", {
+    adminId: req.userId,
+    userId,
+    email: user.email,
+    planId: plan.id,
+    note: parsed.data.note ?? null,
+    paymentId: payment.id,
+  });
+
+  const updated = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, subscriptionTier: true, subscriptionExpiresAt: true },
+  });
+
+  res.json({
+    message: `${plan.nameUz} faollashtirildi`,
+    paymentId: payment.id,
+    user: {
+      ...updated,
+      subscriptionExpiresAt: updated?.subscriptionExpiresAt?.toISOString() ?? null,
+    },
+  });
+});
+
+router.post("/users/:id/revoke-subscription", async (req: AuthRequest, res: Response) => {
+  const userId = req.params.id;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true } });
+  if (!user) {
+    res.status(404).json({ message: "Foydalanuvchi topilmadi" });
+    return;
+  }
+
+  await prisma.subscription.updateMany({
+    where: { userId, status: "active" },
+    data: { status: "cancelled" },
+  });
+  await prisma.user.update({
+    where: { id: userId },
+    data: { subscriptionTier: "FREE", subscriptionExpiresAt: null },
+  });
+
+  logger.info("Obuna bekor qilindi", { adminId: req.userId, userId, email: user.email });
+  res.json({ message: "Obuna bekor qilindi" });
 });
 
 // ══════════════════════════════════════════════════
