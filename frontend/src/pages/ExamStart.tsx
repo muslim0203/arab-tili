@@ -16,17 +16,25 @@ export function ExamStart() {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
 
   const isCefrFull = examId === "cefr-full";
+  const isCefrDemo = examId === "cefr-demo";
+  const isCefrLevelPick = isCefrFull || isCefrDemo;
 
   const start = async () => {
     if (!examId) return;
-    if (isCefrFull && !selectedLevel) {
+    if (isCefrLevelPick && !selectedLevel) {
       setError("Darajani tanlang");
       return;
     }
     setError("");
     setLoading(true);
     try {
-      if (isCefrFull) {
+      if (isCefrDemo) {
+        const res = await api<{ attemptId: string }>("/exams/cefr/demo", {
+          method: "POST",
+          body: { level: selectedLevel },
+        });
+        navigate(`/exam/${res.attemptId}`, { replace: true });
+      } else if (isCefrFull) {
         const res = await api<{ attemptId: string }>("/exams/cefr/start", {
           method: "POST",
           body: { level: selectedLevel },
@@ -43,14 +51,16 @@ export function ExamStart() {
     }
   };
 
-  if (isCefrFull) {
+  if (isCefrLevelPick) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>CEFR to‘liq imtihon</CardTitle>
+            <CardTitle>{isCefrDemo ? "Bepul demo imtihon" : "CEFR to‘liq imtihon"}</CardTitle>
             <CardDescription>
-              Darajani tanlang. Imtihon 5 bo‘limdan iborat: Listening, Reading, Language Use, Writing, Speaking.
+              {isCefrDemo
+                ? "Darajani tanlang. Demo 5 bo‘limning qisqartirilgan variantidan iborat: har bo‘limdan bir nechta savol, 1 ta yozma va 1 ta og‘zaki topshiriq — to‘liq AI baholash bilan. Umrida bir marta bepul."
+                : "Darajani tanlang. Imtihon 5 bo‘limdan iborat: Listening, Reading, Language Use, Writing, Speaking."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -72,10 +82,12 @@ export function ExamStart() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button onClick={start} disabled={loading || !selectedLevel} className="w-full">
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Generatsiya qilinmoqda…</> : "Imtihonni boshlash"}
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Generatsiya qilinmoqda…</> : (isCefrDemo ? "Demoni boshlash" : "Imtihonni boshlash")}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Listening, Reading, Language Use – savollar omboridan; Writing va Speaking – AI orqali. Tez boshlanadi.
+              {isCefrDemo
+                ? "Bu bepul demo — umrida bir marta. To‘liq imtihon uchun Pro rejaga o‘ting yoki mock imtihon sotib oling."
+                : "Listening, Reading, Language Use – savollar omboridan; Writing va Speaking – AI orqali. Tez boshlanadi."}
             </p>
           </CardContent>
         </Card>

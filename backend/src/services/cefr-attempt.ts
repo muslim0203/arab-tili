@@ -15,7 +15,16 @@ export type CefrLevelType = CefrLevel;
  * - Writing: AI task(lar), jami maxScore = 30
  * - Speaking: AI task(lar), jami maxScore = 30
  */
-export async function createCefrAttempt(userId: string, level: CefrLevel) {
+/** Demo imtihonda har bo'limdan olinadigan savol soni (to'liq imtihonda 15). */
+const DEMO_PER_SECTION = 3;
+
+export async function createCefrAttempt(
+  userId: string,
+  level: CefrLevel,
+  opts?: { demo?: boolean }
+) {
+  const demo = opts?.demo ?? false;
+
   const attempt = await prisma.userExamAttempt.create({
     data: {
       userId,
@@ -25,7 +34,10 @@ export async function createCefrAttempt(userId: string, level: CefrLevel) {
     },
   });
 
-  const bank = await selectQuestionsForAttempt(level);
+  const bank = await selectQuestionsForAttempt(
+    level,
+    demo ? { perSection: DEMO_PER_SECTION } : undefined
+  );
   let order = 0;
 
   const createFromBank = async (
@@ -64,7 +76,8 @@ export async function createCefrAttempt(userId: string, level: CefrLevel) {
   let writingTasks: WritingTask[] = [];
   let speakingTasks: SpeakingTask[] = [];
   try {
-    const writingCount = level === "A1" || level === "A2" ? 1 : 2;
+    // Demo'da har doim 1 ta writing task (arzon va tez).
+    const writingCount = demo ? 1 : (level === "A1" || level === "A2" ? 1 : 2);
     const writingMaxPerTask = Math.round(MAX_SCORE_PER_SKILL / writingCount); // 30/1=30 yoki 30/2=15
     const writingRes = await generateWritingTasks(level, writingCount);
     writingTasks = writingRes.tasks;
@@ -88,11 +101,11 @@ export async function createCefrAttempt(userId: string, level: CefrLevel) {
       });
     }
 
-    // Speaking – jami max 30 ball
+    // Speaking – jami max 30 ball. Demo'da faqat 1 ta savol qoldiramiz.
     const speakingRes = await generateSpeakingTasks(level);
-    speakingTasks = speakingRes.tasks;
+    speakingTasks = demo ? speakingRes.tasks.slice(0, 1) : speakingRes.tasks;
     const speakingMaxPerTask = Math.round(MAX_SCORE_PER_SKILL / Math.max(1, speakingTasks.length));
-    for (const t of speakingRes.tasks) {
+    for (const t of speakingTasks) {
       order++;
       await prisma.attemptQuestion.create({
         data: {

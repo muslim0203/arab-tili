@@ -39,6 +39,7 @@ const AtTaanalExam = lazy(() => import("@/pages/AtTaanalExam").then((m) => ({ de
 const AttemptHistory = lazy(() => import("@/pages/AttemptHistory").then((m) => ({ default: m.AttemptHistory })));
 const AttemptResults = lazy(() => import("@/pages/AttemptResults").then((m) => ({ default: m.AttemptResults })));
 const ExamPage = lazy(() => import("@/pages/ExamPage").then((m) => ({ default: m.ExamPage })));
+const ExamStart = lazy(() => import("@/pages/ExamStart").then((m) => ({ default: m.ExamStart })));
 
 function PageFallback() {
   return (
@@ -68,6 +69,7 @@ export default function App() {
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/attempts/history" element={<ProtectedRoute><AttemptHistory /></ProtectedRoute>} />
             <Route path="/attempts/:attemptId/results" element={<ProtectedRoute><AttemptResults /></ProtectedRoute>} />
+            <Route path="/exam/start/:examId" element={<ProtectedRoute><ExamStart /></ProtectedRoute>} />
             <Route path="/exam/:attemptId" element={<ProtectedRoute><ExamPage /></ProtectedRoute>} />
             {/* Tizim haqida, Foydalanuvchilarga, Tashkilotlarga, Yordam (dropdown: Bog'lanish, Qo'llanmalar, Video) */}
             <Route path="/tizim-haqida" element={<TizimHaqida />} />

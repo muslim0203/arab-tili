@@ -42,6 +42,7 @@ export function useAccessControl() {
         // Access checks
         canAccessFullSarf: status?.access.fullSarf ?? false,
         canStartMock: status?.access.mockExam ?? false,
+        canStartDemoMock: status?.access.demoMock ?? false,
         canUseWritingAI: status?.access.writingAI ?? false,
         canUseSpeakingAI: status?.access.speakingAI ?? false,
         canUseAITutor: status?.access.aiTutor ?? false,

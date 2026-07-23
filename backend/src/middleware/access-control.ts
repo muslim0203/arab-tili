@@ -9,6 +9,7 @@ import { Response, NextFunction } from "express";
 import { type AuthRequest } from "./auth.js";
 import {
     canStartMock,
+    canStartDemoMock,
     canUseWritingAI,
     canUseSpeakingAI,
     canAccessFullSarf,
@@ -30,6 +31,28 @@ export async function requireMockAccess(req: AuthRequest, res: Response, next: N
             message: result.reason,
             planType: result.planType,
             upgradeRequired: true,
+        });
+        return;
+    }
+
+    next();
+}
+
+/**
+ * Middleware: Require free DEMO mock access (FREE users, once in a lifetime)
+ */
+export async function requireDemoMockAccess(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    if (!req.userId) {
+        res.status(401).json({ message: "Avtorizatsiya kerak." });
+        return;
+    }
+
+    const result = await canStartDemoMock(req.userId);
+    if (!result.allowed) {
+        res.status(403).json({
+            message: result.reason,
+            planType: result.planType,
+            upgradeRequired: result.planType === "free",
         });
         return;
     }

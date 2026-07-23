@@ -42,6 +42,7 @@ export type AccessStatus = {
     access: {
         fullSarf: boolean;
         mockExam: boolean;
+        demoMock: boolean;
         writingAI: boolean;
         speakingAI: boolean;
         aiTutor: boolean;
