@@ -44,10 +44,13 @@ export function PassageRunner({
             return a;
         }
         return passage.questions.map((q) => {
-            const indices = [0, 1, 2, 3];
+            // Variantlar sonini qat'iy 4 deb emas, haqiqiy uzunlik bo'yicha aralashtiramiz
+            const validOptions = q.options.filter((o) => o != null && o !== "");
+            const indices = validOptions.map((_, i) => i);
             const shuffledIndices = shuffle(indices);
-            const shuffledOptions = shuffledIndices.map((i) => q.options[i]) as [string, string, string, string];
-            const newCorrectIndex = shuffledOptions.indexOf(q.options[q.correctIndex]) as 0 | 1 | 2 | 3;
+            const shuffledOptions = shuffledIndices.map((i) => validOptions[i]);
+            const correctOption = q.options[q.correctIndex];
+            const newCorrectIndex = shuffledOptions.indexOf(correctOption);
             return { ...q, options: shuffledOptions, correctIndex: newCorrectIndex };
         });
     }, [passage.questions]);
@@ -365,6 +368,7 @@ export function PassageRunner({
                                     <button
                                         key={idx}
                                         onClick={() => setSelectedOption(idx)}
+                                        aria-pressed={isSelected}
                                         className={`
                                             w-full text-right p-4 rounded-xl border-2 transition-all duration-200
                                             flex items-center gap-4 group

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -241,6 +241,12 @@ function AttemptCard({ item, index }: { item: AttemptItem; index: number }) {
         <div
           className="flex items-center gap-4 p-4 cursor-pointer"
           onClick={() => isCompleted && setExpanded(!expanded)}
+          onKeyDown={(e) => {
+            if (isCompleted && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault();
+              setExpanded((v) => !v);
+            }
+          }}
           role={isCompleted ? "button" : undefined}
           tabIndex={isCompleted ? 0 : undefined}
         >
@@ -436,7 +442,7 @@ function SummaryStats({ items }: { items: AttemptItem[] }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {[
-        { label: "Jami imtihonlar", value: totalExams.toString(), icon: ClipboardList, color: "text-primary" },
+        { label: "Yuklangan imtihonlar", value: totalExams.toString(), icon: ClipboardList, color: "text-primary" },
         { label: "O'rtacha ball", value: `${avgScore.toFixed(0)}%`, icon: Target, color: getScoreColor(avgScore) },
         { label: "Eng yuqori ball", value: `${bestScore.toFixed(0)}%`, icon: TrendingUp, color: "text-emerald-500" },
         { label: "Hozirgi CEFR", value: lastCefr ?? "—", icon: Award, color: "text-amber-500" },
@@ -459,19 +465,30 @@ function SummaryStats({ items }: { items: AttemptItem[] }) {
 
 /* ====== Main Component ====== */
 export function AttemptHistory() {
-  const [cursor, setCursor] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["attempts", "history", cursor],
-    queryFn: () =>
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["attempts", "history"],
+    queryFn: ({ pageParam }) =>
       api<AttemptsResponse>(
-        cursor ? `/attempts?limit=20&cursor=${encodeURIComponent(cursor)}` : "/attempts?limit=20"
+        pageParam ? `/attempts?limit=20&cursor=${encodeURIComponent(pageParam)}` : "/attempts?limit=20"
       ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   });
 
-  const items = data?.items ?? [];
-  const nextCursor = data?.nextCursor ?? null;
+  // Barcha yuklangan sahifalarni birlashtiramiz — eski qatorlar yo'qolmaydi.
+  const items = useMemo(
+    () => data?.pages.flatMap((p) => p.items) ?? [],
+    [data]
+  );
 
   const filteredItems = useMemo(() => {
     if (filter === "all") return items;
@@ -569,16 +586,19 @@ export function AttemptHistory() {
               </div>
             )}
 
-            {nextCursor && (
+            {hasNextPage && (
               <div className="flex justify-center pt-4">
                 <Button
                   variant="outline"
-                  onClick={() => setCursor(nextCursor)}
-                  disabled={isLoading}
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
                   className="min-h-11 rounded-xl"
                 >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                  {isFetchingNextPage ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Yuklanmoqda…
+                    </span>
                   ) : (
                     "Yana yuklash"
                   )}

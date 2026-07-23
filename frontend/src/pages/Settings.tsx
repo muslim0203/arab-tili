@@ -160,36 +160,41 @@ export function Settings() {
                         ) : (
                             <form onSubmit={profileForm.handleSubmit((d) => profileMut.mutate(d))} className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Email</label>
-                                    <Input value={profile?.email ?? ""} disabled className="bg-muted/50" />
+                                    <label htmlFor="settings-email" className="text-sm font-medium">Email</label>
+                                    <Input id="settings-email" value={profile?.email ?? ""} disabled className="bg-muted/50" />
                                     <p className="text-xs text-muted-foreground">Email o'zgartirib bo'lmaydi</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">To'liq ism</label>
-                                    <Input {...profileForm.register("fullName")} />
+                                    <label htmlFor="settings-fullname" className="text-sm font-medium">To'liq ism</label>
+                                    <Input id="settings-fullname" {...profileForm.register("fullName")} />
                                     {profileForm.formState.errors.fullName && (
                                         <p className="text-sm text-destructive">{profileForm.formState.errors.fullName.message}</p>
                                     )}
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Interfeys tili</label>
-                                    <div className="flex gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-muted-foreground">Interfeys tili</span>
+                                        <span className="text-xs font-medium text-muted-foreground bg-muted rounded-full px-2 py-0.5">Tez orada</span>
+                                    </div>
+                                    <div className="flex gap-2 opacity-60">
                                         {LANG_OPTIONS.map((lang) => (
                                             <button
                                                 key={lang.value}
                                                 type="button"
-                                                onClick={() => profileForm.setValue("languagePreference", lang.value as "uz" | "ru" | "ar")}
+                                                disabled
+                                                aria-disabled="true"
                                                 className={cn(
-                                                    "flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-all",
-                                                    profileForm.watch("languagePreference") === lang.value
+                                                    "flex-1 px-3 py-2 rounded-lg border text-sm font-medium cursor-not-allowed",
+                                                    lang.value === "uz"
                                                         ? "border-primary bg-primary/10 text-primary"
-                                                        : "border-border hover:border-primary/50"
+                                                        : "border-border text-muted-foreground"
                                                 )}
                                             >
                                                 {lang.label}
                                             </button>
                                         ))}
                                     </div>
+                                    <p className="text-xs text-muted-foreground">Interfeys tili hozircha faqat o'zbekcha. Boshqa tillar tez orada qo'shiladi.</p>
                                 </div>
 
                                 {/* Account info */}
@@ -238,22 +243,22 @@ export function Settings() {
                             className="space-y-4"
                         >
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Joriy parol</label>
-                                <Input type="password" {...passwordForm.register("currentPassword")} autoComplete="current-password" />
+                                <label htmlFor="settings-current-password" className="text-sm font-medium">Joriy parol</label>
+                                <Input id="settings-current-password" type="password" {...passwordForm.register("currentPassword")} autoComplete="current-password" />
                                 {passwordForm.formState.errors.currentPassword && (
                                     <p className="text-sm text-destructive">{passwordForm.formState.errors.currentPassword.message}</p>
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Yangi parol</label>
-                                <Input type="password" {...passwordForm.register("newPassword")} autoComplete="new-password" />
+                                <label htmlFor="settings-new-password" className="text-sm font-medium">Yangi parol</label>
+                                <Input id="settings-new-password" type="password" {...passwordForm.register("newPassword")} autoComplete="new-password" />
                                 {passwordForm.formState.errors.newPassword && (
                                     <p className="text-sm text-destructive">{passwordForm.formState.errors.newPassword.message}</p>
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Yangi parolni tasdiqlash</label>
-                                <Input type="password" {...passwordForm.register("confirmPassword")} autoComplete="new-password" />
+                                <label htmlFor="settings-confirm-password" className="text-sm font-medium">Yangi parolni tasdiqlash</label>
+                                <Input id="settings-confirm-password" type="password" {...passwordForm.register("confirmPassword")} autoComplete="new-password" />
                                 {passwordForm.formState.errors.confirmPassword && (
                                     <p className="text-sm text-destructive">{passwordForm.formState.errors.confirmPassword.message}</p>
                                 )}

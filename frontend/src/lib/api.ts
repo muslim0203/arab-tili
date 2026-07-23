@@ -95,7 +95,12 @@ export async function api<T = unknown>(path: string, config: RequestConfig = {})
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || "Request failed");
+    const message = err?.message || "Request failed";
+    // Backend'dan kelgan qo'shimcha maydonlarni (upgradeRequired, code, ...) saqlab qolamiz.
+    throw Object.assign(new Error(message), {
+      ...(err && typeof err === "object" ? err : {}),
+      status: res.status,
+    });
   }
 
   const contentType = res.headers.get("content-type");

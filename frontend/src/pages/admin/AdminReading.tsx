@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,11 +105,11 @@ export function AdminReading() {
     };
 
     const save = async () => {
-        if (!form.text.trim()) { alert("Matn kiritilishi shart"); return; }
+        if (!form.text.trim()) { toast.error("Matn kiritilishi shart"); return; }
         const expectedCount = DEFAULTS[form.passageType]?.questionCount || 6;
         const validQs = form.questions.filter((q) => q.prompt.trim() && q.options.every((o) => o.trim()));
         if (validQs.length < expectedCount) {
-            alert(`Bu passage turi uchun kamida ${expectedCount} ta savol to'ldirilishi kerak. Hozir ${validQs.length} ta to'ldirilgan.`);
+            toast.error(`Bu passage turi uchun kamida ${expectedCount} ta savol to'ldirilishi kerak. Hozir ${validQs.length} ta to'ldirilgan.`);
             return;
         }
 
@@ -130,7 +131,7 @@ export function AdminReading() {
             setEditing(null);
             await load();
         } catch (e: unknown) {
-            alert(e instanceof Error ? e.message : "Xatolik");
+            toast.error(e instanceof Error ? e.message : "Xatolik");
         } finally {
             setSaving(false);
         }
@@ -139,6 +140,7 @@ export function AdminReading() {
     const remove = async (id: string) => {
         if (!confirm("Passage va barcha savollarini o'chirmoqchimisiz?")) return;
         await api(`/admin/reading/${id}`, { method: "DELETE" });
+        toast.success("Passage o'chirildi");
         await load();
     };
 

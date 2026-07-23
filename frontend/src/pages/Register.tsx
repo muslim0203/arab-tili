@@ -28,7 +28,11 @@ const schema = z.object({
   fullName: z.string().min(1, "Ism kiritilishi shart"),
   email: z.string().email("To'g'ri email kiriting"),
   password: z.string().min(8, "Parol kamida 8 belgi"),
+  confirmPassword: z.string().min(1, "Parolni tasdiqlang"),
   languagePreference: z.enum(["uz", "ru", "ar"]).optional().default("uz"),
+}).refine((d) => d.password === d.confirmPassword, {
+  message: "Parollar mos kelmaydi",
+  path: ["confirmPassword"],
 });
 
 type FormData = z.infer<typeof schema>;
@@ -39,7 +43,7 @@ export function Register() {
   const [error, setError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { languagePreference: "uz" },
   });
@@ -47,9 +51,11 @@ export function Register() {
   const onSubmit = async (data: FormData) => {
     setError("");
     try {
+      // confirmPassword faqat frontend tekshiruvi uchun — server'ga yubormaymiz.
+      const { confirmPassword: _confirmPassword, ...payload } = data;
       const res = await api<{ user: unknown; accessToken: string; refreshToken: string }>("/auth/register", {
         method: "POST",
-        body: data,
+        body: payload,
         skipAuth: true,
       });
       setAuth(res.user as Parameters<typeof setAuth>[0], res.accessToken, res.refreshToken);
@@ -127,21 +133,33 @@ export function Register() {
           </div>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Ism</label>
-              <Input placeholder="Ismingiz" {...register("fullName")} />
+              <label htmlFor="register-name" className="text-sm font-medium">Ism</label>
+              <Input id="register-name" placeholder="Ismingiz" autoComplete="name" {...register("fullName")} />
               {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input type="email" placeholder="you@example.com" {...register("email")} />
+              <label htmlFor="register-email" className="text-sm font-medium">Email</label>
+              <Input id="register-email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Parol</label>
-              <Input type="password" placeholder="Kamida 6 belgi" {...register("password")} />
+              <label htmlFor="register-password" className="text-sm font-medium">Parol</label>
+              <Input id="register-password" type="password" placeholder="Kamida 8 belgi" autoComplete="new-password" {...register("password")} />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
-            <Button type="submit" className="w-full min-h-11 rounded-xl touch-manipulation">Ro'yxatdan o'tish</Button>
+            <div className="space-y-2">
+              <label htmlFor="register-confirm-password" className="text-sm font-medium">Parolni tasdiqlash</label>
+              <Input id="register-confirm-password" type="password" placeholder="Parolni qayta kiriting" autoComplete="new-password" {...register("confirmPassword")} />
+              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+            </div>
+            <Button
+              type="submit"
+              className="w-full min-h-11 rounded-xl touch-manipulation flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              <span>{isSubmitting ? "Kutilmoqda..." : "Ro'yxatdan o'tish"}</span>
+            </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground">
             Hisobingiz bormi?{" "}

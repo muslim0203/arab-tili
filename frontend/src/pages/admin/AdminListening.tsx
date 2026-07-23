@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,10 +94,10 @@ export function AdminListening() {
     const addQuestion = async () => {
         if (!addingTo) return;
         if (!qForm.prompt.trim() || qForm.options.some((o) => !o.trim())) {
-            alert("Barcha maydonlarni to'ldiring"); return;
+            toast.error("Barcha maydonlarni to'ldiring"); return;
         }
         if (!qForm.audioUrl && !qForm.audioFile) {
-            alert("Audio fayl yuklang"); return;
+            toast.error("Audio fayl yuklang"); return;
         }
 
         setSaving(true);
@@ -121,7 +122,7 @@ export function AdminListening() {
             setQForm(emptyQForm());
             await load();
         } catch (e: unknown) {
-            alert(e instanceof Error ? e.message : "Xatolik");
+            toast.error(e instanceof Error ? e.message : "Xatolik");
         } finally {
             setSaving(false);
         }
@@ -131,6 +132,7 @@ export function AdminListening() {
     const deleteQuestion = async (qId: string) => {
         if (!confirm("Savolni o'chirmoqchimisiz?")) return;
         await api(`/admin/listening/questions/${qId}`, { method: "DELETE" });
+        toast.success("Savol o'chirildi");
         await load();
     };
 
@@ -150,7 +152,7 @@ export function AdminListening() {
             setEditSettings(null);
             await load();
         } catch (e: unknown) {
-            alert(e instanceof Error ? e.message : "Xatolik");
+            toast.error(e instanceof Error ? e.message : "Xatolik");
         } finally {
             setSaving(false);
         }

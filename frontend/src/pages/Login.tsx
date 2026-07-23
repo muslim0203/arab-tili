@@ -38,11 +38,14 @@ export function Login() {
   const [error, setError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/dashboard";
+  // Login'dan keyin qayerga qaytish: state.from ustuvor, aks holda ?next=, aks holda /dashboard.
+  const stateFrom = (location.state as { from?: { pathname: string } })?.from?.pathname;
+  const nextParam = new URLSearchParams(location.search).get("next");
+  const from = stateFrom ?? (nextParam || "/dashboard");
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -149,13 +152,13 @@ export function Login() {
           </div>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} />
+              <label htmlFor="login-email" className="text-sm font-medium">Email</label>
+              <Input id="login-email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Parol</label>
-              <Input type="password" placeholder="••••••••" autoComplete="current-password" {...register("password")} />
+              <label htmlFor="login-password" className="text-sm font-medium">Parol</label>
+              <Input id="login-password" type="password" placeholder="••••••••" autoComplete="current-password" {...register("password")} />
               {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
             <Link
@@ -164,7 +167,14 @@ export function Login() {
             >
               Parolni unutdingizmi?
             </Link>
-            <Button type="submit" className="w-full min-h-11 rounded-xl touch-manipulation">Kirish</Button>
+            <Button
+              type="submit"
+              className="w-full min-h-11 rounded-xl touch-manipulation flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              <span>{isSubmitting ? "Kutilmoqda..." : "Kirish"}</span>
+            </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground pt-2">
             Hisobingiz yo'qmi?{" "}

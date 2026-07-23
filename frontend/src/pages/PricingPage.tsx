@@ -186,9 +186,9 @@ export function PricingPage() {
                                     <ul className="space-y-3 flex-1 mb-6">
                                         {[
                                             { text: "Sarf asoslari (cheklangan)", included: true },
-                                            { text: "1 Mock demo (qisman)", included: true },
-                                            { text: "1 Writing demo (cheklangan AI)", included: true },
-                                            { text: "1 Speaking demo (1 savol)", included: true },
+                                            { text: "Kuniga 2 ta bepul urinish (Yozish + Gapirish)", included: true },
+                                            { text: "Yozish — 1 vazifa, cheklangan AI baho", included: true },
+                                            { text: "Gapirish — 1 savol", included: true },
                                             { text: "To'liq mock imtihon", included: false },
                                             { text: "AI Tutor", included: false },
                                             { text: "Progress tracking", included: false },

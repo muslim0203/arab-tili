@@ -176,12 +176,18 @@ export function GrammarRunner({
                     />
                 </div>
 
-                {/* Progress bar */}
-                <div className="w-full h-2 rounded-full bg-muted mb-8 overflow-hidden">
+                {/* Progress bar — javob berilgan (tugallangan) savollar ulushi */}
+                <div
+                    className="w-full h-2 rounded-full bg-muted mb-8 overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={currentIndex}
+                    aria-valuemin={0}
+                    aria-valuemax={questions.length}
+                >
                     <div
                         className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out"
                         style={{
-                            width: `${((currentIndex + 1) / questions.length) * 100}%`,
+                            width: `${(currentIndex / questions.length) * 100}%`,
                         }}
                     />
                 </div>
@@ -202,6 +208,7 @@ export function GrammarRunner({
                                 <button
                                     key={idx}
                                     onClick={() => setSelectedOption(idx)}
+                                    aria-pressed={isSelected}
                                     className={`
                     w-full text-right p-4 rounded-xl border-2 transition-all duration-200
                     flex items-center gap-4 group

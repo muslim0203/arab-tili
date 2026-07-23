@@ -82,13 +82,16 @@ export function SpeakingWritingExamRunner() {
     const [remaining, setRemaining] = useState(getRemainingAttempts());
     const writingResultRef = useRef<WritingSectionResult | null>(null);
 
-    // Check for saved progress
+    // Check for saved progress (yakunlangan natija ham tiklanadi — refresh'da yo'qolmaydi)
     useEffect(() => {
         try {
             const raw = localStorage.getItem(SW_STORAGE_KEY);
             if (raw) {
                 const saved = JSON.parse(raw);
-                if (saved.phase && saved.phase !== "intro") {
+                if (saved.phase === "results" && saved.result) {
+                    setResult(saved.result as SWResult);
+                    setPhase("results");
+                } else if (saved.phase && saved.phase !== "intro") {
                     if (saved.writingResult) writingResultRef.current = saved.writingResult;
                     setPhase(saved.phase);
                 }
@@ -104,10 +107,10 @@ export function SpeakingWritingExamRunner() {
     }, []);
 
     // ═══ Start exam ═══
+    // Diqqat: kunlik urinish BOSHLANGANDA emas, imtihon YAKUNLANGANDA sarflanadi
+    // (tashlab ketilgan urinish bekorga hisoblanmasin — O9).
     const handleStart = useCallback(() => {
         if (remaining <= 0) return;
-        incrementDaily();
-        setRemaining(getRemainingAttempts());
         writingResultRef.current = null;
         setResult(null);
         setPhase("writing");
@@ -132,9 +135,15 @@ export function SpeakingWritingExamRunner() {
             maxScore: (wr?.maxScore ?? 15) + speakingResult.maxScore,
             completedAt: new Date().toISOString(),
         };
+        // Kunlik urinish faqat shu yerda — imtihon to'liq yakunlanганda — sarflanadi
+        incrementDaily();
+        setRemaining(getRemainingAttempts());
         setResult(swResult);
         setPhase("results");
-        localStorage.removeItem(SW_STORAGE_KEY);
+        // Natijani saqlaymiz: sahifa yangilansa natija ekrani tiklanadi (O8)
+        try {
+            localStorage.setItem(SW_STORAGE_KEY, JSON.stringify({ phase: "results", result: swResult }));
+        } catch { /* ignore */ }
     }, []);
 
     // ═══ Restart ═══
@@ -280,10 +289,10 @@ export function SpeakingWritingExamRunner() {
 
         // Performance label
         let perfLabel = "Yaxshi harakat!";
-        let perfColor = "text-amber-400";
-        if (percentage >= 80) { perfLabel = "Ajoyib!"; perfColor = "text-emerald-400"; }
-        else if (percentage >= 60) { perfLabel = "Yaxshi!"; perfColor = "text-blue-400"; }
-        else if (percentage < 40) { perfLabel = "Ko'proq mashq qiling"; perfColor = "text-red-400"; }
+        let perfColor = "text-amber-600 dark:text-amber-400";
+        if (percentage >= 80) { perfLabel = "Ajoyib!"; perfColor = "text-emerald-600 dark:text-emerald-400"; }
+        else if (percentage >= 60) { perfLabel = "Yaxshi!"; perfColor = "text-blue-600 dark:text-blue-400"; }
+        else if (percentage < 40) { perfLabel = "Ko'proq mashq qiling"; perfColor = "text-red-600 dark:text-red-400"; }
 
         return (
             <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5 flex items-center justify-center p-4">

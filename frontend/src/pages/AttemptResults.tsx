@@ -74,13 +74,40 @@ type ResultsData = {
 /* ====== Component ====== */
 export function AttemptResults() {
   const { attemptId } = useParams<{ attemptId: string }>();
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["attempt-results", attemptId],
     queryFn: () => api<ResultsData>(`/attempts/${attemptId}/results`),
     enabled: !!attemptId,
   });
 
-  if (isLoading || !data) {
+  // Muhim: xato tekshiruvi loading'dan OLDIN turishi kerak, aks holda
+  // so'rov xato bo'lganda data undefined bo'lib abadiy spinner ko'rinardi.
+  if (error) {
+    return (
+      <AppLayout maxWidth="max-w-2xl">
+        <div className="space-y-4">
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-destructive">
+            {error instanceof Error ? error.message : "Natija yuklanmadi"}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              size="default"
+              className="rounded-xl"
+            >
+              {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Qayta urinish"}
+            </Button>
+            <Button variant="outline" asChild size="default" className="rounded-xl">
+              <Link to="/attempts/history">Orqaga</Link>
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (isLoading) {
     return (
       <AppLayout maxWidth="max-w-2xl">
         <div className="flex min-h-[300px] items-center justify-center">
@@ -89,11 +116,17 @@ export function AttemptResults() {
       </AppLayout>
     );
   }
-  if (error) {
+
+  if (!data) {
     return (
       <AppLayout maxWidth="max-w-2xl">
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-destructive">
-          {error instanceof Error ? error.message : "Natija yuklanmadi"}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-muted/20 p-6 text-center text-muted-foreground">
+            Natija topilmadi.
+          </div>
+          <Button variant="outline" asChild size="default" className="rounded-xl">
+            <Link to="/attempts/history">Tarixga qaytish</Link>
+          </Button>
         </div>
       </AppLayout>
     );

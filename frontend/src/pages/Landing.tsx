@@ -66,7 +66,7 @@ export function Landing() {
   }, [isRtl, i18n.language]);
 
   return (
-    <div className="min-h-screen bg-white" dir={isRtl ? "rtl" : "ltr"}>
+    <div className="min-h-screen bg-background" dir={isRtl ? "rtl" : "ltr"}>
       <SEO
         isHome
         title="Arab Exam – Arab tili CEFR imtihon platformasi"

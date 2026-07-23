@@ -4,6 +4,9 @@
 // ─────────────────────────────────────────────────
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { ArrowRight, RotateCcw } from "lucide-react";
+import { ConfirmModal } from "./ConfirmModal";
 import { ExamStartCards } from "./ExamStartCards";
 import { GrammarRunner } from "./GrammarRunner";
 import { ReadingRunner } from "./ReadingRunner";
@@ -31,6 +34,10 @@ import type {
 } from "@/types/exam";
 
 const STORAGE_KEY = "at-taanal-attempt";
+const PHASE_KEY = "at-taanal-phase";
+
+// Faqat imtihonning faol (davom etayotgan) bosqichlari
+const ACTIVE_PHASES: ExamPhase[] = ["grammar", "reading", "listening", "writing", "speaking"];
 
 function loadAttempt(): ExamAttempt | null {
     try {
@@ -48,6 +55,15 @@ function saveAttempt(attempt: ExamAttempt) {
 
 function clearAttempt() {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PHASE_KEY);
+}
+
+function savePhase(phase: ExamPhase) {
+    localStorage.setItem(PHASE_KEY, phase);
+}
+
+function loadPhase(): ExamPhase | null {
+    return (localStorage.getItem(PHASE_KEY) as ExamPhase | null) ?? null;
 }
 
 export function AtTaanalExamRunner() {
@@ -58,49 +74,70 @@ export function AtTaanalExamRunner() {
     const [grammarLoading, setGrammarLoading] = useState(false);
     const [dbListeningStages, setDbListeningStages] = useState<ListeningStage[]>([]);
     const [listeningLoading, setListeningLoading] = useState(false);
+    const [isStarting, setIsStarting] = useState(false);
+    const [pendingResume, setPendingResume] = useState<{ attempt: ExamAttempt; phase: ExamPhase } | null>(null);
+    const [resuming, setResuming] = useState(false);
+    const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
     // On mount, check for saved attempt
     useEffect(() => {
         const saved = loadAttempt();
-        if (saved && saved.status === "completed") {
+        if (!saved) return;
+        if (saved.status === "completed") {
             setAttempt(saved);
             setPhase("results");
+            return;
         }
-        // If in_progress, we cannot fully restore mid-question (timers lost).
-        // So we let user restart from cards.
+        // Tugallanmagan imtihon: bo'lim darajasida tiklashni taklif qilamiz (K5).
+        // Tugagan bo'limlar saqlanadi; joriy bo'lim qaytadan boshlanadi.
+        if (saved.status === "in_progress") {
+            const savedPhase = loadPhase();
+            if (savedPhase && ACTIVE_PHASES.includes(savedPhase)) {
+                setPendingResume({ attempt: saved, phase: savedPhase });
+            }
+        }
     }, []);
 
-    // ═══ Start the exam ═══
-    const handleStart = useCallback(async () => {
-        // 1. DB'dan grammar savollarni yuklash
+    // ═══ DB yuklovchi yordamchilar (start va resume uchun umumiy) ═══
+    const fetchGrammar = useCallback(async () => {
         setGrammarLoading(true);
         try {
             const data = await api<{ questions: GrammarQuestion[] }>("/exams/grammar/mixed");
             setDbGrammarQuestions(data.questions);
-        } catch (e) {
-            console.error("Grammar savollar yuklanmadi:", e);
+        } finally {
             setGrammarLoading(false);
-            return;
         }
-        setGrammarLoading(false);
+    }, []);
 
-        // 3. Listening stages ni DB dan yuklash
+    const fetchListening = useCallback(async () => {
         setListeningLoading(true);
         try {
             const lisData = await api<{ stages: ListeningStage[] }>("/exams/listening/stages");
-            if (lisData.stages && lisData.stages.length > 0) {
-                setDbListeningStages(lisData.stages);
-            } else {
-                // DB da stage yo'q — seed ma'lumotlaridan foydalanish
-                setDbListeningStages(seedListeningStages);
-            }
+            setDbListeningStages(lisData.stages && lisData.stages.length > 0 ? lisData.stages : seedListeningStages);
         } catch (e) {
             console.warn("Listening stages DB dan yuklanmadi, seed ishlatiladi:", e);
             setDbListeningStages(seedListeningStages);
+        } finally {
+            setListeningLoading(false);
         }
-        setListeningLoading(false);
+    }, []);
 
-        // 4. Attempt yaratish
+    // ═══ Start the exam ═══
+    const handleStart = useCallback(async () => {
+        setIsStarting(true);
+        // 1. Grammar savollari majburiy — yuklanmasa aniq xato ko'rsatamiz (K4)
+        try {
+            await fetchGrammar();
+        } catch (e) {
+            console.error("Grammar savollar yuklanmadi:", e);
+            toast.error("Savollar yuklanmadi. Internetni tekshirib, qayta urinib ko'ring.");
+            setIsStarting(false);
+            return;
+        }
+        // 2. Listening stages (xato bo'lsa seed'ga tushadi)
+        await fetchListening();
+
+        // 3. Attempt yaratish
         const newAttempt: ExamAttempt = {
             id: generateId(),
             examType: "at-taanal",
@@ -120,7 +157,38 @@ export function AtTaanalExamRunner() {
         setAttempt(newAttempt);
         attemptRef.current = newAttempt;
         saveAttempt(newAttempt);
+        savePhase("grammar");
+        setIsStarting(false);
         setPhase("grammar");
+    }, [fetchGrammar, fetchListening]);
+
+    // ═══ Tugallanmagan imtihonni davom ettirish (K5) ═══
+    const handleResumeConfirm = useCallback(async () => {
+        if (!pendingResume) return;
+        const { attempt: saved, phase: savedPhase } = pendingResume;
+        setResuming(true);
+        try {
+            // Joriy bo'lim uchun kerakli DB ma'lumotini qayta yuklaymiz
+            if (savedPhase === "grammar") await fetchGrammar();
+            if (savedPhase === "listening") await fetchListening();
+        } catch (e) {
+            console.error("Imtihonni tiklab bo'lmadi:", e);
+            toast.error("Imtihonni tiklab bo'lmadi. Internetni tekshirib, qayta urinib ko'ring.");
+            setResuming(false);
+            return;
+        }
+        setAttempt(saved);
+        attemptRef.current = saved;
+        setPendingResume(null);
+        setResuming(false);
+        setPhase(savedPhase);
+    }, [pendingResume, fetchGrammar, fetchListening]);
+
+    const handleResumeDiscard = useCallback(() => {
+        clearAttempt();
+        setPendingResume(null);
+        setAttempt(null);
+        setPhase("cards");
     }, []);
 
     // ═══ Grammar complete ═══
@@ -143,6 +211,7 @@ export function AtTaanalExamRunner() {
             return updated;
         });
 
+        savePhase("reading");
         setPhase("reading");
     }, []);
 
@@ -189,6 +258,7 @@ export function AtTaanalExamRunner() {
             return updated;
         });
 
+        savePhase("listening");
         setPhase("listening");
     }, []);
 
@@ -242,6 +312,7 @@ export function AtTaanalExamRunner() {
                 return updated;
             });
 
+            savePhase("writing");
             setPhase("writing");
         },
         []
@@ -288,6 +359,7 @@ export function AtTaanalExamRunner() {
                 return updated;
             });
 
+            savePhase("speaking");
             setPhase("speaking");
         },
         []
@@ -321,10 +393,15 @@ export function AtTaanalExamRunner() {
         []
     );
 
-    // ═══ Restart ═══
-    const handleRestart = useCallback(() => {
+    // ═══ Restart — tasdiqsiz o'chirmaymiz (O13) ═══
+    const handleRestartRequest = useCallback(() => {
+        setShowRestartConfirm(true);
+    }, []);
+
+    const handleRestartConfirm = useCallback(() => {
         clearAttempt();
         setAttempt(null);
+        setShowRestartConfirm(false);
         setPhase("cards");
     }, []);
 
@@ -333,6 +410,61 @@ export function AtTaanalExamRunner() {
         setPhase("speaking-writing");
     }, []);
 
+    // ═══ Faol imtihon bosqichlarida sahifadan chiqishda ogohlantirish (K5) ═══
+    useEffect(() => {
+        if (!ACTIVE_PHASES.includes(phase)) return;
+        const handler = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            e.returnValue = "";
+        };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, [phase]);
+
+    // ═══ Tugallanmagan imtihonni tiklash taklifi (K5) ═══
+    if (pendingResume) {
+        const phaseNames: Record<string, string> = {
+            grammar: "Grammatika",
+            reading: "O'qish",
+            listening: "Tinglash",
+            writing: "Yozish",
+            speaking: "Gapirish",
+        };
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+                <div className="max-w-md w-full rounded-2xl border border-border bg-card/90 backdrop-blur-sm p-8 shadow-xl text-center">
+                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <RotateCcw className="w-7 h-7 text-primary" />
+                    </div>
+                    <h2 className="text-xl font-bold text-card-foreground mb-2">
+                        Tugallanmagan imtihoningiz bor
+                    </h2>
+                    <p className="text-sm text-muted-foreground mb-6">
+                        Siz <span className="font-semibold text-card-foreground">{phaseNames[pendingResume.phase] ?? pendingResume.phase}</span> bo'limida to'xtagan edingiz.
+                        Tugagan bo'limlar saqlanadi; joriy bo'lim qaytadan boshlanadi.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <button
+                            onClick={handleResumeConfirm}
+                            disabled={resuming}
+                            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {resuming ? "Tiklanmoqda…" : "Davom etish"}
+                            {!resuming && <ArrowRight className="w-4 h-4" />}
+                        </button>
+                        <button
+                            onClick={handleResumeDiscard}
+                            disabled={resuming}
+                            className="flex-1 py-3 px-4 rounded-xl border border-border bg-card text-card-foreground font-semibold text-sm hover:bg-muted/50 transition-all disabled:opacity-70"
+                        >
+                            Boshdan boshlash
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     // ═══ Render phases ═══
     switch (phase) {
         case "cards":
@@ -340,6 +472,7 @@ export function AtTaanalExamRunner() {
                 <ExamStartCards
                     onStartAtTaanal={handleStart}
                     onStartSpeakingWriting={handleStartSpeakingWriting}
+                    isStarting={isStarting}
                 />
             );
 
@@ -411,7 +544,20 @@ export function AtTaanalExamRunner() {
 
         case "results":
             if (!attempt) return null;
-            return <ExamResults attempt={attempt} onRestart={handleRestart} />;
+            return (
+                <>
+                    <ExamResults attempt={attempt} onRestart={handleRestartRequest} />
+                    <ConfirmModal
+                        open={showRestartConfirm}
+                        title="Qayta topshirasizmi?"
+                        description="Joriy natijangiz o'chiriladi va bu amalni bekor qilib bo'lmaydi."
+                        confirmLabel="Ha, qayta topshirish"
+                        cancelLabel="Bekor qilish"
+                        onConfirm={handleRestartConfirm}
+                        onCancel={() => setShowRestartConfirm(false)}
+                    />
+                </>
+            );
 
         default:
             return null;

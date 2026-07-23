@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Mic, Square, Loader2 } from "lucide-react";
+import { Mic, Square, Loader2, AlertTriangle, RotateCcw } from "lucide-react";
 import { getRemainingSeconds } from "@/utils/timer";
 
 interface AudioRecorderProps {
@@ -12,10 +12,12 @@ interface AudioRecorderProps {
     onComplete: (blob: Blob) => void;
 }
 
-type RecordingState = "starting" | "recording" | "stopping" | "done";
+type RecordingState = "starting" | "recording" | "stopping" | "done" | "error";
 
 export function AudioRecorder({ deadline, onComplete }: AudioRecorderProps) {
     const [state, setState] = useState<RecordingState>("starting");
+    const [errorMsg, setErrorMsg] = useState<string>("");
+    const [retryKey, setRetryKey] = useState(0);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const chunksRef = useRef<BlobPart[]>([]);
@@ -82,13 +84,19 @@ export function AudioRecorder({ deadline, onComplete }: AudioRecorderProps) {
 
                 // Start waveform animation
                 drawWaveform(analyser);
-            } catch {
-                // mic error — fallback: send empty blob
-                if (!completeCalledRef.current) {
-                    completeCalledRef.current = true;
-                    setState("done");
-                    onComplete(new Blob([], { type: "audio/webm" }));
+            } catch (err) {
+                if (cancelled) return;
+                // Mikrofon xatosi — bo'sh audio JIMGINA yubormaymiz.
+                // Foydalanuvchiga aniq xato + "Qayta urinish" ko'rsatamiz.
+                const name = err instanceof DOMException ? err.name : "";
+                if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+                    setErrorMsg("Mikrofonga ruxsat berilmadi. Brauzer sozlamalaridan mikrofon ruxsatini bering va qayta urinib ko'ring.");
+                } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+                    setErrorMsg("Mikrofon topilmadi. Qurilmangizga mikrofon ulanganini tekshirib, qayta urinib ko'ring.");
+                } else {
+                    setErrorMsg("Mikrofonni ishga tushirib bo'lmadi. Qayta urinib ko'ring.");
                 }
+                setState("error");
             }
         }
 
@@ -102,7 +110,7 @@ export function AudioRecorder({ deadline, onComplete }: AudioRecorderProps) {
             }
             streamRef.current?.getTracks().forEach((t) => t.stop());
         };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Monitor deadline
     useEffect(() => {
@@ -168,6 +176,34 @@ export function AudioRecorder({ deadline, onComplete }: AudioRecorderProps) {
         draw();
     }, []);
 
+    const handleRetry = useCallback(() => {
+        setErrorMsg("");
+        setState("starting");
+        setRetryKey((k) => k + 1);
+    }, []);
+
+    // ── Xato holati: bo'sh audio yubormaymiz, foydalanuvchi qayta urinadi ──
+    if (state === "error") {
+        return (
+            <div className="rounded-2xl border border-red-500/30 bg-card/80 backdrop-blur-sm p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-6 h-6 text-red-500 shrink-0" />
+                    <div>
+                        <p className="font-semibold text-card-foreground text-sm">Yozib olib bo'lmadi</p>
+                        <p className="text-sm text-muted-foreground mt-1">{errorMsg}</p>
+                    </div>
+                </div>
+                <button
+                    onClick={handleRetry}
+                    className="w-full py-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-rose-500/25 transition-all active:scale-[0.98]"
+                >
+                    <RotateCcw className="w-4 h-4" />
+                    Qayta urinish
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="rounded-2xl border border-rose-500/20 bg-card/80 backdrop-blur-sm p-6 space-y-4">
             {/* Status */}
@@ -182,7 +218,7 @@ export function AudioRecorder({ deadline, onComplete }: AudioRecorderProps) {
                     {state === "recording" && (
                         <>
                             <div className="w-3 h-3 rounded-full bg-rose-500 animate-pulse" />
-                            <span className="text-sm font-semibold text-rose-400">Yozib olinmoqda</span>
+                            <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">Yozib olinmoqda</span>
                         </>
                     )}
                     {(state === "stopping" || state === "done") && (
@@ -195,7 +231,7 @@ export function AudioRecorder({ deadline, onComplete }: AudioRecorderProps) {
                 {state === "recording" && (
                     <button
                         onClick={stopRecording}
-                        className="py-2 px-5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 font-semibold text-sm flex items-center gap-2 hover:bg-rose-500/25 transition-all active:scale-[0.97]"
+                        className="py-2 px-5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold text-sm flex items-center gap-2 hover:bg-rose-500/25 transition-all active:scale-[0.97]"
                     >
                         <Square className="w-4 h-4" />
                         Tugatish

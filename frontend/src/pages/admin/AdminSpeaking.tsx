@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Save, X, Mic } from "lucide-react";
@@ -63,7 +64,7 @@ export function AdminSpeaking() {
 
     const save = async () => {
         if (!form.prompt.trim()) {
-            alert("Mavzu matni kiritilishi shart!");
+            toast.error("Mavzu matni kiritilishi shart!");
             return;
         }
         setSaving(true);
@@ -73,13 +74,14 @@ export function AdminSpeaking() {
             else await api(`/admin/speaking/${editing}`, { method: "PUT", body });
             setEditing(null);
             await load();
-        } catch (e: unknown) { alert(e instanceof Error ? e.message : "Xatolik"); }
+        } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Xatolik"); }
         finally { setSaving(false); }
     };
 
     const remove = async (id: string) => {
         if (!confirm("Bu mavzuni o'chirmoqchimisiz?")) return;
         await api(`/admin/speaking/${id}`, { method: "DELETE" });
+        toast.success("Mavzu o'chirildi");
         await load();
     };
 

@@ -17,8 +17,6 @@ interface SpeakingRunnerProps {
     maxQuestions?: number; // default 6 (2e+2m+2h); 1 = random single question
 }
 
-const STORAGE_KEY = "at-taanal-speaking";
-
 /** Pick N random items from array */
 function pickRandom<T>(arr: T[], n: number): T[] {
     const copy = [...arr];
@@ -51,16 +49,11 @@ function selectQuestions(pool: SpeakingQuestion[], count: number): SpeakingQuest
 
 type RunnerPhase = "intro" | "exam" | "processing" | "done";
 
-interface SavedState {
-    selectedQuestions: SpeakingQuestion[];
-    answers: SpeakingAnswer[];
-    currentIndex: number;
-}
-
 export function SpeakingRunner({ questions: pool, onComplete, onAnswerChange, maxQuestions = 6 }: SpeakingRunnerProps) {
     const [phase, setPhase] = useState<RunnerPhase>("intro");
     const [selectedQuestions, setSelectedQuestions] = useState<SpeakingQuestion[]>([]);
-    const [answers, setAnswers] = useState<SpeakingAnswer[]>([]);
+    // Javoblar answersRef orqali boshqariladi (render answers qiymatiga bog'liq emas)
+    const [, setAnswers] = useState<SpeakingAnswer[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [micError, setMicError] = useState<string | null>(null);
     const answersRef = useRef<SpeakingAnswer[]>([]);
@@ -76,13 +69,10 @@ export function SpeakingRunner({ questions: pool, onComplete, onAnswerChange, ma
         return () => window.removeEventListener("beforeunload", handler);
     }, [phase]);
 
-    // Save to localStorage
-    useEffect(() => {
-        if (phase === "exam" && selectedQuestions.length > 0) {
-            const state: SavedState = { selectedQuestions, answers, currentIndex };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        }
-    }, [answers, currentIndex, selectedQuestions, phase]);
+    // Eslatma: gapirish javoblari audio Blob bo'lgani uchun localStorage'da
+    // ishonchli saqlab bo'lmaydi — shu sababli mahalliy "progress saqlash"
+    // qo'shilmaydi (yolg'on tiklash taassurotini bermaslik uchun). Sahifadan
+    // chiqishda quyidagi beforeunload ogohlantirishi foydalanuvchini himoya qiladi.
 
     // Check mic permission on intro
     const checkMic = useCallback(async () => {
@@ -156,7 +146,6 @@ export function SpeakingRunner({ questions: pool, onComplete, onAnswerChange, ma
                 score: totalScore,
                 maxScore: maxQuestions * 5,
             };
-            localStorage.removeItem(STORAGE_KEY);
             onComplete(result);
         },
         [onComplete]

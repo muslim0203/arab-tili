@@ -214,13 +214,13 @@ export function WritingTaskComponent({
 
                         {/* Word count warning */}
                         {wordStatus === "danger" && wordCount > 0 && (
-                            <div className="flex items-center gap-2 mt-2 text-xs text-red-400">
+                            <div className="flex items-center gap-2 mt-2 text-xs text-red-600 dark:text-red-400">
                                 <AlertTriangle className="w-3.5 h-3.5" />
                                 So'z soni juda kam. Kamida 80 ta so'z yozing.
                             </div>
                         )}
                         {wordStatus === "over" && (
-                            <div className="flex items-center gap-2 mt-2 text-xs text-yellow-400">
+                            <div className="flex items-center gap-2 mt-2 text-xs text-yellow-600 dark:text-yellow-400">
                                 <AlertTriangle className="w-3.5 h-3.5" />
                                 So'z soni tavsiyadan ortiq. 130 dan oshmasligi tavsiya etiladi.
                             </div>
@@ -245,7 +245,7 @@ export function WritingTaskComponent({
                                         <button
                                             key={key}
                                             onClick={() => handleKeyPress(key)}
-                                            className="w-9 h-9 rounded-lg bg-muted/80 border border-border text-card-foreground font-semibold text-sm hover:bg-amber-500/15 hover:border-amber-500/30 hover:text-amber-400 active:scale-90 transition-all"
+                                            className="w-11 h-11 rounded-lg bg-muted/80 border border-border text-card-foreground font-semibold text-sm hover:bg-amber-500/15 hover:border-amber-500/30 hover:text-amber-400 active:scale-90 transition-all"
                                             style={{ fontFamily: "'Amiri', 'Noto Naskh Arabic', serif" }}
                                         >
                                             {key}
@@ -257,31 +257,31 @@ export function WritingTaskComponent({
                             <div className="flex gap-1 justify-center mt-1">
                                 <button
                                     onClick={() => handleKeyPress(" ")}
-                                    className="px-12 h-9 rounded-lg bg-muted/80 border border-border text-muted-foreground text-xs hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
+                                    className="px-12 h-11 rounded-lg bg-muted/80 border border-border text-muted-foreground text-xs hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
                                 >
                                     مسافة
                                 </button>
                                 <button
                                     onClick={() => handleKeyPress("\n")}
-                                    className="px-6 h-9 rounded-lg bg-muted/80 border border-border text-muted-foreground text-xs hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
+                                    className="px-6 h-11 rounded-lg bg-muted/80 border border-border text-muted-foreground text-xs hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
                                 >
                                     ↵ سطر
                                 </button>
                                 <button
                                     onClick={() => handleKeyPress(".")}
-                                    className="w-9 h-9 rounded-lg bg-muted/80 border border-border text-card-foreground text-sm hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
+                                    className="w-11 h-11 rounded-lg bg-muted/80 border border-border text-card-foreground text-sm hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
                                 >
                                     .
                                 </button>
                                 <button
                                     onClick={() => handleKeyPress("،")}
-                                    className="w-9 h-9 rounded-lg bg-muted/80 border border-border text-card-foreground text-sm hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
+                                    className="w-11 h-11 rounded-lg bg-muted/80 border border-border text-card-foreground text-sm hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
                                 >
                                     ،
                                 </button>
                                 <button
                                     onClick={() => handleKeyPress("؟")}
-                                    className="w-9 h-9 rounded-lg bg-muted/80 border border-border text-card-foreground text-sm hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
+                                    className="w-11 h-11 rounded-lg bg-muted/80 border border-border text-card-foreground text-sm hover:bg-amber-500/15 hover:border-amber-500/30 transition-all"
                                 >
                                     ؟
                                 </button>

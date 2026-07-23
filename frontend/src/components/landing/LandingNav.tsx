@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback } from "react";
-import { ChevronDown, LayoutDashboard, Settings, LogOut } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Settings, LogOut, Menu, X } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 
 const LANGUAGES = [
@@ -91,7 +91,7 @@ function NavDropdown({ item }: { item: NavItem }) {
           <ChevronDown className="h-3.5 w-3.5 mt-0.5" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56 shadow-lg rounded-xl border border-border/60 bg-white/95 backdrop-blur">
+      <DropdownMenuContent align="start" className="w-56 shadow-lg rounded-xl border border-border/60 bg-popover/95 backdrop-blur">
         {item.children.map((child) => {
           if ("children" in child && child.children) {
             return (
@@ -99,7 +99,7 @@ function NavDropdown({ item }: { item: NavItem }) {
                 <DropdownMenuSubTrigger className="cursor-pointer">
                   {child.label}
                 </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="rounded-xl shadow-lg border border-border/60 bg-white/95">
+                <DropdownMenuSubContent className="rounded-xl shadow-lg border border-border/60 bg-popover/95">
                   {child.children.map((sub) => (
                     <DropdownMenuItem key={sub.label} asChild>
                       <Link to={sub.href} className="cursor-pointer">
@@ -124,9 +124,93 @@ function NavDropdown({ item }: { item: NavItem }) {
   );
 }
 
+function MobileNavChild({ child }: { child: NavChild }) {
+  const [open, setOpen] = useState(false);
+
+  if (child.children) {
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full min-h-[44px] items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium text-foreground hover:bg-accent"
+          aria-expanded={open}
+        >
+          {child.label}
+          <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+        </button>
+        {open && (
+          <ul className="ml-3 border-l border-border pl-3">
+            {child.children.map((sub) => (
+              <li key={sub.label}>
+                <Link
+                  to={sub.href}
+                  className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  {sub.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <Link
+        to={child.href ?? "#"}
+        className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+      >
+        {child.label}
+      </Link>
+    </li>
+  );
+}
+
+function MobileNavItem({ item }: { item: NavItem }) {
+  const [open, setOpen] = useState(false);
+
+  if (!item.children) {
+    return (
+      <li>
+        <Link
+          to={item.href ?? "#"}
+          className="flex min-h-[44px] items-center rounded-lg px-3 py-2.5 text-sm font-semibold uppercase tracking-wide text-foreground/80 hover:bg-accent"
+        >
+          {item.label}
+        </Link>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full min-h-[44px] items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold uppercase tracking-wide text-primary hover:bg-accent"
+        aria-expanded={open}
+      >
+        {item.label}
+        <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <ul className="ml-3 border-l border-border pl-3">
+          {item.children.map((child) => (
+            <MobileNavChild key={child.label} child={child} />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
 export function LandingNav() {
   const { t, i18n } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const isLoggedIn = useAuthStore((s) => s.isAuthenticated());
   const logout = useAuthStore((s) => s.logout);
@@ -138,9 +222,27 @@ export function LandingNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Sahifa o'zgarganda yoki katta ekranga o'tganda mobil menyuni yop
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onResize = () => {
+      if (window.innerWidth >= 768) setMobileOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
   const handleLogout = useCallback(() => {
     logout();
     navigate("/", { replace: true });
+    setMobileOpen(false);
   }, [logout, navigate]);
 
   const currentLang =
@@ -151,8 +253,8 @@ export function LandingNav() {
       className={cn(
         "sticky top-0 z-50 w-full transition-all duration-300",
         scrolled
-          ? "bg-white/95 shadow-sm backdrop-blur"
-          : "bg-white/80 backdrop-blur"
+          ? "bg-background/95 shadow-sm backdrop-blur"
+          : "bg-background/80 backdrop-blur"
       )}
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-4">
@@ -172,7 +274,7 @@ export function LandingNav() {
           ))}
         </nav>
 
-        {/* O'ng tomon: til + auth */}
+        {/* O'ng tomon: til + auth (desktop) + mobil burger */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Til tanlash */}
           <DropdownMenu>
@@ -258,8 +360,67 @@ export function LandingNav() {
               </Button>
             </>
           )}
+
+          {/* Mobil burger tugma */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden min-h-[44px] min-w-[44px]"
+            aria-label={mobileOpen ? "Menyuni yopish" : "Menyuni ochish"}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav-panel"
+            onClick={() => setMobileOpen((v) => !v)}
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
       </div>
+
+      {/* Mobil navigatsiya paneli */}
+      {mobileOpen && (
+        <div
+          id="mobile-nav-panel"
+          className="md:hidden border-t border-border bg-background max-h-[calc(100vh-4rem)] overflow-y-auto"
+        >
+          <ul className="container mx-auto flex flex-col gap-1 px-4 py-3">
+            {(NAV_ITEMS as readonly NavItem[]).map((item) => (
+              <MobileNavItem key={item.label} item={item} />
+            ))}
+          </ul>
+          <div className="container mx-auto flex flex-col gap-2 border-t border-border px-4 py-4">
+            {!isLoggedIn && (
+              <Link
+                to="/login"
+                onClick={() => setMobileOpen(false)}
+                className="flex min-h-[44px] items-center justify-center rounded-lg border border-border px-4 text-sm font-medium text-foreground hover:bg-accent"
+              >
+                {t("nav.login")}
+              </Link>
+            )}
+            <Button
+              asChild
+              size="default"
+              className="min-h-[44px] w-full rounded-lg shadow-sm"
+              onClick={() => setMobileOpen(false)}
+            >
+              <Link to={isLoggedIn ? "/dashboard" : "/register"}>
+                {isLoggedIn ? "Dashboard" : t("nav.startDemo")}
+              </Link>
+            </Button>
+            {isLoggedIn && (
+              <Button
+                variant="outline"
+                size="default"
+                className="min-h-[44px] w-full rounded-lg gap-2"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                Chiqish
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

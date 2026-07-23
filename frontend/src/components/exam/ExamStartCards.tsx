@@ -2,15 +2,17 @@
 // Exam Start Cards (3 cards) – O'zbek tilida
 // ─────────────────────────────────────────────────
 
-import { BookOpen, Award, GraduationCap, Lock, ArrowRight, ArrowLeft } from "lucide-react";
+import { BookOpen, Award, GraduationCap, Lock, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ExamStartCardsProps {
     onStartAtTaanal: () => void;
     onStartSpeakingWriting: () => void;
+    /** At-Ta'anul imtihoni savollari yuklanayotganda true */
+    isStarting?: boolean;
 }
 
-export function ExamStartCards({ onStartAtTaanal, onStartSpeakingWriting }: ExamStartCardsProps) {
+export function ExamStartCards({ onStartAtTaanal, onStartSpeakingWriting, isStarting = false }: ExamStartCardsProps) {
     const navigate = useNavigate();
 
     return (
@@ -82,7 +84,7 @@ export function ExamStartCards({ onStartAtTaanal, onStartSpeakingWriting }: Exam
                     <div className="group relative overflow-hidden rounded-2xl border-2 border-primary/50 bg-card/90 backdrop-blur-sm p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:border-primary scale-[1.02] md:scale-105">
                         {/* Popular badge */}
                         <div className="absolute top-0 right-0 bg-gradient-to-l from-primary to-primary/80 text-primary-foreground text-xs font-bold px-4 py-1 rounded-bl-xl">
-                            ⭐ Eng ko'p tanlanган
+                            ⭐ Eng ko'p tanlangan
                         </div>
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="relative z-10">
@@ -123,10 +125,20 @@ export function ExamStartCards({ onStartAtTaanal, onStartSpeakingWriting }: Exam
                             </ul>
                             <button
                                 onClick={onStartAtTaanal}
-                                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98]"
+                                disabled={isStarting}
+                                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
                             >
-                                Imtihonni boshlash
-                                <ArrowRight className="w-4 h-4" />
+                                {isStarting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Tayyorlanmoqda…
+                                    </>
+                                ) : (
+                                    <>
+                                        Imtihonni boshlash
+                                        <ArrowRight className="w-4 h-4" />
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

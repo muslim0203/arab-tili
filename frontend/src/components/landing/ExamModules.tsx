@@ -28,7 +28,7 @@ export function ExamModules() {
   const { t } = useTranslation();
 
   return (
-    <section className="bg-white py-20 sm:py-28" aria-labelledby="exam-modules-heading">
+    <section className="bg-background py-20 sm:py-28" aria-labelledby="exam-modules-heading">
       <div className="container mx-auto px-4">
         <motion.div
           className="mx-auto max-w-2xl text-center"

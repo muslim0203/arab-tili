@@ -11,7 +11,7 @@ export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="bg-white py-20 sm:py-28" aria-labelledby="faq-heading">
+    <section className="bg-background py-20 sm:py-28" aria-labelledby="faq-heading">
       <div className="container mx-auto px-4">
         <motion.div
           className="mx-auto max-w-2xl text-center"

@@ -7,7 +7,7 @@ export function Hero() {
   const { t } = useTranslation();
 
   return (
-    <section className="relative overflow-hidden bg-white pt-12 pb-20 sm:pt-20 sm:pb-28 lg:pt-28 lg:pb-36">
+    <section className="relative overflow-hidden bg-background pt-12 pb-20 sm:pt-20 sm:pb-28 lg:pt-28 lg:pb-36">
       <div className="container mx-auto grid gap-12 px-4 lg:grid-cols-2 lg:gap-16 lg:items-center">
         <div className="max-w-xl">
           <motion.h1
@@ -56,7 +56,7 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-border bg-white shadow-2xl shadow-primary/10 overflow-hidden"
+            className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl shadow-primary/10 overflow-hidden"
             aria-hidden
           >
             {/* Window header */}

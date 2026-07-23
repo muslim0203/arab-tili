@@ -29,7 +29,7 @@ export function TrustedBy() {
           {LOGOS.map((logo, i) => (
             <motion.div
               key={logo.name}
-              className="flex h-10 items-center justify-center rounded-lg bg-white px-6 py-2 shadow-sm border border-border"
+              className="flex h-10 items-center justify-center rounded-lg bg-card px-6 py-2 shadow-sm border border-border"
               style={{ minWidth: logo.width }}
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}

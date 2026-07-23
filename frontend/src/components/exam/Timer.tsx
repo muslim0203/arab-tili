@@ -70,17 +70,17 @@ export function Timer({
         };
     }, [deadline, handleExpire]);
 
-    // Determine color
-    let colorClass = "text-emerald-400";
+    // Determine color (light modeda ham yetarli kontrast uchun quyuqroq variant)
+    let colorClass = "text-emerald-600 dark:text-emerald-400";
     let bgClass = "bg-emerald-500/10 border-emerald-500/30";
     let ringClass = "";
 
     if (remaining <= dangerAt) {
-        colorClass = "text-red-400";
+        colorClass = "text-red-600 dark:text-red-400";
         bgClass = "bg-red-500/15 border-red-500/40";
         ringClass = "animate-pulse";
     } else if (remaining <= warnAt) {
-        colorClass = "text-amber-400";
+        colorClass = "text-amber-600 dark:text-amber-400";
         bgClass = "bg-amber-500/10 border-amber-500/30";
     }
 

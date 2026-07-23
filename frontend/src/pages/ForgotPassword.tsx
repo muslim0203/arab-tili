@@ -15,7 +15,7 @@ export function ForgotPassword() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
 
-  const { register, handleSubmit } = useForm<FormData>({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
     setError("");
@@ -48,10 +48,13 @@ export function ForgotPassword() {
               {error && <p className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">{error}</p>}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Email</label>
-                  <Input type="email" placeholder="you@example.com" {...register("email")} />
+                  <label htmlFor="forgot-email" className="text-sm font-medium">Email</label>
+                  <Input id="forgot-email" type="email" placeholder="you@example.com" autoComplete="email" {...register("email")} />
+                  {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                 </div>
-                <Button type="submit" className="w-full">Yuborish</Button>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Yuborilmoqda..." : "Yuborish"}
+                </Button>
               </form>
             </>
           )}

@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
-import { Loader2, Clock, Mic, Square, Upload } from "lucide-react";
+import { Loader2, Clock, Mic, Square, Upload, AlertTriangle, RotateCcw, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type Question = {
   id: string;
@@ -42,12 +43,14 @@ const formatTime = (seconds: number) => {
 };
 
 const SECTION_LABELS: Record<string, string> = {
-  listening: "Listening",
-  reading: "Reading",
-  language_use: "Language Use",
-  writing: "Writing",
-  speaking: "Speaking",
+  listening: "Tinglash",
+  reading: "O‘qish",
+  language_use: "Til bilimi",
+  writing: "Yozish",
+  speaking: "Gapirish",
 };
+
+const MAX_LISTENING_PLAYS = 2;
 
 function fullAudioUrl(audioUrl: string | null | undefined): string {
   if (!audioUrl) return "";
@@ -65,14 +68,20 @@ function fullAudioUrl(audioUrl: string | null | undefined): string {
   return audioUrl;
 }
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+const SAVE_DEBOUNCE_MS = 1000;
+
 export function ExamPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["attempt", attemptId],
     queryFn: () => api<AttemptData>(`/attempts/${attemptId}`),
     enabled: !!attemptId,
@@ -99,19 +108,73 @@ export function ExamPage() {
     },
     [attemptId, queryClient]
   );
-  const saveAnswer = useCallback(
+
+  // Tarmoq PUT — xato yuzaga kelsa yuqoriga uzatiladi (chaqiruvchi ushlaydi)
+  const putAnswer = useCallback(
     async (questionId: string, answerText: string) => {
-      if (!attemptId) return;
+      if (!attemptId) throw new Error("Attempt topilmadi");
       await api(`/attempts/${attemptId}/answer`, {
         method: "PUT",
         body: useAttemptQuestionId
           ? { attemptQuestionId: questionId, answerText }
           : { questionId, answerText },
       });
-      updateAnswerInCache(questionId, { answerText });
     },
-    [attemptId, useAttemptQuestionId, updateAnswerInCache]
+    [attemptId, useAttemptQuestionId]
   );
+
+  // ── MCQ: darhol cache yangilanadi, tarmoq xatosi toast bilan ko'rsatiladi ──
+  const handleMcqSelect = useCallback(
+    (questionId: string, opt: string) => {
+      updateAnswerInCache(questionId, { answerText: opt });
+      putAnswer(questionId, opt).catch(() => {
+        toast.error("Javob saqlanmadi, internetni tekshiring");
+      });
+    },
+    [updateAnswerInCache, putAnswer]
+  );
+
+  // ── Writing/Speaking matni: darhol UI, tarmoq PUT debounce bilan ──
+  const pendingSaveRef = useRef<{ questionId: string; text: string } | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushPendingSave = useCallback(async () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    const pending = pendingSaveRef.current;
+    if (!pending) return;
+    pendingSaveRef.current = null;
+    setSaveState("saving");
+    try {
+      await putAnswer(pending.questionId, pending.text);
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+      toast.error("Javob saqlanmadi, internetni tekshiring");
+    }
+  }, [putAnswer]);
+
+  const handleTextChange = useCallback(
+    (questionId: string, text: string) => {
+      updateAnswerInCache(questionId, { answerText: text });
+      pendingSaveRef.current = { questionId, text };
+      setSaveState("saving");
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        void flushPendingSave();
+      }, SAVE_DEBOUNCE_MS);
+    },
+    [updateAnswerInCache, flushPendingSave]
+  );
+
+  // Savol almashganda yoki sahifadan chiqishda kutilayotgan saqlashni flush qilamiz
+  useEffect(() => {
+    return () => {
+      void flushPendingSave();
+    };
+  }, [currentIndex, flushPendingSave]);
 
   const [recordingState, setRecordingState] = useState<"idle" | "recording" | "uploading">("idle");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -121,41 +184,62 @@ export function ExamPage() {
     async (attemptQuestionId: string, file: Blob) => {
       if (!attemptId) return;
       setRecordingState("uploading");
-      const formData = new FormData();
-      formData.append("audio", file, "recording.webm");
-      formData.append("attemptQuestionId", attemptQuestionId);
-      const token = useAuthStore.getState().accessToken;
-      const apiBase = import.meta.env.VITE_API_URL || "/api";
-      const res = await fetch(`${apiBase}/attempts/${attemptId}/speaking-audio`, {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.statusText }));
-        throw new Error(err.message || "Audio yuklanmadi");
+      try {
+        const formData = new FormData();
+        formData.append("audio", file, "recording.webm");
+        formData.append("attemptQuestionId", attemptQuestionId);
+        const token = useAuthStore.getState().accessToken;
+        const apiBase = import.meta.env.VITE_API_URL || "/api";
+        const res = await fetch(`${apiBase}/attempts/${attemptId}/speaking-audio`, {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(err.message || "Audio yuklanmadi");
+        }
+        const resData = (await res.json()) as { audioUrl: string };
+        updateAnswerInCache(attemptQuestionId, { answerText: "[Audio yuklandi]", audioUrl: resData.audioUrl });
+        setRecordingState("idle");
+      } catch (e) {
+        setRecordingState("idle");
+        throw e;
       }
-      const data = (await res.json()) as { audioUrl: string };
-      updateAnswerInCache(attemptQuestionId, { answerText: "[Audio yuklandi]", audioUrl: data.audioUrl });
-      setRecordingState("idle");
     },
     [attemptId, updateAnswerInCache]
   );
   const startRecording = useCallback(() => {
     if (!question || question.section !== "speaking") return;
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      const mr = new MediaRecorder(stream);
-      mediaRecorderRef.current = mr;
-      const chunks: BlobPart[] = [];
-      mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-      mr.onstop = () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        uploadSpeakingAudio(question.id, blob).catch((e) => alert(e.message));
-      };
-      mr.start();
-      setRecordingState("recording");
-    }).catch(() => alert("Mikrofon ruxsati kerak"));
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        const mr = new MediaRecorder(stream);
+        mediaRecorderRef.current = mr;
+        const chunks: BlobPart[] = [];
+        mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+        mr.onstop = () => {
+          stream.getTracks().forEach((t) => t.stop());
+          const blob = new Blob(chunks, { type: "audio/webm" });
+          uploadSpeakingAudio(question.id, blob).catch((e) => {
+            toast.error(
+              e instanceof Error ? e.message : "Audio yuklanmadi. Qayta urinib ko‘ring."
+            );
+          });
+        };
+        mr.start();
+        setRecordingState("recording");
+      })
+      .catch((err: unknown) => {
+        const name = err instanceof DOMException ? err.name : "";
+        if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+          toast.error("Mikrofonga ruxsat berilmadi. Brauzer sozlamalaridan mikrofon ruxsatini bering.");
+        } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+          toast.error("Mikrofon topilmadi. Qurilmangizga mikrofon ulanganligini tekshiring.");
+        } else {
+          toast.error("Mikrofonni ishga tushirib bo‘lmadi. Qayta urinib ko‘ring.");
+        }
+      });
   }, [question, uploadSpeakingAudio]);
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && recordingState === "recording") {
@@ -185,40 +269,111 @@ export function ExamPage() {
     return () => clearInterval(t);
   }, [data?.exam?.durationMinutes, data?.startedAt]);
 
-  const handleSubmit = async () => {
-    if (!attemptId || !data || !window.confirm("Imtihonni yakunlashni xohlaysizmi?")) return;
-    try {
-      const listening = questions.filter((q) => q.section === "listening");
-      const reading = questions.filter((q) => q.section === "reading");
-      const language = questions.filter((q) => q.section === "language_use");
-      const writing = questions.filter((q) => q.section === "writing");
-      const speaking = questions.filter((q) => q.section === "speaking");
-      const bankQuestions = [...listening, ...reading, ...language];
-      const body = {
-        answers: bankQuestions.map((q) => ({
-          attemptQuestionId: q.id,
-          answer: (answers[q.id]?.answerText ?? "").trim(),
-        })),
-        writing: writing.map((q) => ({
-          taskId: q.id,
-          text: (answers[q.id]?.answerText ?? "").trim(),
-        })),
-        speaking: speaking.map((q) => {
-          const a = answers[q.id];
-          const isAudio = a?.audioUrl || a?.answerText === "[Audio yuklandi]";
-          return {
+  const submittingRef = useRef(false);
+  const handleSubmit = useCallback(
+    async (auto = false) => {
+      if (!attemptId || !data || submittingRef.current) return;
+      if (data.status === "COMPLETED") return;
+      if (!auto && !window.confirm("Imtihonni yakunlashni xohlaysizmi?")) return;
+      submittingRef.current = true;
+      setIsSubmitting(true);
+      try {
+        // Kutilayotgan writing/speaking saqlashini yo'qotmaslik uchun avval flush
+        await flushPendingSave();
+        const allQuestions = data.questions;
+        const allAnswers = data.answers;
+        const listening = allQuestions.filter((q) => q.section === "listening");
+        const reading = allQuestions.filter((q) => q.section === "reading");
+        const language = allQuestions.filter((q) => q.section === "language_use");
+        const writing = allQuestions.filter((q) => q.section === "writing");
+        const speaking = allQuestions.filter((q) => q.section === "speaking");
+        const bankQuestions = [...listening, ...reading, ...language];
+        const body = {
+          answers: bankQuestions.map((q) => ({
+            attemptQuestionId: q.id,
+            answer: (allAnswers[q.id]?.answerText ?? "").trim(),
+          })),
+          writing: writing.map((q) => ({
             taskId: q.id,
-            text: isAudio ? undefined : (a?.answerText ?? "").trim(),
-            audioUrl: a?.audioUrl,
-          };
-        }),
-      };
-      await api(`/attempts/${attemptId}/submit`, { method: "POST", body });
-      navigate(`/attempts/${attemptId}/results`, { replace: true });
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Xatolik");
+            text: (allAnswers[q.id]?.answerText ?? "").trim(),
+          })),
+          speaking: speaking.map((q) => {
+            const a = allAnswers[q.id];
+            const isAudio = a?.audioUrl || a?.answerText === "[Audio yuklandi]";
+            return {
+              taskId: q.id,
+              text: isAudio ? undefined : (a?.answerText ?? "").trim(),
+              audioUrl: a?.audioUrl,
+            };
+          }),
+        };
+        await api(`/attempts/${attemptId}/submit`, { method: "POST", body });
+        if (auto) toast.info("Vaqt tugadi — imtihon avtomatik yakunlandi");
+        navigate(`/attempts/${attemptId}/results`, { replace: true });
+      } catch (e) {
+        submittingRef.current = false;
+        setIsSubmitting(false);
+        toast.error(e instanceof Error ? e.message : "Imtihonni yakunlashda xatolik yuz berdi");
+      }
+    },
+    [attemptId, data, flushPendingSave, navigate]
+  );
+
+  // Taymer ogohlantirishlari va vaqt tugaganda avto-yakunlash
+  const handleSubmitRef = useRef(handleSubmit);
+  handleSubmitRef.current = handleSubmit;
+  const warnedRef = useRef({ five: false, one: false });
+  useEffect(() => {
+    if (timeLeft === null || !data || data.status === "COMPLETED") return;
+    if (timeLeft > 0 && timeLeft <= 300 && !warnedRef.current.five) {
+      warnedRef.current.five = true;
+      if (timeLeft > 60) toast.warning("Diqqat: 5 daqiqadan kam vaqt qoldi");
     }
-  };
+    if (timeLeft > 0 && timeLeft <= 60 && !warnedRef.current.one) {
+      warnedRef.current.one = true;
+      toast.warning("Diqqat: 1 daqiqadan kam vaqt qoldi");
+    }
+    if (timeLeft === 0 && !submittingRef.current) {
+      void handleSubmitRef.current(true);
+    }
+  }, [timeLeft, data]);
+
+  // COMPLETED bo'lsa natijalarga yo'naltirish — render emas, effekt ichida
+  useEffect(() => {
+    if (data?.status === "COMPLETED" && attemptId) {
+      navigate(`/attempts/${attemptId}/results`, { replace: true });
+    }
+  }, [data?.status, attemptId, navigate]);
+
+  // ── Xato holati (loading'dan OLDIN tekshiriladi) ──
+  if (error) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-destructive shrink-0" />
+              <CardTitle className="text-base">Imtihonni yuklab bo‘lmadi</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : "Noma’lum xatolik yuz berdi"}
+            </p>
+            <div className="flex gap-2">
+              <Button onClick={() => refetch()}>
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Qayta urinish
+              </Button>
+              <Button variant="outline" onClick={() => navigate(-1)}>
+                Orqaga
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading || !data) {
     return (
@@ -227,11 +382,12 @@ export function ExamPage() {
       </div>
     );
   }
-  if (error || data.status === "COMPLETED") {
-    if (data?.status === "COMPLETED") navigate(`/attempts/${attemptId}/results`, { replace: true });
+
+  if (data.status === "COMPLETED") {
+    // Effekt natijalar sahifasiga yo'naltiradi
     return (
-      <div className="p-4 text-destructive">
-        {error ? (error instanceof Error ? error.message : "Xatolik") : "Imtihon topilmadi"}
+      <div className="flex items-center justify-center min-h-[300px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -240,6 +396,8 @@ export function ExamPage() {
   const isWriting = question?.section === "writing";
   const isSpeaking = question?.section === "speaking";
   const isMcq = !isWriting && !isSpeaking && Array.isArray(question?.options) && question.options.length > 0;
+  const playsUsed = question ? (listeningPlaysUsed[question.id] ?? 0) : 0;
+  const playsLeft = Math.max(0, MAX_LISTENING_PLAYS - playsUsed);
 
   return (
     <div className="min-h-screen bg-muted/30 pb-20">
@@ -289,24 +447,32 @@ export function ExamPage() {
               {question.section === "listening" && question.audioUrl && (
                 <div className="rounded bg-muted/50 p-3">
                   <p className="font-medium text-muted-foreground mb-2">Audio</p>
-                  {(listeningPlaysUsed[question.id] ?? 0) >= 2 ? (
-                    <p className="text-sm text-muted-foreground">2 marta eshitildi</p>
+                  {playsUsed >= MAX_LISTENING_PLAYS ? (
+                    <p className="text-sm text-muted-foreground">
+                      Audio {MAX_LISTENING_PLAYS} marta eshitildi — tinglash limiti tugadi
+                    </p>
                   ) : (
-                    <audio
-                      key={question.id}
-                      ref={listeningAudioRef}
-                      src={fullAudioUrl(question.audioUrl)}
-                      controls
-                      controlsList="nodownload"
-                      onEnded={() => {
-                        const qId = question.id;
-                        setListeningPlaysUsed((prev) => {
-                          const next = (prev[qId] ?? 0) + 1;
-                          if (next < 2) setTimeout(() => listeningAudioRef.current?.play(), 0);
-                          return { ...prev, [qId]: next };
-                        });
-                      }}
-                    />
+                    <>
+                      <audio
+                        key={question.id}
+                        ref={listeningAudioRef}
+                        src={fullAudioUrl(question.audioUrl)}
+                        controls
+                        controlsList="nodownload"
+                        onEnded={() => {
+                          const qId = question.id;
+                          setListeningPlaysUsed((prev) => ({
+                            ...prev,
+                            [qId]: (prev[qId] ?? 0) + 1,
+                          }));
+                        }}
+                      />
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {playsUsed === 0
+                          ? `Audio jami ${MAX_LISTENING_PLAYS} marta eshitiladi`
+                          : `Yana ${playsLeft} marta eshitishingiz mumkin`}
+                      </p>
+                    </>
                   )}
                 </div>
               )}
@@ -342,7 +508,8 @@ export function ExamPage() {
                   <button
                     key={opt}
                     type="button"
-                    onClick={() => saveAnswer(question.id, opt)}
+                    aria-pressed={selected === opt}
+                    onClick={() => handleMcqSelect(question.id, opt)}
                     className={cn(
                       "w-full rounded-lg border p-3 text-left text-sm transition-colors",
                       selected === opt
@@ -358,7 +525,23 @@ export function ExamPage() {
                   {isSpeaking && (
                     <div className="flex flex-wrap items-center gap-2">
                       {speakingAudioUrl ? (
-                        <p className="text-sm text-muted-foreground">Audio yuklandi. Agar xohlasangiz, transkriptni qo‘lda yozing pastga.</p>
+                        <>
+                          <p className="text-sm text-muted-foreground">
+                            Audio yuklandi. Xohlasangiz, quyida transkript yozishingiz mumkin.
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              updateAnswerInCache(question.id, { audioUrl: null, answerText: "" });
+                              toast.info("Avvalgi audio o‘chirildi — yangi javob yozib oling");
+                            }}
+                          >
+                            <RotateCcw className="h-4 w-4 mr-1" />
+                            Qayta yozib olish
+                          </Button>
+                        </>
                       ) : (
                         <>
                           <Button
@@ -382,7 +565,15 @@ export function ExamPage() {
                               className="sr-only"
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (file && question) uploadSpeakingAudio(question.id, file);
+                                if (file && question) {
+                                  uploadSpeakingAudio(question.id, file).catch((err) => {
+                                    toast.error(
+                                      err instanceof Error
+                                        ? err.message
+                                        : "Audio yuklanmadi. Qayta urinib ko‘ring."
+                                    );
+                                  });
+                                }
                                 e.target.value = "";
                               }}
                             />
@@ -396,8 +587,31 @@ export function ExamPage() {
                     className="min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     placeholder={isWriting ? "Javobingizni yozing…" : "Ixtiyoriy: javob matnini yozing (audio yoki yozuv)"}
                     value={selected ?? ""}
-                    onChange={(e) => saveAnswer(question.id, e.target.value)}
+                    onChange={(e) => handleTextChange(question.id, e.target.value)}
                   />
+                  <p
+                    className={cn(
+                      "flex items-center gap-1 text-xs",
+                      saveState === "error" ? "text-destructive" : "text-muted-foreground"
+                    )}
+                    aria-live="polite"
+                  >
+                    {saveState === "saving" && (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" /> Saqlanmoqda…
+                      </>
+                    )}
+                    {saveState === "saved" && (
+                      <>
+                        <Check className="h-3 w-3" /> Saqlandi
+                      </>
+                    )}
+                    {saveState === "error" && (
+                      <>
+                        <AlertTriangle className="h-3 w-3" /> Saqlanmadi — internetni tekshiring
+                      </>
+                    )}
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -415,7 +629,10 @@ export function ExamPage() {
           {currentIndex < questions.length - 1 ? (
             <Button onClick={() => setCurrentIndex((i) => i + 1)}>Keyingi</Button>
           ) : (
-            <Button onClick={handleSubmit}>Yakunlash</Button>
+            <Button onClick={() => handleSubmit(false)} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Yakunlash
+            </Button>
           )}
         </div>
       </main>

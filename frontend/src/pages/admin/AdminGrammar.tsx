@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,7 +70,7 @@ export function AdminGrammar() {
             setEditing(null);
             await load();
         } catch (e: unknown) {
-            alert(e instanceof Error ? e.message : "Xatolik");
+            toast.error(e instanceof Error ? e.message : "Xatolik");
         } finally {
             setSaving(false);
         }
@@ -78,6 +79,7 @@ export function AdminGrammar() {
     const remove = async (id: string) => {
         if (!confirm("Haqiqatan ham o'chirmoqchimisiz?")) return;
         await api(`/admin/grammar/${id}`, { method: "DELETE" });
+        toast.success("Savol o'chirildi");
         await load();
     };
 
