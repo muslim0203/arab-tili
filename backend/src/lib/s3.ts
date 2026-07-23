@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3"
 import multer from "multer"
 import multerS3 from "multer-s3"
 import crypto from "crypto"
@@ -119,8 +119,27 @@ export async function deleteFromSpaces(key: string): Promise<void> {
     }
 }
 
+/**
+ * Spaces'da obyekt mavjudligini tekshiradi (HeadObject).
+ *
+ * Idempotent skriptlar uchun: mavjud faylni qayta generatsiya qilmaslik (kredit tejash).
+ * Saqlash sozlanmagan bo'lsa `false` qaytaradi.
+ */
+export async function objectExistsInSpaces(key: string): Promise<boolean> {
+    if (!isObjectStorageEnabled()) return false
+    try {
+        await s3Client.send(new HeadObjectCommand({ Bucket: config.aws.s3Bucket, Key: key }))
+        return true
+    } catch (e: any) {
+        const status = e?.$metadata?.httpStatusCode
+        if (status === 404 || e?.name === "NotFound" || e?.name === "NoSuchKey") return false
+        // Boshqa xatolar (403, tarmoq) — chaqiruvchi qaror qilsin.
+        throw e
+    }
+}
+
 /** Kalitdan public URL. DO Spaces virtual-hosted uslubda: https://<bucket>.<region>.digitaloceanspaces.com/<key> */
-function publicUrlFor(key: string): string {
+export function publicUrlFor(key: string): string {
     const endpoint = config.aws.endpoint.replace(/\/+$/, "")
     if (!endpoint) return key
     const u = new URL(endpoint)

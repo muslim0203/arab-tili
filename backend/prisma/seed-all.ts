@@ -45,6 +45,12 @@ const scripts = [
     "seed-speaking-easy.ts",
     "seed-speaking-medium.ts",
     "seed-speaking-hard.ts",
+    // Listening: DIQQAT — bulardan OLDIN audiolar generatsiya qilingan bo'lishi shart:
+    //   npx tsx scripts/generate-listening-audio.ts
+    // (audio xaritasi topilmasa bu seedlar aniq xato bilan to'xtaydi.)
+    "seed-listening-easy.ts",
+    "seed-listening-medium.ts",
+    "seed-listening-hard.ts",
 ];
 
 async function main() {

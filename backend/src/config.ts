@@ -14,6 +14,8 @@ export const config = {
   backendUrl: env.BACKEND_URL ?? "http://localhost:3000",
   openaiApiKey: env.OPENAI_API_KEY ?? "",
   geminiApiKey: env.GEMINI_API_KEY ?? "",
+  // ElevenLabs — listening audiolarini generatsiya qilish uchun (scripts/generate-listening-audio.ts)
+  elevenLabsApiKey: env.ELEVENLABS_API_KEY ?? "",
   googleClientId: env.GOOGLE_CLIENT_ID ?? "",
   aws: {
     accessKeyId: env.AWS_ACCESS_KEY_ID ?? "",
