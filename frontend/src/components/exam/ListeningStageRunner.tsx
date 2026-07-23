@@ -16,6 +16,7 @@ import {
     ArrowRight,
     Loader2,
     Pause,
+    Play,
 } from "lucide-react";
 
 interface ListeningStageRunnerProps {
@@ -46,6 +47,8 @@ export function ListeningStageRunner({
     const [deadline, setDeadline] = useState(0);
     const [playsUsed, setPlaysUsed] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
+    // Pauza o'rtada bosilganda true — "Davom ettirish" tinglash limitini sarflamaydi (O6)
+    const [isPaused, setIsPaused] = useState(false);
     const [audioError, setAudioError] = useState(false);
 
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -114,6 +117,7 @@ export function ListeningStageRunner({
 
         audio.addEventListener("ended", () => {
             setIsPlaying(false);
+            setIsPaused(false);
         });
 
         // Use refs to read current phase/isPerQuestion — avoids stale closure bug
@@ -223,7 +227,7 @@ export function ListeningStageRunner({
     }, [createAudio, getAudioUrl, isPerQuestion, stage.perQuestionTimeSec, stage.totalTimeSec]);
 
 
-    // ── Listen Again ──
+    // ── Listen Again (boshidan — tinglash limitini sarflaydi) ──
     const handleListenAgain = useCallback(() => {
         if (playsUsed >= stage.maxPlays) return;
         const audio = audioRef.current;
@@ -234,8 +238,21 @@ export function ListeningStageRunner({
             setIsPlaying(false);
         });
         setIsPlaying(true);
+        setIsPaused(false);
         setPlaysUsed((p) => p + 1);
     }, [playsUsed, stage.maxPlays]);
+
+    // ── Resume (o'rtadan davom — limitni SARFLAMAYDI) ──
+    const handleResume = useCallback(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        audio.play().catch(() => {
+            setAudioError(true);
+            setIsPlaying(false);
+        });
+        setIsPlaying(true);
+        setIsPaused(false);
+    }, []);
 
     // ── Save answer + go next ──
     const saveAndGoNext = useCallback(() => {
@@ -269,6 +286,7 @@ export function ListeningStageRunner({
                 // Reset plays and audio for next question
                 setPlaysUsed(0);
                 setIsPlaying(false);
+                setIsPaused(false);
                 setAudioError(false);
 
                 // For stage 1: each question gets its own audio (per-question URL)
@@ -587,8 +605,10 @@ export function ListeningStageRunner({
                                 onClick={() => {
                                     audioRef.current?.pause();
                                     setIsPlaying(false);
+                                    setIsPaused(true);
                                 }}
                                 className="ml-auto p-1.5 rounded-lg hover:bg-emerald-500/10 transition-colors"
+                                aria-label="To'xtatib turish"
                             >
                                 <Pause className="w-4 h-4" />
                             </button>
@@ -597,24 +617,40 @@ export function ListeningStageRunner({
                         <div className="flex items-center gap-2 flex-1">
                             <Headphones className="w-4 h-4 text-emerald-500 shrink-0" />
                             <span className="text-sm text-muted-foreground">
-                                {isPerQuestion
-                                    ? `Tinglash: ${playsUsed} / ${stage.maxPlays}`
-                                    : `Audio: ${playsUsed} / ${stage.maxPlays} tinglash ishlatildi`}
+                                {isPaused
+                                    ? "To'xtatildi"
+                                    : isPerQuestion
+                                        ? `Tinglash: ${playsUsed} / ${stage.maxPlays}`
+                                        : `Audio: ${playsUsed} / ${stage.maxPlays} tinglash ishlatildi`}
                             </span>
-                            {canListenAgain && (
-                                <button
-                                    onClick={handleListenAgain}
-                                    className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-sm font-medium hover:bg-emerald-500/20 transition-colors"
-                                >
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                    Qayta tinglash
-                                </button>
-                            )}
-                            {playsUsed >= stage.maxPlays && (
-                                <span className="ml-auto text-xs text-muted-foreground">
-                                    Tinglash tugadi
-                                </span>
-                            )}
+                            <div className="ml-auto flex items-center gap-2">
+                                {/* Davom ettirish — o'rtadan, limitni sarflamaydi */}
+                                {isPaused && (
+                                    <button
+                                        onClick={handleResume}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition-colors"
+                                    >
+                                        <Play className="w-3.5 h-3.5" />
+                                        Davom ettirish
+                                    </button>
+                                )}
+                                {/* Qayta tinglash — boshidan, tinglash limitini sarflaydi */}
+                                {canListenAgain && (
+                                    <button
+                                        onClick={handleListenAgain}
+                                        title="Boshidan tinglaysiz — bu tinglash urinishlaringizdan birini sarflaydi"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-sm font-medium hover:bg-emerald-500/20 transition-colors"
+                                    >
+                                        <RotateCcw className="w-3.5 h-3.5" />
+                                        Qayta tinglash
+                                    </button>
+                                )}
+                                {playsUsed >= stage.maxPlays && !isPaused && (
+                                    <span className="text-xs text-muted-foreground">
+                                        Tinglash tugadi
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
