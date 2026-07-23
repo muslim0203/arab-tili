@@ -240,19 +240,19 @@ export function validateItems(difficulty: ListeningDifficulty, items: ListeningI
 /**
  * OVOZ ID'LARI — o'zingizning ElevenLabs akkountingizdagi ID'lar bilan almashtiring.
  *
- * Bu yerdagilar ElevenLabs'ning standart ("premade") multilingual ovozlari:
- *   male     — Adam   (pnInz6obpgDQGcFmaJgB)  → dialogda "A" spiker (erkak)
- *   female   — Rachel (21m00Tcm4TlvDq8ikWAM)  → dialogda "B" spiker (ayol)
- *   narrator — Antoni (ErXwobaYiN019PkySvjV)  → ma'ruza (hard) uchun
+ * Bu yerdagilar akkountdagi maxsus ARABCHA ("professional") ovozlar:
+ *   male     — Omar  (xvhpbk8otnNHtT3fjCpr)  → dialogda "A" spiker (erkak)
+ *   female   — Salma (B5xxC4eQoOFJnY4R5XkI)  → dialogda "B" spiker (ayol)
+ *   narrator — Razan (EUojVLG1QfxaqqH4ce6s)  → ma'ruza (hard) uchun (akademik hikoya)
  *
  * Voice ID'ni topish: https://elevenlabs.io/app/voice-library → ovozni tanlang → "ID" ni nusxalang,
- * yoki API: GET https://api.elevenlabs.io/v1/voices (xh-header: xi-api-key).
- * Arabcha uchun ovozni tanlashda "Multilingual" belgisi borligiga e'tibor bering.
+ * yoki API: GET https://api.elevenlabs.io/v2/voices (header: xi-api-key).
+ * Arabcha uchun "ar" tilidagi ovozlarni tanlang.
  */
 export const VOICES = {
-    male: "pnInz6obpgDQGcFmaJgB",
-    female: "21m00Tcm4TlvDq8ikWAM",
-    narrator: "ErXwobaYiN019PkySvjV",
+    male: "xvhpbk8otnNHtT3fjCpr",
+    female: "B5xxC4eQoOFJnY4R5XkI",
+    narrator: "EUojVLG1QfxaqqH4ce6s",
 } as const;
 
 /**
