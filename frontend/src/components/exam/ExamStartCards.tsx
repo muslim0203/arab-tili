@@ -2,9 +2,8 @@
 // Exam Start Cards (3 cards) – O'zbek tilida
 // ─────────────────────────────────────────────────
 
-import { BookOpen, Award, GraduationCap, Lock, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAccessControl } from "@/lib/useAccessControl";
+import { BookOpen, Award, GraduationCap, Lock, ArrowRight, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ExamStartCardsProps {
     onStartAtTaanal: () => void;
@@ -13,8 +12,6 @@ interface ExamStartCardsProps {
 
 export function ExamStartCards({ onStartAtTaanal, onStartSpeakingWriting }: ExamStartCardsProps) {
     const navigate = useNavigate();
-    const { isFreeUser, canStartDemoMock } = useAccessControl();
-    const showDemo = isFreeUser && canStartDemoMock;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
@@ -131,15 +128,6 @@ export function ExamStartCards({ onStartAtTaanal, onStartSpeakingWriting }: Exam
                                 Imtihonni boshlash
                                 <ArrowRight className="w-4 h-4" />
                             </button>
-                            {showDemo && (
-                                <Link
-                                    to="/exam/start/cefr-demo"
-                                    className="mt-3 w-full py-2.5 px-4 rounded-xl border border-primary/40 text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors"
-                                >
-                                    <Sparkles className="w-4 h-4" />
-                                    Avval bepul demoni sinang
-                                </Link>
-                            )}
                         </div>
                     </div>
 
