@@ -45,6 +45,7 @@ const scripts = [
     "seed-speaking-easy.ts",
     "seed-speaking-medium.ts",
     "seed-speaking-hard.ts",
+    "seed-sarf.ts",           // "Sarf asoslari" darslari
     // Listening: DIQQAT — bulardan OLDIN audiolar generatsiya qilingan bo'lishi shart:
     //   npx tsx scripts/generate-listening-audio.ts
     // (audio xaritasi topilmasa bu seedlar aniq xato bilan to'xtaydi.)

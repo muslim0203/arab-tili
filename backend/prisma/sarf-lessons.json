@@ -1,0 +1,1533 @@
+{
+  "lessons": [
+    {
+      "slug": "sarf-kirish",
+      "order": 1,
+      "level": "A1",
+      "titleUz": "Kirish: sarf ilmi va harakatlar",
+      "titleAr": "عِلْمُ الصَّرْفِ وَالْحَرَكَاتُ",
+      "summary": "Sarf ilmi nima bilan shug'ullanishi, arabcha harakatlar (fatha, kasra, damma), sukun, tanvin, shadda va mizon (o'zak) tushunchasi bilan tanishasiz.",
+      "estMinutes": 12,
+      "isFree": true,
+      "theory": [
+        {
+          "type": "heading",
+          "text": "Sarf ilmi nima?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sarf (morfologiya) — so'z shakllarining o'zgarishini o'rganadigan ilm. Arab tilida bitta o'zakdan o'nlab so'z yasaladi: masalan, «yozdi», «yozadi», «yoz!», «yozuvchi», «yozilgan» — bularning hammasi bitta o'zakning turli shakllaridir. Sarf ilmi ana shu shakllarning qanday yasalishini va bir shakldan boshqasiga qanday o'tilishini o'rgatadi. Nahv (sintaksis) gap ichidagi so'zlarning vazifasini o'rgansa, sarf so'zning o'zini, uning ichki qurilishini o'rganadi."
+        },
+        {
+          "type": "heading",
+          "text": "Harakatlar: fatha, kasra, damma"
+        },
+        {
+          "type": "paragraph",
+          "text": "Arab yozuvida unli tovushlar harflar ustiga yoki ostiga qo'yiladigan kichik belgilar — harakatlar bilan ko'rsatiladi. Uchta asosiy harakat bor: fatha (harf ustidagi qiya chiziqcha, «a» tovushini beradi), kasra (harf ostidagi qiya chiziqcha, «i» tovushini beradi) va damma (harf ustidagi kichik «vov», «u» tovushini beradi). Sukun (harf ustidagi kichik doiracha) harfda unli yo'qligini, ya'ni harf «yopiq» o'qilishini bildiradi. Tanvin — harakat belgisining ikkilanishi bo'lib, so'z oxirida «-n» tovushini qo'shadi: «-an», «-in», «-un». Shadda (harf ustidagi kichik «w» shaklidagi belgi) harfning ikkilanib, qattiq o'qilishini bildiradi."
+        },
+        {
+          "type": "tableRef",
+          "tableId": "harakatlar-jadvali"
+        },
+        {
+          "type": "example",
+          "arabic": "كَتَبَ",
+          "translit": "kataba",
+          "meaning": "u yozdi — uchala harf ham fatha bilan: ka-ta-ba"
+        },
+        {
+          "type": "example",
+          "arabic": "رَبٌّ",
+          "translit": "rabbun",
+          "meaning": "Rabb, xo'jayin — «b» harfida shadda (ikkilangan) va tanvin damma («-un»)"
+        },
+        {
+          "type": "heading",
+          "text": "Mizon: ف ع ل — o'zak tushunchasi"
+        },
+        {
+          "type": "paragraph",
+          "text": "Arab tilidagi ko'p so'zlar uch o'zak harfdan tuziladi. Sarf olimlari bu o'zak harflarni o'lchash uchun mizon (tarozi) sifatida ف ع ل harflarini tanlaganlar: birinchi o'zak harf «fa» (fa-ul-fi'l), ikkinchi harf «ayn» (ayn-ul-fi'l), uchinchi harf «lam» (lam-ul-fi'l) deb ataladi. Masalan, نَصَرَ (nasara — «u yordam berdi») fe'li فَعَلَ (fa'ala) vaznida: ن — fa o'rnida, ص — ayn o'rnida, ر — lam o'rnida turadi."
+        },
+        {
+          "type": "note",
+          "text": "Eslab qoling: har qanday fe'l yoki ismning vaznini aniqlash uchun uning o'zak harflarini ف ع ل ga solishtiramiz. Bu — sarf ilmining asosiy quroli. Keyingi darslarning hammasi shu mizon ustiga quriladi."
+        }
+      ],
+      "conjugationTables": [
+        {
+          "id": "harakatlar-jadvali",
+          "title": "Harakatlar va belgilar (ب harfi misolida)",
+          "rootArabic": "ب",
+          "columns": [
+            "Belgi nomi",
+            "Arabcha",
+            "O'qilishi",
+            "Izoh"
+          ],
+          "rows": [
+            {
+              "cells": [
+                "Fatha",
+                "بَ",
+                "ba",
+                "harf ustidagi qiya chiziqcha — «a»"
+              ]
+            },
+            {
+              "cells": [
+                "Kasra",
+                "بِ",
+                "bi",
+                "harf ostidagi qiya chiziqcha — «i»"
+              ]
+            },
+            {
+              "cells": [
+                "Damma",
+                "بُ",
+                "bu",
+                "harf ustidagi kichik vov — «u»"
+              ]
+            },
+            {
+              "cells": [
+                "Sukun",
+                "اَبْ",
+                "ab",
+                "doiracha — unli yo'q, harf yopiq o'qiladi"
+              ]
+            },
+            {
+              "cells": [
+                "Tanvin fatha",
+                "بًا",
+                "ban",
+                "ikki fatha — so'z oxirida «-an»"
+              ]
+            },
+            {
+              "cells": [
+                "Tanvin kasra",
+                "بٍ",
+                "bin",
+                "ikki kasra — so'z oxirida «-in»"
+              ]
+            },
+            {
+              "cells": [
+                "Tanvin damma",
+                "بٌ",
+                "bun",
+                "ikki damma — so'z oxirida «-un»"
+              ]
+            },
+            {
+              "cells": [
+                "Shadda",
+                "رَبِّ",
+                "rabbi",
+                "harf ikkilanadi: rab-bi"
+              ]
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "orderIndex": 1,
+          "prompt": "Sarf ilmi nimani o'rganadi?",
+          "options": [
+            "Gap ichidagi so'zlarning vazifasini",
+            "So'z shakllarining o'zgarishi va yasalishini",
+            "Arab harflarining chiroyli yozilishini",
+            "Tovushlarning to'g'ri talaffuzini"
+          ],
+          "correctIndex": 1,
+          "explanation": "Sarf (morfologiya) so'zning ichki qurilishini — bir o'zakdan turli shakllar qanday yasalishini o'rganadi. Gapdagi vazifalarni esa nahv (sintaksis) o'rganadi."
+        },
+        {
+          "orderIndex": 2,
+          "prompt": "بَ dagi harakat qaysi va u qanday o'qiladi?",
+          "options": [
+            "Kasra — «bi»",
+            "Damma — «bu»",
+            "Fatha — «ba»",
+            "Sukun — «b»"
+          ],
+          "correctIndex": 2,
+          "explanation": "Harf ustidagi qiya chiziqcha — fatha bo'lib, «a» tovushini beradi: بَ = «ba»."
+        },
+        {
+          "orderIndex": 3,
+          "prompt": "Kasra qayerga qo'yiladi va qanday tovush beradi?",
+          "options": [
+            "Harf ostiga qo'yiladi, «i» tovushini beradi",
+            "Harf ustiga qo'yiladi, «u» tovushini beradi",
+            "Harf ustiga qo'yiladi, «a» tovushini beradi",
+            "Harf ostiga qo'yiladi, «n» tovushini beradi"
+          ],
+          "correctIndex": 0,
+          "explanation": "Kasra — harf OSTIDAGI qiya chiziqcha bo'lib, «i» tovushini beradi: بِ = «bi»."
+        },
+        {
+          "orderIndex": 4,
+          "prompt": "Sukun (ــْ) nimani bildiradi?",
+          "options": [
+            "Harf ikki marta o'qilishini",
+            "So'z oxirida «-n» qo'shilishini",
+            "Harf «u» bilan o'qilishini",
+            "Harfda unli yo'qligini, harf yopiq o'qilishini"
+          ],
+          "correctIndex": 3,
+          "explanation": "Sukun harfda harakat (unli) yo'qligini bildiradi: اَبْ = «ab» — «b» harfi unlisiz, yopiq o'qiladi."
+        },
+        {
+          "orderIndex": 5,
+          "prompt": "Tanvin nima?",
+          "options": [
+            "Harfning ikkilanib o'qilishi",
+            "Harakatning ikkilanishi — so'z oxirida «-an», «-in», «-un» tovushini beradi",
+            "Unli tovushning cho'zib o'qilishi",
+            "So'z boshidagi maxsus belgi"
+          ],
+          "correctIndex": 1,
+          "explanation": "Tanvin — fatha, kasra yoki dammaning ikkilanishi bo'lib, so'z oxirida «-n» qo'shadi: بًا = «ban», بٍ = «bin», بٌ = «bun»."
+        },
+        {
+          "orderIndex": 6,
+          "prompt": "رَبٌّ (rabbun) so'zidagi shadda (ــّ) nimani ko'rsatadi?",
+          "options": [
+            "«b» harfi ikkilanib o'qilishini: rab-bun",
+            "«b» harfi unlisiz o'qilishini",
+            "So'z oxirida «-in» borligini",
+            "«r» harfi «u» bilan o'qilishini"
+          ],
+          "correctIndex": 0,
+          "explanation": "Shadda harfning ikkilanishini bildiradi: رَبٌّ da «b» ikki marta o'qiladi — «rab-bun»."
+        },
+        {
+          "orderIndex": 7,
+          "prompt": "نَصَرَ fe'lini فَعَلَ mizoniga solganda ص harfi qaysi o'ringa to'g'ri keladi?",
+          "options": [
+            "ف (fa) o'rniga",
+            "ل (lam) o'rniga",
+            "ع (ayn) o'rniga",
+            "Hech qaysi o'ringa — u qo'shimcha harf"
+          ],
+          "correctIndex": 2,
+          "explanation": "نَصَرَ da: ن — birinchi o'zak harf (ف o'rnida), ص — ikkinchi o'zak harf (ع o'rnida), ر — uchinchi o'zak harf (ل o'rnida)."
+        }
+      ]
+    },
+    {
+      "slug": "fel-turlari",
+      "order": 2,
+      "level": "A1",
+      "titleUz": "Fe'l turlari: mozi, muzori, amr",
+      "titleAr": "أَنْوَاعُ الْفِعْلِ: اَلْمَاضِي وَالْمُضَارِعُ وَالْأَمْرُ",
+      "summary": "Arab tilidagi fe'lning uch turi — mozi (o'tgan zamon), muzori (hozirgi-kelasi zamon) va amr (buyruq) fe'llarining ma'nosi va tashqi belgilari bilan tanishasiz.",
+      "estMinutes": 14,
+      "isFree": true,
+      "theory": [
+        {
+          "type": "heading",
+          "text": "Fe'l nima?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fe'l — ish-harakatni zamon bilan bog'lab ifodalaydigan so'z: «yozdi», «yozadi», «yoz!». Arab tilida fe'l zamon jihatidan uch turga bo'linadi: mozi (o'tgan zamon), muzori (hozirgi va kelasi zamon) va amr (buyruq). Har uchala tur bitta o'zakdan yasaladi, faqat shakli o'zgaradi."
+        },
+        {
+          "type": "heading",
+          "text": "Mozi — o'tgan zamon fe'li"
+        },
+        {
+          "type": "paragraph",
+          "text": "Mozi fe'l gapirilayotgan paytdan OLDIN bo'lib o'tgan ish-harakatni bildiradi. U fe'lning eng sodda, asl shakli hisoblanadi — hech qanday old qo'shimchasi yo'q: نَصَرَ (nasara) — «u yordam berdi», كَتَبَ (kataba) — «u yozdi». Lug'atlarda fe'l aynan mozi shaklida beriladi."
+        },
+        {
+          "type": "example",
+          "arabic": "نَصَرَ",
+          "translit": "nasara",
+          "meaning": "u (erkak) yordam berdi — mozi, o'tgan zamon"
+        },
+        {
+          "type": "heading",
+          "text": "Muzori — hozirgi-kelasi zamon fe'li"
+        },
+        {
+          "type": "paragraph",
+          "text": "Muzori fe'l hozir bo'layotgan yoki kelajakda bo'ladigan ish-harakatni bildiradi. Uning asosiy belgisi — boshiga qo'shiladigan to'rt harfdan biri: أ (a — «men»), ن (na — «biz»), ي (ya — «u»), ت (ta — «sen» yoki «u ayol»). Bu harflar أَنَيْتُ (anaytu) so'zida jamlangan. Masalan: يَنْصُرُ (yansuru) — «u yordam beradi / bermoqda». E'tibor bering: mozi نَصَرَ ning boshiga يَـ qo'shildi va ichki harakatlar o'zgardi."
+        },
+        {
+          "type": "example",
+          "arabic": "يَنْصُرُ",
+          "translit": "yansuru",
+          "meaning": "u (erkak) yordam beradi / bermoqda — muzori, hozirgi-kelasi zamon"
+        },
+        {
+          "type": "heading",
+          "text": "Amr — buyruq fe'li"
+        },
+        {
+          "type": "paragraph",
+          "text": "Amr fe'li tinglovchiga qaratilgan buyruq yoki iltimosni bildiradi: اُنْصُرْ (unsur) — «yordam ber!». Amr muzoridan yasaladi: muzorining bosh harfi olib tashlanadi, kerak bo'lsa boshiga vasl alifi qo'shiladi va oxiri sukun bilan tugaydi. Uchala shaklni yonma-yon solishtiring — quyidagi jadvalga qarang."
+        },
+        {
+          "type": "tableRef",
+          "tableId": "zamon-taqqoslash"
+        },
+        {
+          "type": "note",
+          "text": "Tez ajratish qoidasi: boshida أ، ن، ي، ت harflaridan biri bo'lsa — muzori; buyruq ohangi va oxiri sukun bo'lsa — amr; ikkalasi ham bo'lmasa, sodda shakl — mozi."
+        }
+      ],
+      "conjugationTables": [
+        {
+          "id": "zamon-taqqoslash",
+          "title": "Uch fe'l turi taqqoslash (ن ص ر o'zagi)",
+          "rootArabic": "ن ص ر",
+          "columns": [
+            "Fe'l turi",
+            "Arabcha",
+            "O'qilishi",
+            "Ma'nosi"
+          ],
+          "rows": [
+            {
+              "cells": [
+                "Mozi (o'tgan zamon)",
+                "نَصَرَ",
+                "nasara",
+                "u yordam berdi"
+              ]
+            },
+            {
+              "cells": [
+                "Muzori (hozirgi-kelasi zamon)",
+                "يَنْصُرُ",
+                "yansuru",
+                "u yordam beradi / bermoqda"
+              ],
+              "highlight": "يَ"
+            },
+            {
+              "cells": [
+                "Amr (buyruq)",
+                "اُنْصُرْ",
+                "unsur",
+                "yordam ber!"
+              ],
+              "highlight": "اُ"
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "orderIndex": 1,
+          "prompt": "Mozi fe'l qanday ish-harakatni bildiradi?",
+          "options": [
+            "Hozir bo'layotgan ish-harakatni",
+            "Kelajakda bo'ladigan ish-harakatni",
+            "Bo'lib o'tgan ish-harakatni",
+            "Buyruq ma'nosidagi ish-harakatni"
+          ],
+          "correctIndex": 2,
+          "explanation": "Mozi — o'tgan zamon fe'li: gapirilayotgan paytdan oldin bo'lib o'tgan ishni bildiradi. Masalan, نَصَرَ — «u yordam berdi»."
+        },
+        {
+          "orderIndex": 2,
+          "prompt": "يَنْصُرُ (yansuru) qaysi fe'l turiga kiradi?",
+          "options": [
+            "Muzori",
+            "Mozi",
+            "Amr",
+            "Masdar"
+          ],
+          "correctIndex": 0,
+          "explanation": "Boshidagi يَـ harfi — muzori belgisi. يَنْصُرُ — «u yordam beradi / bermoqda», hozirgi-kelasi zamon fe'li."
+        },
+        {
+          "orderIndex": 3,
+          "prompt": "Amr fe'li qanday ma'noni ifodalaydi?",
+          "options": [
+            "O'tgan zamondagi ishni",
+            "Tinglovchiga qaratilgan buyruq yoki iltimosni",
+            "Doimiy takrorlanadigan ishni",
+            "Ish-harakatning nomini"
+          ],
+          "correctIndex": 1,
+          "explanation": "Amr — buyruq fe'li: tinglovchidan ishni bajarishni talab qiladi. Masalan, اُنْصُرْ — «yordam ber!»."
+        },
+        {
+          "orderIndex": 4,
+          "prompt": "نَصَرَ (nasara) so'zining ma'nosi qaysi?",
+          "options": [
+            "U yordam beradi",
+            "Yordam ber!",
+            "Yordam berish",
+            "U yordam berdi"
+          ],
+          "correctIndex": 3,
+          "explanation": "نَصَرَ — mozi (o'tgan zamon) fe'li: «u (erkak) yordam berdi». «U yordam beradi» — يَنْصُرُ, «yordam ber!» — اُنْصُرْ bo'ladi."
+        },
+        {
+          "orderIndex": 5,
+          "prompt": "Muzori fe'lning boshiga qo'shiladigan harflar qaysilar?",
+          "options": [
+            "ب، ت، ث، ج",
+            "س، ش، ص، ض",
+            "أ، ن، ي، ت",
+            "ك، ل، م، ن"
+          ],
+          "correctIndex": 2,
+          "explanation": "Muzori belgilari to'rtta: أ (men), ن (biz), ي (u), ت (sen / u ayol). Ular أَنَيْتُ so'zida jamlangan."
+        },
+        {
+          "orderIndex": 6,
+          "prompt": "اُنْصُرْ (unsur) so'zining ma'nosi qaysi?",
+          "options": [
+            "Yordam ber!",
+            "U yordam berdi",
+            "U yordam beradi",
+            "Ular yordam berdilar"
+          ],
+          "correctIndex": 0,
+          "explanation": "اُنْصُرْ — amr (buyruq) fe'li: «yordam ber!». Oxiridagi sukun va buyruq shakli uni mozi va muzoridan ajratib turadi."
+        },
+        {
+          "orderIndex": 7,
+          "prompt": "Qaysi qatorda mozi — muzori — amr tartibi TO'G'RI berilgan?",
+          "options": [
+            "يَنْصُرُ — نَصَرَ — اُنْصُرْ",
+            "نَصَرَ — يَنْصُرُ — اُنْصُرْ",
+            "اُنْصُرْ — يَنْصُرُ — نَصَرَ",
+            "نَصَرَ — اُنْصُرْ — يَنْصُرُ"
+          ],
+          "correctIndex": 1,
+          "explanation": "To'g'ri tartib: نَصَرَ (nasara — yordam berdi, mozi), يَنْصُرُ (yansuru — yordam beradi, muzori), اُنْصُرْ (unsur — yordam ber!, amr)."
+        }
+      ]
+    },
+    {
+      "slug": "mozi-tuslanishi",
+      "order": 3,
+      "level": "A1/A2",
+      "titleUz": "Mozi fe'lning tuslanishi",
+      "titleAr": "تَصْرِيفُ الْفِعْلِ الْمَاضِي",
+      "summary": "Mozi fe'lning 14 siyg'a bo'yicha to'liq tuslanishini نَصَرَ (nasara) misolida o'rganasiz: g'oyib, muxotab va mutakallim shakllari, qo'shimchalari bilan.",
+      "estMinutes": 20,
+      "isFree": false,
+      "theory": [
+        {
+          "type": "heading",
+          "text": "Tuslanish (tasrif) nima?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Arab tilida fe'l bajaruvchining shaxsi (kim?), jinsi (erkakmi, ayolmi?) va soniga (bir, ikki, ko'p) qarab shaklini o'zgartiradi. Bu o'zgarish tuslanish (tasrif) deyiladi. Mozi fe'lda jami 14 ta shakl — 14 siyg'a bor: 6 tasi g'oyib (u, ular — uchinchi shaxs), 6 tasi muxotab (sen, siz — ikkinchi shaxs), 2 tasi mutakallim (men, biz — birinchi shaxs). Tuslanish faqat fe'l oxiriga qo'shimcha qo'shish orqali bo'ladi — o'zak harflar o'zgarmaydi."
+        },
+        {
+          "type": "paragraph",
+          "text": "Klassik sarf kitoblarida tuslanish g'oyib muzakkardan boshlanadi: avval «u (erkak)», keyin ikkilik va ko'plik, so'ng ayollar shakli, keyin muxotab, oxirida mutakallim. Har bir siyg'ani qo'shimchasi bilan birga yodlash kerak: masalan, تْ — «u ayol», تُمْ — «siz erkaklar», نَا — «biz» belgisi. Quyidagi jadvalda نَصَرَ fe'lining to'liq tuslanishi berilgan — qo'shimchalar ajratib ko'rsatilgan."
+        },
+        {
+          "type": "tableRef",
+          "tableId": "mozi-nasara-14"
+        },
+        {
+          "type": "example",
+          "arabic": "نَصَرْتُ صَدِيقِي",
+          "translit": "nasartu sadiiqii",
+          "meaning": "men do'stimga yordam berdim — تُ qo'shimchasi «men»ni bildiradi"
+        },
+        {
+          "type": "note",
+          "text": "Diqqat: نَصَرْتُمَا (nasartumaa) shakli ikki siyg'ada bir xil — muxotab muzakkar ikkilik va muxotaba muannas ikkilik. Shuningdek, qo'shimcha undosh bilan boshlansa (ت، ن), o'zakning uchinchi harfi sukun oladi: نَصَرْتَ، نَصَرْنَ، نَصَرْنَا. Unli-qo'shimchalarda esa fatha saqlanadi: نَصَرَا، نَصَرَتْ."
+        },
+        {
+          "type": "paragraph",
+          "text": "Yodlash usuli: jadvalni uch guruhga bo'lib yodlang — avval g'oyiblar oltiligi (نَصَرَ dan نَصَرْنَ gacha), keyin muxotablar oltiligi (نَصَرْتَ dan نَصَرْتُنَّ gacha), oxirida mutakallim ikkiligi (نَصَرْتُ، نَصَرْنَا). Har kuni ovoz chiqarib takrorlang — bu tartib barcha fe'llar uchun bir xil, bir marta puxta yodlasangiz, istalgan sahih fe'lni tuslay olasiz."
+        }
+      ],
+      "conjugationTables": [
+        {
+          "id": "mozi-nasara-14",
+          "title": "نَصَرَ fe'lining mozi tuslanishi (14 siyg'a)",
+          "rootArabic": "ن ص ر",
+          "columns": [
+            "Siyg'a",
+            "Arabcha",
+            "O'qilishi",
+            "Ma'nosi"
+          ],
+          "rows": [
+            {
+              "cells": [
+                "G'oyib muzakkar birlik",
+                "نَصَرَ",
+                "nasara",
+                "u (erkak) yordam berdi"
+              ]
+            },
+            {
+              "cells": [
+                "G'oyib muzakkar ikkilik",
+                "نَصَرَا",
+                "nasaraa",
+                "u ikkalasi (erkak) yordam berdi"
+              ],
+              "highlight": "ا"
+            },
+            {
+              "cells": [
+                "G'oyib muzakkar ko'plik",
+                "نَصَرُوا",
+                "nasaruu",
+                "ular (erkaklar) yordam berdilar"
+              ],
+              "highlight": "ُوا"
+            },
+            {
+              "cells": [
+                "G'oyiba muannas birlik",
+                "نَصَرَتْ",
+                "nasarat",
+                "u (ayol) yordam berdi"
+              ],
+              "highlight": "تْ"
+            },
+            {
+              "cells": [
+                "G'oyiba muannas ikkilik",
+                "نَصَرَتَا",
+                "nasarataa",
+                "u ikkalasi (ayol) yordam berdi"
+              ],
+              "highlight": "تَا"
+            },
+            {
+              "cells": [
+                "G'oyiba muannas ko'plik",
+                "نَصَرْنَ",
+                "nasarna",
+                "ular (ayollar) yordam berdilar"
+              ],
+              "highlight": "ْنَ"
+            },
+            {
+              "cells": [
+                "Muxotab muzakkar birlik",
+                "نَصَرْتَ",
+                "nasarta",
+                "sen (erkak) yordam berding"
+              ],
+              "highlight": "تَ"
+            },
+            {
+              "cells": [
+                "Muxotab muzakkar ikkilik",
+                "نَصَرْتُمَا",
+                "nasartumaa",
+                "siz ikkalangiz (erkak) yordam berdingiz"
+              ],
+              "highlight": "تُمَا"
+            },
+            {
+              "cells": [
+                "Muxotab muzakkar ko'plik",
+                "نَصَرْتُمْ",
+                "nasartum",
+                "siz (erkaklar) yordam berdingiz"
+              ],
+              "highlight": "تُمْ"
+            },
+            {
+              "cells": [
+                "Muxotaba muannas birlik",
+                "نَصَرْتِ",
+                "nasarti",
+                "sen (ayol) yordam berding"
+              ],
+              "highlight": "تِ"
+            },
+            {
+              "cells": [
+                "Muxotaba muannas ikkilik",
+                "نَصَرْتُمَا",
+                "nasartumaa",
+                "siz ikkalangiz (ayol) yordam berdingiz"
+              ],
+              "highlight": "تُمَا"
+            },
+            {
+              "cells": [
+                "Muxotaba muannas ko'plik",
+                "نَصَرْتُنَّ",
+                "nasartunna",
+                "siz (ayollar) yordam berdingiz"
+              ],
+              "highlight": "تُنَّ"
+            },
+            {
+              "cells": [
+                "Mutakallim birlik",
+                "نَصَرْتُ",
+                "nasartu",
+                "men yordam berdim"
+              ],
+              "highlight": "تُ"
+            },
+            {
+              "cells": [
+                "Mutakallim ko'plik",
+                "نَصَرْنَا",
+                "nasarnaa",
+                "biz yordam berdik"
+              ],
+              "highlight": "نَا"
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "orderIndex": 1,
+          "prompt": "نَصَرْتُ (nasartu) qaysi siyg'a?",
+          "options": [
+            "Muxotab muzakkar birlik — «sen yordam berding»",
+            "Mutakallim birlik — «men yordam berdim»",
+            "G'oyiba muannas birlik — «u ayol yordam berdi»",
+            "Mutakallim ko'plik — «biz yordam berdik»"
+          ],
+          "correctIndex": 1,
+          "explanation": "Oxiridagi تُ (damma bilan) — mutakallim birlik belgisi: نَصَرْتُ — «men yordam berdim». Solishtiring: نَصَرْتَ (ta) — «sen erkak», نَصَرْتِ (ti) — «sen ayol»."
+        },
+        {
+          "orderIndex": 2,
+          "prompt": "نَصَرُوا (nasaruu) so'zining ma'nosi qaysi?",
+          "options": [
+            "Ular (erkaklar) yordam berdilar",
+            "Siz (erkaklar) yordam berdingiz",
+            "Ular (ayollar) yordam berdilar",
+            "U ikkalasi yordam berdi"
+          ],
+          "correctIndex": 0,
+          "explanation": "ُوا qo'shimchasi — g'oyib muzakkar ko'plik belgisi: نَصَرُوا — «ular (erkaklar) yordam berdilar»."
+        },
+        {
+          "orderIndex": 3,
+          "prompt": "تُمْ qo'shimchasi qaysi siyg'ani bildiradi?",
+          "options": [
+            "Muxotaba muannas ko'plik — «siz ayollar»",
+            "G'oyib muzakkar ko'plik — «ular erkaklar»",
+            "Muxotab muzakkar ko'plik — «siz erkaklar»",
+            "Mutakallim ko'plik — «biz»"
+          ],
+          "correctIndex": 2,
+          "explanation": "تُمْ — muxotab muzakkar ko'plik belgisi: نَصَرْتُمْ — «siz (erkaklar) yordam berdingiz». «Siz ayollar» esa تُنَّ bilan: نَصَرْتُنَّ."
+        },
+        {
+          "orderIndex": 4,
+          "prompt": "نَصَرَتْ (nasarat) qaysi siyg'a?",
+          "options": [
+            "Muxotab muzakkar birlik — «sen erkak yordam berding»",
+            "Mutakallim birlik — «men yordam berdim»",
+            "Muxotaba muannas birlik — «sen ayol yordam berding»",
+            "G'oyiba muannas birlik — «u ayol yordam berdi»"
+          ],
+          "correctIndex": 3,
+          "explanation": "Oxiridagi sokin تْ — g'oyiba muannas birlik belgisi: نَصَرَتْ — «u (ayol) yordam berdi». نَصَرْتَ (nasarta) esa «sen (erkak) yordam berding» bo'ladi — farq harakatlarda."
+        },
+        {
+          "orderIndex": 5,
+          "prompt": "«Biz yordam berdik» arabchada qanday bo'ladi?",
+          "options": [
+            "نَصَرْنَ",
+            "نَصَرْنَا",
+            "نَصَرُوا",
+            "نَصَرْتُمْ"
+          ],
+          "correctIndex": 1,
+          "explanation": "نَا qo'shimchasi — mutakallim ko'plik belgisi: نَصَرْنَا (nasarnaa) — «biz yordam berdik». نَصَرْنَ (nasarna) esa «ular (ayollar) yordam berdilar»."
+        },
+        {
+          "orderIndex": 6,
+          "prompt": "نَصَرْنَ (nasarna) qaysi siyg'a?",
+          "options": [
+            "G'oyiba muannas ko'plik — «ular (ayollar) yordam berdilar»",
+            "Mutakallim ko'plik — «biz yordam berdik»",
+            "G'oyib muzakkar ko'plik — «ular (erkaklar) yordam berdilar»",
+            "Muxotaba muannas birlik — «sen (ayol) yordam berding»"
+          ],
+          "correctIndex": 0,
+          "explanation": "Fathali نَ qo'shimchasi — g'oyiba muannas ko'plik belgisi: نَصَرْنَ — «ular (ayollar) yordam berdilar». «Biz» shakli alif bilan tugaydi: نَصَرْنَا."
+        },
+        {
+          "orderIndex": 7,
+          "prompt": "«Siz (ayollar) yordam berdingiz» ma'nosidagi shakl qaysi?",
+          "options": [
+            "نَصَرْتُمْ",
+            "نَصَرَتَا",
+            "نَصَرْتُمَا",
+            "نَصَرْتُنَّ"
+          ],
+          "correctIndex": 3,
+          "explanation": "تُنَّ qo'shimchasi — muxotaba muannas ko'plik belgisi: نَصَرْتُنَّ (nasartunna) — «siz (ayollar) yordam berdingiz». نَصَرْتُمْ — erkaklarga qaratilgan shakl."
+        },
+        {
+          "orderIndex": 8,
+          "prompt": "نَصَرْتُمَا (nasartumaa) shakli haqida qaysi fikr TO'G'RI?",
+          "options": [
+            "U faqat erkaklarga qaratilgan ikkilik shakl",
+            "U ham muxotab muzakkar ikkilik, ham muxotaba muannas ikkilik uchun bir xil ishlatiladi",
+            "U «u ikkalasi yordam berdi» ma'nosini bildiradi",
+            "U faqat ayollarga qaratilgan ikkilik shakl"
+          ],
+          "correctIndex": 1,
+          "explanation": "Ikkinchi shaxs ikkilikda erkak va ayol shakli bir xil: نَصَرْتُمَا — «siz ikkalangiz yordam berdingiz» (erkak ham, ayol ham). «U ikkalasi» esa g'oyibda: نَصَرَا (erkak), نَصَرَتَا (ayol)."
+        }
+      ]
+    },
+    {
+      "slug": "muzori-tuslanishi",
+      "order": 4,
+      "level": "A1/A2",
+      "titleUz": "Muzori fe'lning tuslanishi",
+      "titleAr": "تَصْرِيفُ الْفِعْلِ الْمُضَارِعِ",
+      "summary": "Muzori fe'lning 14 siyg'a bo'yicha to'liq tuslanishi: يَنْصُرُ misolida prefiks (ي، ت، أ، ن) va suffikslar tizimi.",
+      "estMinutes": 20,
+      "isFree": false,
+      "theory": [
+        {
+          "type": "heading",
+          "text": "Muzori fe'l nima?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Muzori fe'l — hozirgi va kelasi zamonni bildiruvchi fe'l shakli. Mozi fe'ldan farqli o'laroq, muzori fe'l shaxsni so'z OXIRIDA emas, avvalo so'z BOSHIDAGI maxsus harf bilan ko'rsatadi. Bu harflar to'rtta: أ (hamza), ن (nun), ي (yo), ت (to) — ular \"muzoriylik harflari\" deyiladi va نَأْتِي so'zida jamlab eslab qolinadi."
+        },
+        {
+          "type": "example",
+          "arabic": "يَنْصُرُ",
+          "translit": "yansuru",
+          "meaning": "u (erkak) yordam beradi / beryapti"
+        },
+        {
+          "type": "paragraph",
+          "text": "Muzori tuslanishida ikki narsaga qaraladi: (1) boshidagi prefiks — ي g'oyib muzakkarni, ت g'oyiba muannas va muxotabni, أ mutakallim birlikni, ن mutakallim ko'plikni bildiradi; (2) oxiridagi suffiks — ikkilikda انِ, muzakkar ko'plikda ونَ, muxotaba muannas birlikda ينَ, muannas ko'plikda sokin undoshdan keyin نَ (nuni nisva) qo'shiladi. Suffiks qo'shilmagan siyg'alar oxiri damma bilan tugaydi: يَنْصُرُ، تَنْصُرُ، أَنْصُرُ، نَنْصُرُ."
+        },
+        {
+          "type": "tableRef",
+          "tableId": "muzori-nasara-14"
+        },
+        {
+          "type": "note",
+          "text": "Diqqat: تَنْصُرُ shakli ikki siyg'aga tegishli — \"u (ayol) yordam beradi\" (g'oyiba muannas birlik) va \"sen (erkak) yordam berasan\" (muxotab muzakkar birlik). Xuddi shunday تَنْصُرَانِ uch siyg'ada, تَنْصُرْنَ esa faqat muxotaba muannas ko'plikda keladi. Qaysi ma'no ekanini kontekst (gapning egasi) belgilaydi."
+        },
+        {
+          "type": "note",
+          "text": "Muannas ko'plik siyg'alarida (يَنْصُرْنَ va تَنْصُرْنَ) fe'lning oxirgi tub harfi رْ sokin bo'ladi, keyin nuni nisva نَ qo'shiladi. Bu ikki siyg'a — jadvaldagi yagona \"ichki sukunli\" shakllar."
+        }
+      ],
+      "conjugationTables": [
+        {
+          "id": "muzori-nasara-14",
+          "title": "نَصَرَ fe'lining muzori tuslanishi (14 siyg'a)",
+          "rootArabic": "ن ص ر",
+          "columns": [
+            "Siyg'a",
+            "Arabcha",
+            "O'qilishi",
+            "Ma'nosi"
+          ],
+          "rows": [
+            {
+              "cells": [
+                "G'oyib muzakkar, birlik",
+                "يَنْصُرُ",
+                "yansuru",
+                "u (erkak) yordam beradi"
+              ],
+              "highlight": "يَ"
+            },
+            {
+              "cells": [
+                "G'oyib muzakkar, ikkilik",
+                "يَنْصُرَانِ",
+                "yansuraani",
+                "u ikkalasi (erkak) yordam beradi"
+              ],
+              "highlight": "انِ"
+            },
+            {
+              "cells": [
+                "G'oyib muzakkar, ko'plik",
+                "يَنْصُرُونَ",
+                "yansuruuna",
+                "ular (erkaklar) yordam beradilar"
+              ],
+              "highlight": "ونَ"
+            },
+            {
+              "cells": [
+                "G'oyiba muannas, birlik",
+                "تَنْصُرُ",
+                "tansuru",
+                "u (ayol) yordam beradi"
+              ],
+              "highlight": "تَ"
+            },
+            {
+              "cells": [
+                "G'oyiba muannas, ikkilik",
+                "تَنْصُرَانِ",
+                "tansuraani",
+                "u ikkalasi (ayol) yordam beradi"
+              ],
+              "highlight": "انِ"
+            },
+            {
+              "cells": [
+                "G'oyiba muannas, ko'plik",
+                "يَنْصُرْنَ",
+                "yansurna",
+                "ular (ayollar) yordam beradilar"
+              ],
+              "highlight": "ْنَ"
+            },
+            {
+              "cells": [
+                "Muxotab muzakkar, birlik",
+                "تَنْصُرُ",
+                "tansuru",
+                "sen (erkak) yordam berasan"
+              ],
+              "highlight": "تَ"
+            },
+            {
+              "cells": [
+                "Muxotab muzakkar, ikkilik",
+                "تَنْصُرَانِ",
+                "tansuraani",
+                "siz ikkalangiz yordam berasiz"
+              ],
+              "highlight": "انِ"
+            },
+            {
+              "cells": [
+                "Muxotab muzakkar, ko'plik",
+                "تَنْصُرُونَ",
+                "tansuruuna",
+                "siz (erkaklar) yordam berasiz"
+              ],
+              "highlight": "ونَ"
+            },
+            {
+              "cells": [
+                "Muxotaba muannas, birlik",
+                "تَنْصُرِينَ",
+                "tansuriina",
+                "sen (ayol) yordam berasan"
+              ],
+              "highlight": "ينَ"
+            },
+            {
+              "cells": [
+                "Muxotaba muannas, ikkilik",
+                "تَنْصُرَانِ",
+                "tansuraani",
+                "siz ikkalangiz (ayollar) yordam berasiz"
+              ],
+              "highlight": "انِ"
+            },
+            {
+              "cells": [
+                "Muxotaba muannas, ko'plik",
+                "تَنْصُرْنَ",
+                "tansurna",
+                "siz (ayollar) yordam berasiz"
+              ],
+              "highlight": "ْنَ"
+            },
+            {
+              "cells": [
+                "Mutakallim, birlik",
+                "أَنْصُرُ",
+                "ansuru",
+                "men yordam beraman"
+              ],
+              "highlight": "أَ"
+            },
+            {
+              "cells": [
+                "Mutakallim, ko'plik",
+                "نَنْصُرُ",
+                "nansuru",
+                "biz yordam beramiz"
+              ],
+              "highlight": "نَ"
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "orderIndex": 1,
+          "prompt": "Muzori fe'lning boshiga qo'shiladigan muzoriylik harflari qaysilar?",
+          "options": [
+            "أ، ن، ي، ت",
+            "س، ل، ك، ب",
+            "و، ف، ث، م",
+            "ق، د، ط، ع"
+          ],
+          "correctIndex": 0,
+          "explanation": "Muzoriylik harflari to'rtta: أ (mutakallim birlik), ن (mutakallim ko'plik), ي (g'oyib), ت (g'oyiba muannas va muxotab). Ular نَأْتِي so'zida jamlangan."
+        },
+        {
+          "orderIndex": 2,
+          "prompt": "يَنْصُرُونَ qaysi siyg'a?",
+          "options": [
+            "G'oyib muzakkar, birlik",
+            "G'oyib muzakkar, ko'plik",
+            "Muxotab muzakkar, ko'plik",
+            "G'oyiba muannas, ko'plik"
+          ],
+          "correctIndex": 1,
+          "explanation": "Boshidagi يَ prefiksi g'oyibni, oxiridagi ونَ suffiksi muzakkar ko'plikni bildiradi: يَنْصُرُونَ — ular (erkaklar) yordam beradilar. Muxotab ko'plik تَنْصُرُونَ bo'lar edi."
+        },
+        {
+          "orderIndex": 3,
+          "prompt": "تَنْصُرِينَ qaysi siyg'a?",
+          "options": [
+            "Muxotab muzakkar, birlik",
+            "G'oyiba muannas, birlik",
+            "Muxotaba muannas, birlik",
+            "Muxotaba muannas, ko'plik"
+          ],
+          "correctIndex": 2,
+          "explanation": "ينَ suffiksi butun tuslanishda faqat bitta siyg'ada keladi — muxotaba muannas birlikda: تَنْصُرِينَ — sen (ayol) yordam berasan."
+        },
+        {
+          "orderIndex": 4,
+          "prompt": "\"Biz yordam beramiz\" arabchada qanday bo'ladi?",
+          "options": [
+            "أَنْصُرُ",
+            "نَنْصُرُ",
+            "يَنْصُرُ",
+            "تَنْصُرُ"
+          ],
+          "correctIndex": 1,
+          "explanation": "Mutakallim ko'plik prefiksi ن: نَنْصُرُ — biz yordam beramiz. أَنْصُرُ — men, يَنْصُرُ — u (erkak), تَنْصُرُ — u (ayol) yoki sen (erkak)."
+        },
+        {
+          "orderIndex": 5,
+          "prompt": "تَنْصُرُ shakli qaysi IKKI siyg'aga tegishli?",
+          "options": [
+            "G'oyiba muannas birlik va muxotab muzakkar birlik",
+            "G'oyib muzakkar birlik va mutakallim birlik",
+            "Muxotaba muannas birlik va mutakallim ko'plik",
+            "G'oyib muzakkar ikkilik va muxotab muzakkar ikkilik"
+          ],
+          "correctIndex": 0,
+          "explanation": "تَ prefiksi ham g'oyiba muannasga, ham muxotabga xizmat qiladi. Shuning uchun تَنْصُرُ — \"u (ayol) yordam beradi\" ham, \"sen (erkak) yordam berasan\" ham bo'la oladi; ma'noni kontekst hal qiladi."
+        },
+        {
+          "orderIndex": 6,
+          "prompt": "يَنْصُرْنَ qaysi siyg'a?",
+          "options": [
+            "G'oyiba muannas, ko'plik",
+            "Muxotaba muannas, ko'plik",
+            "G'oyib muzakkar, ko'plik",
+            "Mutakallim, ko'plik"
+          ],
+          "correctIndex": 0,
+          "explanation": "يَ prefiksi + رْ sokin + nuni nisva نَ — g'oyiba muannas ko'plik: يَنْصُرْنَ — ular (ayollar) yordam beradilar. Muxotaba muannas ko'plik تَنْصُرْنَ bo'ladi."
+        },
+        {
+          "orderIndex": 7,
+          "prompt": "أَنْصُرُ so'zining ma'nosi qaysi?",
+          "options": [
+            "U (erkak) yordam beradi",
+            "Sen (erkak) yordam berasan",
+            "Men yordam beraman",
+            "Biz yordam beramiz"
+          ],
+          "correctIndex": 2,
+          "explanation": "أَ (hamza) prefiksi mutakallim birlik belgisi: أَنْصُرُ — men yordam beraman."
+        },
+        {
+          "orderIndex": 8,
+          "prompt": "Muzori fe'lning barcha ikkilik siyg'alarida qaysi suffiks keladi?",
+          "options": [
+            "ونَ",
+            "ينَ",
+            "انِ",
+            "نَ"
+          ],
+          "correctIndex": 2,
+          "explanation": "Ikkilik siyg'alarining umumiy belgisi — انِ (alif + kasrali nun): يَنْصُرَانِ، تَنْصُرَانِ. ونَ — muzakkar ko'plik, ينَ — muxotaba muannas birlik, نَ — muannas ko'plikdagi nuni nisva."
+        }
+      ]
+    },
+    {
+      "slug": "amr-fel",
+      "order": 5,
+      "level": "A2",
+      "titleUz": "Amr (buyruq) fe'lining yasalishi",
+      "titleAr": "صِيَاغَةُ فِعْلِ الْأَمْرِ",
+      "summary": "Amr fe'l muzoridan qanday yasaladi: muzoriylik harfini tashlash, hamzatul vasl qo'shish va اُنْصُرْ ning 6 ta muxotab siyg'asi.",
+      "estMinutes": 16,
+      "isFree": false,
+      "theory": [
+        {
+          "type": "heading",
+          "text": "Amr fe'l nima?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Amr fe'l — buyruq, iltimos yoki da'vatni bildiruvchi fe'l shakli: \"yordam ber!\", \"o'qi!\". Buyruq faqat suhbatdoshga qaratilgani uchun amr fe'l faqat 2-shaxs (muxotab) siyg'alarida tuslanadi — jami 6 ta shakl."
+        },
+        {
+          "type": "heading",
+          "text": "Yasalish qoidasi"
+        },
+        {
+          "type": "paragraph",
+          "text": "Amr fe'l muzorining muxotab siyg'asidan uch qadamda yasaladi: (1) boshidagi muzoriylik harfi تَ olib tashlanadi; (2) qolgan qismning birinchi harfi sokin bo'lsa (arab tilida so'z sokin harf bilan boshlana olmaydi), so'z boshiga hamzatul vasl qo'shiladi; (3) fe'l oxiri jazm holatiga o'tadi — birlik muzakkarda oxirgi harf sokin bo'ladi (اُنْصُرْ), تَنْصُرُونَ، تَنْصُرِينَ، تَنْصُرَانِ kabi shakllarda esa oxirgi nun tushib qoladi (اُنْصُرُوا، اُنْصُرِي، اُنْصُرَا). Faqat nuni nisva (تَنْصُرْنَ → اُنْصُرْنَ) tushmaydi."
+        },
+        {
+          "type": "example",
+          "arabic": "تَنْصُرُ ← نْصُرْ ← اُنْصُرْ",
+          "translit": "tansuru → nsur → unsur",
+          "meaning": "yordam berasan → (sokin bosh) → (sen, erkak) yordam ber!"
+        },
+        {
+          "type": "note",
+          "text": "Hamzatul vaslning harakati muzorining ʿayn harfiga (o'rta tub harf harakatiga) qarab belgilanadi: ʿayn DAMMA bo'lsa hamza ham damma o'qiladi — يَنْصُرُ dan اُنْصُرْ; ʿayn KASRA yoki FATHA bo'lsa hamza kasra o'qiladi — يَضْرِبُ dan اِضْرِبْ, يَفْتَحُ dan اِفْتَحْ."
+        },
+        {
+          "type": "note",
+          "text": "Hamzatul vasl faqat so'z boshida turib o'qilganda talaffuz qilinadi. Oldingi so'zga ulab o'qilsa u tushib qoladi: وَانْصُرْ — \"vansur\" (\"va unsur\" emas). Ko'plik shakli اُنْصُرُوا oxiridagi alif esa faqat yozuvda bo'lib, o'qilmaydi: \"unsuruu\"."
+        },
+        {
+          "type": "tableRef",
+          "tableId": "amr-nasara-6"
+        }
+      ],
+      "conjugationTables": [
+        {
+          "id": "amr-nasara-6",
+          "title": "نَصَرَ fe'lining amr tuslanishi (6 muxotab siyg'a)",
+          "rootArabic": "ن ص ر",
+          "columns": [
+            "Siyg'a",
+            "Arabcha",
+            "O'qilishi",
+            "Ma'nosi"
+          ],
+          "rows": [
+            {
+              "cells": [
+                "Muxotab muzakkar, birlik",
+                "اُنْصُرْ",
+                "unsur",
+                "(sen, erkak) yordam ber!"
+              ],
+              "highlight": "اُ"
+            },
+            {
+              "cells": [
+                "Muxotab muzakkar, ikkilik",
+                "اُنْصُرَا",
+                "unsuraa",
+                "(siz ikkalangiz) yordam beringlar!"
+              ],
+              "highlight": "َا"
+            },
+            {
+              "cells": [
+                "Muxotab muzakkar, ko'plik",
+                "اُنْصُرُوا",
+                "unsuruu",
+                "(siz, erkaklar) yordam beringlar!"
+              ],
+              "highlight": "ُوا"
+            },
+            {
+              "cells": [
+                "Muxotaba muannas, birlik",
+                "اُنْصُرِي",
+                "unsurii",
+                "(sen, ayol) yordam ber!"
+              ],
+              "highlight": "ِي"
+            },
+            {
+              "cells": [
+                "Muxotaba muannas, ikkilik",
+                "اُنْصُرَا",
+                "unsuraa",
+                "(siz ikkalangiz, ayollar) yordam beringlar!"
+              ],
+              "highlight": "َا"
+            },
+            {
+              "cells": [
+                "Muxotaba muannas, ko'plik",
+                "اُنْصُرْنَ",
+                "unsurna",
+                "(siz, ayollar) yordam beringlar!"
+              ],
+              "highlight": "ْنَ"
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "orderIndex": 1,
+          "prompt": "Amr fe'l qaysi shakldan yasaladi?",
+          "options": [
+            "Mozi fe'lning g'oyib siyg'asidan",
+            "Muzori fe'lning muxotab siyg'asidan",
+            "Masdar (harakat nomi)dan",
+            "Ism foil (bajaruvchi ism)dan"
+          ],
+          "correctIndex": 1,
+          "explanation": "Amr fe'l muzorining muxotab (2-shaxs) siyg'asidan yasaladi: تَنْصُرُ → اُنْصُرْ. Shuning uchun amr faqat 6 ta muxotab shaklga ega."
+        },
+        {
+          "orderIndex": 2,
+          "prompt": "تَنْصُرُ dan amr yasashda BIRINCHI qadam nima?",
+          "options": [
+            "Boshidagi muzoriylik harfi تَ olib tashlanadi",
+            "Oxiriga نَ qo'shiladi",
+            "So'z boshiga أَ qo'shiladi",
+            "Oxirgi harf damma qilinadi"
+          ],
+          "correctIndex": 0,
+          "explanation": "Avval muzoriylik harfi تَ tushiriladi: تَنْصُرُ → نْصُرُ. Keyin sokin bosh uchun hamzatul vasl qo'shiladi va oxiri sokin qilinadi: اُنْصُرْ."
+        },
+        {
+          "orderIndex": 3,
+          "prompt": "Nega اُنْصُرْ so'zining boshiga hamza (hamzatul vasl) qo'shilgan?",
+          "options": [
+            "Buyruqni kuchaytirish uchun",
+            "ت tushgach so'z sokin harf (نْ) bilan boshlanib qolgani uchun",
+            "Muxotabni ko'rsatish uchun",
+            "Fe'l o'zagida hamza borligi uchun"
+          ],
+          "correctIndex": 1,
+          "explanation": "تَ tushirilgach نْصُرْ qoladi — boshi sokin. Arab tilida so'z sokin harf bilan boshlana olmaydi, shuning uchun talaffuzga tayanch sifatida hamzatul vasl qo'shiladi: اُنْصُرْ."
+        },
+        {
+          "orderIndex": 4,
+          "prompt": "اُنْصُرْ dagi hamzatul vasl nima uchun DAMMA bilan o'qiladi?",
+          "options": [
+            "Amr fe'lda hamza doim damma bo'lgani uchun",
+            "Fe'l oxiri sokin bo'lgani uchun",
+            "Muzorida ʿayn harfi damma bo'lgani uchun (يَنْصُرُ)",
+            "Birinchi tub harf ن bo'lgani uchun"
+          ],
+          "correctIndex": 2,
+          "explanation": "Qoida: muzorining ʿayn harfi damma bo'lsa hamzatul vasl damma o'qiladi — يَنْصُرُ → اُنْصُرْ. ʿayn kasra yoki fatha bo'lsa hamza kasra bo'ladi: اِضْرِبْ، اِفْتَحْ."
+        },
+        {
+          "orderIndex": 5,
+          "prompt": "\"(Sen, ayol) yordam ber!\" arabchada qanday bo'ladi?",
+          "options": [
+            "اُنْصُرْ",
+            "اُنْصُرِي",
+            "اُنْصُرْنَ",
+            "اُنْصُرَا"
+          ],
+          "correctIndex": 1,
+          "explanation": "Muxotaba muannas birlik suffiksi ي: اُنْصُرِي — unsurii. اُنْصُرْ — erkakka, اُنْصُرْنَ — ayollar guruhiga, اُنْصُرَا — ikki kishiga buyruq."
+        },
+        {
+          "orderIndex": 6,
+          "prompt": "اُنْصُرُوا so'zining oxiridagi alif (ا) haqida qaysi gap to'g'ri?",
+          "options": [
+            "\"aa\" cho'ziq tovush sifatida o'qiladi",
+            "Yozilsa ham o'qilmaydi — talaffuz \"unsuruu\"",
+            "Ikkilikni bildiradi",
+            "Hamzatul vasl hisoblanadi"
+          ],
+          "correctIndex": 1,
+          "explanation": "Muzakkar ko'plik وا bilan tugagan fe'llarda oxirgi alif faqat yozuv an'anasi (alifi fariqa) — o'qilmaydi: اُنْصُرُوا — unsuruu."
+        },
+        {
+          "orderIndex": 7,
+          "prompt": "وَانْصُرْ birikmasi qanday o'qiladi?",
+          "options": [
+            "va unsur",
+            "vansur",
+            "va ansur",
+            "vaa nusur"
+          ],
+          "correctIndex": 1,
+          "explanation": "Hamzatul vasl faqat so'z boshida o'qiladi; oldingi so'zga ulanganda tushib qoladi: وَ + اُنْصُرْ → وَانْصُرْ — \"vansur\"."
+        }
+      ]
+    },
+    {
+      "slug": "sulosiy-boblar",
+      "order": 6,
+      "level": "A2",
+      "titleUz": "Sulosiy mujarrad boblar va vazn",
+      "titleAr": "أَبْوَابُ الثُّلَاثِيِّ الْمُجَرَّدِ وَالْوَزْنُ",
+      "summary": "Vazn (o'lchov) tushunchasi va sulosiy mujarrad fe'lning uch asosiy bobi: nasara, zaraba, fataha — muzoridagi ʿayn harakati bilan farqlanadi.",
+      "estMinutes": 18,
+      "isFree": false,
+      "theory": [
+        {
+          "type": "heading",
+          "text": "Vazn (o'lchov) nima?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sarf ilmida har bir so'z shaklini o'lchash uchun maxsus qolip — vazn ishlatiladi. Bu qolip فَعَلَ (fa-ʿayn-lam) harflaridan tuziladi va \"mizon sarfiy\" (الْمِيزَانُ الصَّرْفِيُّ), ya'ni sarf tarozisi deb ataladi. O'zakning birinchi harfi ف (fa) o'rniga, ikkinchi harfi ع (ʿayn) o'rniga, uchinchi harfi ل (lam) o'rniga qo'yiladi."
+        },
+        {
+          "type": "example",
+          "arabic": "نَصَرَ = فَعَلَ",
+          "translit": "nasara = fa'ala",
+          "meaning": "ن → ف, ص → ع, ر → ل: demak نَصَرَ fe'li فَعَلَ vaznida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vazn yordamida so'zning harakatlari va qo'shimchalarini aniq tasvirlash mumkin: harflar o'zgarsa ham, qolipdagi harakatlar aynan takrorlanadi. Masalan, كَتَبَ ham فَعَلَ vaznida, chunki uchala harfi ham fatha bilan kelgan."
+        },
+        {
+          "type": "heading",
+          "text": "Sulosiy mujarradning uch asosiy bobi"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sulosiy mujarrad (uch harfli, qo'shimchasiz) fe'llar boblarga bo'linadi. Bob — mozi va muzoridagi ʿayn (o'rta harf) harakatining muayyan birikmasi. Quyidagi uch asosiy bobda mozida ʿayn hamisha fatha, farq esa muzoridagi ʿayn harakatida: bob nasarada damma, bob zarabada kasra, bob fatahada fatha."
+        },
+        {
+          "type": "tableRef",
+          "tableId": "sulosiy-abwab"
+        },
+        {
+          "type": "note",
+          "text": "Fe'lning qaysi bobga tegishli ekanini qoidadan chiqarib bo'lmaydi — bu lug'atdan yodlanadi. Faqat bitta yordamchi belgi bor: bob fataha fe'llarining ko'pchiligida ikkinchi yoki uchinchi o'zak harfi halq (bo'g'iz) harflaridan biri bo'ladi: ء ه ع ح غ خ. Masalan فَتَحَ da ح, ذَهَبَ da ه bor."
+        }
+      ],
+      "conjugationTables": [
+        {
+          "id": "sulosiy-abwab",
+          "title": "Sulosiy mujarradning uch asosiy bobi",
+          "rootArabic": "ف ع ل",
+          "columns": [
+            "Bob",
+            "Vazn",
+            "Mozi",
+            "Muzori",
+            "Ma'nosi"
+          ],
+          "rows": [
+            {
+              "cells": [
+                "Bob nasara",
+                "فَعَلَ يَفْعُلُ",
+                "نَصَرَ",
+                "يَنْصُرُ",
+                "yordam berdi / yordam beradi"
+              ],
+              "highlight": "صُ"
+            },
+            {
+              "cells": [
+                "Bob zaraba",
+                "فَعَلَ يَفْعِلُ",
+                "ضَرَبَ",
+                "يَضْرِبُ",
+                "urdi / uradi"
+              ],
+              "highlight": "رِ"
+            },
+            {
+              "cells": [
+                "Bob fataha",
+                "فَعَلَ يَفْعَلُ",
+                "فَتَحَ",
+                "يَفْتَحُ",
+                "ochdi / ochadi"
+              ],
+              "highlight": "تَ"
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "orderIndex": 1,
+          "prompt": "Sarf ilmida vazn (mizon) nima?",
+          "options": [
+            "Fe'lning zamonini ko'rsatadigan qo'shimcha",
+            "So'z shaklini o'lchaydigan فَعَلَ harflaridan tuzilgan qolip",
+            "Arab alifbosidagi harflar tartibi",
+            "Fe'lning lug'atdagi ma'nosi"
+          ],
+          "correctIndex": 1,
+          "explanation": "Vazn — ف ع ل harflaridan tuzilgan o'lchov qolipi: o'zakning 1-harfi ف, 2-harfi ع, 3-harfi ل o'rniga qo'yilib, so'zning shakli va harakatlari tasvirlanadi."
+        },
+        {
+          "orderIndex": 2,
+          "prompt": "نَصَرَ fe'lining muzorisi qaysi?",
+          "options": [
+            "يَنْصُرُ",
+            "يَنْصِرُ",
+            "يَنْصَرُ",
+            "نَصَرُوا"
+          ],
+          "correctIndex": 0,
+          "explanation": "نَصَرَ bob nasaraga tegishli: muzorida ʿayn (ص harfi) damma oladi — يَنْصُرُ (yansuru)."
+        },
+        {
+          "orderIndex": 3,
+          "prompt": "ضَرَبَ / يَضْرِبُ fe'li qaysi vaznda?",
+          "options": [
+            "فَعَلَ يَفْعُلُ",
+            "فَعَلَ يَفْعَلُ",
+            "فَعَلَ يَفْعِلُ",
+            "فَعِلَ يَفْعَلُ"
+          ],
+          "correctIndex": 2,
+          "explanation": "ضَرَبَ da mozi ʿayni fatha, يَضْرِبُ da muzori ʿayni (ر) kasra — bu فَعَلَ يَفْعِلُ vazni, ya'ni bob zaraba."
+        },
+        {
+          "orderIndex": 4,
+          "prompt": "فَتَحَ fe'lining muzorisida ʿayn (o'rta harf) qaysi harakatni oladi?",
+          "options": [
+            "Damma",
+            "Fatha",
+            "Kasra",
+            "Sukun"
+          ],
+          "correctIndex": 1,
+          "explanation": "فَتَحَ bob fatahaga tegishli: muzorida ham ʿayn fatha oladi — يَفْتَحُ (yaftahu)."
+        },
+        {
+          "orderIndex": 5,
+          "prompt": "Mizon sarfiyda ع (ʿayn) harfi o'zakning qaysi harfiga to'g'ri keladi?",
+          "options": [
+            "Birinchi harfiga",
+            "Oxirgi harfiga",
+            "Qo'shimcha harfga",
+            "Ikkinchi (o'rta) harfiga"
+          ],
+          "correctIndex": 3,
+          "explanation": "Mizonda ف — o'zakning birinchi, ع — ikkinchi (o'rta), ل — uchinchi harfiga to'g'ri keladi. Shuning uchun o'rta harf \"ʿayn kalima\" deb ataladi."
+        },
+        {
+          "orderIndex": 6,
+          "prompt": "Bob nasaraning belgisi qaysi?",
+          "options": [
+            "Mozida fatha, muzorida damma",
+            "Mozida fatha, muzorida kasra",
+            "Mozida fatha, muzorida fatha",
+            "Mozida kasra, muzorida fatha"
+          ],
+          "correctIndex": 0,
+          "explanation": "Bob nasara: نَصَرَ يَنْصُرُ — mozida ʿayn fatha, muzorida ʿayn damma (فَعَلَ يَفْعُلُ)."
+        },
+        {
+          "orderIndex": 7,
+          "prompt": "كَتَبَ / يَكْتُبُ fe'li qaysi bobga tegishli?",
+          "options": [
+            "Bob zaraba",
+            "Bob fataha",
+            "Bob nasara",
+            "Hech qaysi bobga tegishli emas"
+          ],
+          "correctIndex": 2,
+          "explanation": "يَكْتُبُ da muzori ʿayni (ت) damma olgan — فَعَلَ يَفْعُلُ vazni. Bu نَصَرَ يَنْصُرُ bilan bir xil, demak bob nasara."
+        }
+      ]
+    },
+    {
+      "slug": "mushtaq-shakllar",
+      "order": 7,
+      "level": "A2",
+      "titleUz": "Mushtaq shakllarga kirish: masdar, ism foil, ism maf'ul",
+      "titleAr": "الْمَصْدَرُ وَاسْمُ الْفَاعِلِ وَاسْمُ الْمَفْعُولِ",
+      "summary": "Fe'ldan yasaladigan asosiy ismlar: masdar (harakat nomi), ism foil (bajaruvchi, فَاعِل vazni) va ism maf'ul (bajarilgan, مَفْعُول vazni).",
+      "estMinutes": 16,
+      "isFree": false,
+      "theory": [
+        {
+          "type": "heading",
+          "text": "Fe'ldan yasaladigan ismlar — mushtaq shakllar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Arab tilida bitta o'zakdan fe'l bilan birga bir qancha ism ham yasaladi. Bunday ismlar mushtaq (yasama) shakllar deyiladi. Bu darsda uchta eng asosiy shaklni ko'ramiz: masdar, ism foil va ism maf'ul. Uchalasini ham ن ص ر (yordam bermoq) o'zagida kuzatamiz."
+        },
+        {
+          "type": "paragraph",
+          "text": "Masdar — ish-harakatning nomi. U harakatni zamon va bajaruvchiga bog'lamasdan, mavhum tushuncha sifatida ifodalaydi. Sulosiy mujarrad fe'llarning masdari lug'atdan yodlanadi, chunki uning vaznlari xilma-xil. نَصَرَ fe'lining masdari — نَصْرٌ (yordam berish, g'alaba)."
+        },
+        {
+          "type": "example",
+          "arabic": "نَاصِرٌ",
+          "translit": "naasirun",
+          "meaning": "yordam beruvchi — فَاعِل vaznidagi ism foil"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ism foil — ishni bajaruvchini bildiradigan ism. Sulosiy mujarrad fe'ldan hamisha فَاعِل vaznida yasaladi: birinchi o'zak harfdan keyin alif qo'shiladi, o'rta harf kasra oladi. نَصَرَ → نَاصِرٌ (yordam beruvchi), كَتَبَ → كَاتِبٌ (yozuvchi)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ism maf'ul — ish o'ziga bajarilgan shaxs yoki narsani bildiradi. Sulosiy mujarrad fe'ldan hamisha مَفْعُول vaznida yasaladi: boshiga fathali مَ qo'shiladi, o'rta harfdan keyin و keladi. نَصَرَ → مَنْصُورٌ (yordam berilgan), كَتَبَ → مَكْتُوبٌ (yozilgan)."
+        },
+        {
+          "type": "tableRef",
+          "tableId": "mushtaq-shakllar"
+        },
+        {
+          "type": "note",
+          "text": "فَاعِل va مَفْعُول vaznlari sulosiy mujarradning istalgan sahih fe'liga tatbiq etiladi: فَتَحَ → فَاتِحٌ (ochuvchi), مَفْتُوحٌ (ochilgan); ضَرَبَ → ضَارِبٌ (uruvchi), مَضْرُوبٌ (urilgan). Masdar esa har fe'l uchun lug'atdan aniqlanadi."
+        }
+      ],
+      "conjugationTables": [
+        {
+          "id": "mushtaq-shakllar",
+          "title": "ن ص ر o'zagidan yasalgan mushtaq shakllar",
+          "rootArabic": "ن ص ر",
+          "columns": [
+            "Shakl",
+            "Vazn",
+            "Misol",
+            "O'qilishi",
+            "Ma'nosi"
+          ],
+          "rows": [
+            {
+              "cells": [
+                "Masdar",
+                "فَعْل",
+                "نَصْرٌ",
+                "nasrun",
+                "yordam berish, g'alaba"
+              ]
+            },
+            {
+              "cells": [
+                "Ism foil",
+                "فَاعِل",
+                "نَاصِرٌ",
+                "naasirun",
+                "yordam beruvchi"
+              ],
+              "highlight": "ا"
+            },
+            {
+              "cells": [
+                "Ism maf'ul",
+                "مَفْعُول",
+                "مَنْصُورٌ",
+                "mansuurun",
+                "yordam berilgan"
+              ],
+              "highlight": "مَ"
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "orderIndex": 1,
+          "prompt": "Masdar nimani bildiradi?",
+          "options": [
+            "Ishni bajaruvchi shaxsni",
+            "Ish o'ziga bajarilgan narsani",
+            "Ish-harakatning nomini (zamonsiz, bajaruvchisiz)",
+            "Kelasi zamondagi harakatni"
+          ],
+          "correctIndex": 2,
+          "explanation": "Masdar — harakatning nomi: u harakatni zamonga va bajaruvchiga bog'lamaydi. Masalan نَصْرٌ — \"yordam berish\"."
+        },
+        {
+          "orderIndex": 2,
+          "prompt": "نَاصِرٌ so'zi qaysi vaznda?",
+          "options": [
+            "مَفْعُول",
+            "فَاعِل",
+            "فَعْل",
+            "فَعِيل"
+          ],
+          "correctIndex": 1,
+          "explanation": "نَاصِرٌ — ism foil, vazni فَاعِل: birinchi harfdan keyin alif, o'rta harf kasrali (نَـا + صِ + ر)."
+        },
+        {
+          "orderIndex": 3,
+          "prompt": "مَنْصُورٌ so'zining ma'nosi qaysi?",
+          "options": [
+            "Yordam berilgan",
+            "Yordam beruvchi",
+            "Yordam berish",
+            "Yordam beradi"
+          ],
+          "correctIndex": 0,
+          "explanation": "مَنْصُورٌ — ism maf'ul (مَفْعُول vazni), ish o'ziga bajarilganni bildiradi: \"yordam berilgan\"."
+        },
+        {
+          "orderIndex": 4,
+          "prompt": "Ism foil nimani bildiradi?",
+          "options": [
+            "Harakatning nomini",
+            "Ish o'ziga bajarilgan narsani",
+            "O'tgan zamondagi harakatni",
+            "Ishni bajaruvchi shaxsni"
+          ],
+          "correctIndex": 3,
+          "explanation": "Ism foil — ishni bajaruvchini bildiradi va sulosiy mujarradda hamisha فَاعِل vaznida keladi: نَاصِرٌ — yordam beruvchi."
+        },
+        {
+          "orderIndex": 5,
+          "prompt": "كَاتِبٌ so'zi qaysi mushtaq shakl?",
+          "options": [
+            "Masdar",
+            "Ism foil",
+            "Ism maf'ul",
+            "Muzori fe'l"
+          ],
+          "correctIndex": 1,
+          "explanation": "كَاتِبٌ — فَاعِل vaznida (birinchi harfdan keyin alif, o'rta harf kasrali), demak ism foil: \"yozuvchi\"."
+        },
+        {
+          "orderIndex": 6,
+          "prompt": "كَتَبَ fe'lidan مَفْعُول vaznida yasalgan shakl qaysi?",
+          "options": [
+            "كَاتِبٌ",
+            "كِتَابٌ",
+            "مَكْتُوبٌ",
+            "يَكْتُبُ"
+          ],
+          "correctIndex": 2,
+          "explanation": "مَفْعُول vazni: boshiga fathali مَ, o'rta harfdan keyin و. Demak كَتَبَ → مَكْتُوبٌ (yozilgan)."
+        },
+        {
+          "orderIndex": 7,
+          "prompt": "نَصْرٌ so'zi qaysi shakl va uning ma'nosi nima?",
+          "options": [
+            "Masdar — \"yordam berish\"",
+            "Ism foil — \"yordam beruvchi\"",
+            "Ism maf'ul — \"yordam berilgan\"",
+            "Mozi fe'l — \"yordam berdi\""
+          ],
+          "correctIndex": 0,
+          "explanation": "نَصْرٌ — نَصَرَ fe'lining masdari (فَعْل vaznida), harakat nomini bildiradi: \"yordam berish, g'alaba\"."
+        }
+      ]
+    }
+  ]
+}

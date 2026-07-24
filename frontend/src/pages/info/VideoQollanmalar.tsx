@@ -2,6 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SiteHeader } from "@/components/SiteHeader";
 import { useTranslation } from "react-i18next";
 import { Video } from "lucide-react";
+import { SEO } from "@/components/SEO";
+import { StructuredData, buildBreadcrumbSchema } from "@/components/StructuredData";
 
 export function VideoQollanmalar() {
   const { i18n } = useTranslation();
@@ -14,11 +16,24 @@ export function VideoQollanmalar() {
 
   return (
     <div className="min-h-screen bg-muted/30">
+      <SEO
+        title="Video qo'llanmalar"
+        description="Arab Exam platformasidan foydalanish bo'yicha video darsliklar: ro'yxatdan o'tish, mock imtihon topshirish va AI Tutor bilan ishlash."
+        canonicalPath="/yordam/video"
+        lang={i18n.language}
+      />
+      <StructuredData
+        data={buildBreadcrumbSchema([
+          { name: "Bosh sahifa", url: "https://arabexam.uz/" },
+          { name: "Yordam", url: "https://arabexam.uz/yordam" },
+          { name: "Video qo'llanmalar", url: "https://arabexam.uz/yordam/video" },
+        ])}
+      />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Video qo‘llanmalar</CardTitle>
+            <CardTitle as="h1">Video qo‘llanmalar</CardTitle>
             <CardDescription>Qisqa video ko‘rsatmalar</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

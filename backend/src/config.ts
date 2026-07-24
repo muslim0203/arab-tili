@@ -17,6 +17,14 @@ export const config = {
   // ElevenLabs — listening audiolarini generatsiya qilish uchun (scripts/generate-listening-audio.ts)
   elevenLabsApiKey: env.ELEVENLABS_API_KEY ?? "",
   googleClientId: env.GOOGLE_CLIENT_ID ?? "",
+  // AI sozlamalari — model idlar va chegaralar env orqali (qattiq kodlanmagan).
+  // maxOutputTokens 8192 — gemini-2.0-flash chiqish chegarasi (undan oshsa xato).
+  ai: {
+    geminiModel: env.AI_GEMINI_MODEL ?? "gemini-2.0-flash",
+    openaiModel: env.AI_OPENAI_MODEL ?? "gpt-4o-mini",
+    timeoutMs: parseInt(env.AI_TIMEOUT_MS ?? "45000", 10),
+    maxOutputTokens: parseInt(env.AI_MAX_OUTPUT_TOKENS ?? "8192", 10),
+  },
   aws: {
     accessKeyId: env.AWS_ACCESS_KEY_ID ?? "",
     secretAccessKey: env.AWS_SECRET_ACCESS_KEY ?? "",

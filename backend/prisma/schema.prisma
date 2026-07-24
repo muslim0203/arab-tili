@@ -187,6 +187,7 @@ model User {
   purchases           Purchase[]
   usageTracking       UsageTracking[]
   refreshTokens       RefreshToken[]
+  sarfLessonProgress  SarfLessonProgress[]
 
   @@map("users")
 }
@@ -375,6 +376,7 @@ model UserExamAttempt {
   attemptQuestions AttemptQuestion[]
   answers         UserAnswer[]
 
+  @@index([userId, createdAt])
   @@map("user_exam_attempts")
 }
 
@@ -402,6 +404,8 @@ model AttemptQuestion {
   sourceQuestion QuestionBank?   @relation(fields: [sourceQuestionId], references: [id], onDelete: SetNull)
   userAnswers    UserAnswer[]
 
+  @@index([attemptId])
+  @@index([sourceQuestionId])
   @@map("attempt_questions")
 }
 
@@ -426,6 +430,66 @@ model UserAnswer {
   @@unique([attemptId, attemptQuestionId])
   @@unique([attemptId, questionId])
   @@map("user_answers")
+}
+
+// ══════════════════════════════════════════════════
+// SARF (MORFOLOGIYA) LESSON TABLES
+// ══════════════════════════════════════════════════
+
+model SarfLesson {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  order             Int      @default(0)
+  level             String   @map("level") // "A1" | "A1/A2" | "A2" ...
+  titleUz           String   @map("title_uz")
+  titleAr           String   @map("title_ar")
+  summary           String   @map("summary")
+  estMinutes        Int      @map("est_minutes")
+  isFree            Boolean  @default(false) @map("is_free")
+  theory            String   @map("theory") // JSON: Block[] (qarang: C bo'lim)
+  conjugationTables String   @map("conjugation_tables") // JSON: ConjTable[]
+  isPublished       Boolean  @default(true) @map("is_published")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  questions SarfQuestion[]
+  progress  SarfLessonProgress[]
+
+  @@index([order])
+  @@map("sarf_lessons")
+}
+
+model SarfQuestion {
+  id           String   @id @default(cuid())
+  lessonId     String   @map("lesson_id")
+  orderIndex   Int      @default(0) @map("order_index")
+  prompt       String   @map("prompt")
+  options      String   @map("options") // JSON: string[] (4 options)
+  correctIndex Int      @map("correct_index") // 0..3
+  explanation  String   @map("explanation")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  lesson SarfLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@map("sarf_questions")
+}
+
+model SarfLessonProgress {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  lessonId    String    @map("lesson_id")
+  status      String    @default("not_started") @map("status") // not_started | in_progress | completed
+  bestScore   Int       @default(0) @map("best_score") // to'g'ri javoblar soni (savollar sonidan)
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson SarfLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("sarf_lesson_progress")
 }
 
 // ══════════════════════════════════════════════════
@@ -457,6 +521,7 @@ model AITutorConversation {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, createdAt])
   @@map("ai_tutor_conversations")
 }
 
@@ -481,5 +546,7 @@ model Payment {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([status, createdAt])
   @@map("payments")
 }

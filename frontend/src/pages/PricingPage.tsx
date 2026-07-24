@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { AppLayout } from "@/components/app/AppLayout";
@@ -72,6 +73,8 @@ export function PricingPage() {
         onSuccess: (data) => {
             window.location.href = data.redirectUrl;
         },
+        // onError bo'lmasa 503 kelganda tugma jimgina ishlamay qolardi.
+        onError: (err) => toast.error(err instanceof Error ? err.message : "To'lovni boshlab bo'lmadi"),
     });
 
     const subscribePro = useMutation({
@@ -83,6 +86,7 @@ export function PricingPage() {
         onSuccess: (data) => {
             window.location.href = data.redirectUrl;
         },
+        onError: (err) => toast.error(err instanceof Error ? err.message : "To'lovni boshlab bo'lmadi"),
     });
 
     const handleUpgrade = (target: "standard" | "pro") => {

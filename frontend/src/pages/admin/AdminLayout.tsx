@@ -11,6 +11,7 @@ import {
   Headphones,
   PenTool,
   Mic,
+  Sparkles,
 } from "lucide-react";
 
 const nav = [
@@ -23,6 +24,7 @@ const nav = [
   { to: "/admin/listening", label: "Tinglash (Listening)", icon: Headphones },
   { to: "/admin/writing", label: "Yozish (Writing)", icon: PenTool },
   { to: "/admin/speaking", label: "Gapirish (Speaking)", icon: Mic },
+  { to: "/admin/sarf", label: "Sarf asoslari", icon: Sparkles },
 ];
 
 export function AdminLayout() {

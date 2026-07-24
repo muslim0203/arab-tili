@@ -17,15 +17,15 @@ export function TizimHaqida() {
       />
       <StructuredData
         data={buildBreadcrumbSchema([
-          { name: "Bosh sahifa", url: "https://Arab Exam.uz/" },
-          { name: "Tizim haqida", url: "https://Arab Exam.uz/tizim-haqida" },
+          { name: "Bosh sahifa", url: "https://arabexam.uz/" },
+          { name: "Tizim haqida", url: "https://arabexam.uz/tizim-haqida" },
         ])}
       />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Tizim haqida</CardTitle>
+            <CardTitle as="h1">Tizim haqida</CardTitle>
             <CardDescription>Arab Exam – Arab tili imtihoniga tayyorgarlik platformasi</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">
