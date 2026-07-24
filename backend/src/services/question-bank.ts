@@ -48,11 +48,7 @@ export async function selectBankQuestions(
     orderBy: { id: "asc" },
   });
   const shuffled = rows.sort(() => Math.random() - 0.5).slice(0, count);
-  // Ball haqiqiy savol soniga qarab hisoblanadi: to'liq imtihonda 30/15=2,
-  // demo'da 30/3=10. Har holatda bo'lim jami 30 ballga teng bo'lib qoladi,
-  // shu sabab CEFR ballash va daraja aniqlash o'zgarishsiz ishlayveradi.
-  const effectiveCount = Math.max(1, shuffled.length);
-  const ptsPerQ = Math.round((MAX_SCORE_PER_SKILL / effectiveCount) * 100) / 100;
+  const ptsPerQ = getPointsPerQuestion(level, section);
 
   return shuffled.map((r) => ({
     id: r.id,
@@ -70,23 +66,16 @@ export async function selectBankQuestions(
   }));
 }
 
-export async function selectQuestionsForAttempt(
-  level: CefrLevel,
-  opts?: { perSection?: number }
-): Promise<{
+export async function selectQuestionsForAttempt(level: CefrLevel): Promise<{
   listening: Awaited<ReturnType<typeof selectBankQuestions>>;
   reading: Awaited<ReturnType<typeof selectBankQuestions>>;
   language_use: Awaited<ReturnType<typeof selectBankQuestions>>;
 }> {
   const counts = getCountsForLevel(level);
-  // Demo imtihonda har bo'limdan cheklangan (masalan 3 ta) savol olinadi.
-  const listeningN = opts?.perSection ?? counts.listening;
-  const readingN = opts?.perSection ?? counts.reading;
-  const languageUseN = opts?.perSection ?? counts.language_use;
   const [listening, reading, language_use] = await Promise.all([
-    selectBankQuestions(level, "listening", listeningN),
-    selectBankQuestions(level, "reading", readingN),
-    selectBankQuestions(level, "language_use", languageUseN),
+    selectBankQuestions(level, "listening", counts.listening),
+    selectBankQuestions(level, "reading", counts.reading),
+    selectBankQuestions(level, "language_use", counts.language_use),
   ]);
   return { listening, reading, language_use };
 }

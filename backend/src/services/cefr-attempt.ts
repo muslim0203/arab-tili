@@ -15,16 +15,7 @@ export type CefrLevelType = CefrLevel;
  * - Writing: AI task(lar), jami maxScore = 30
  * - Speaking: AI task(lar), jami maxScore = 30
  */
-/** Demo imtihonda har bo'limdan olinadigan savol soni (to'liq imtihonda 15). */
-const DEMO_PER_SECTION = 3;
-
-export async function createCefrAttempt(
-  userId: string,
-  level: CefrLevel,
-  opts?: { demo?: boolean }
-) {
-  const demo = opts?.demo ?? false;
-
+export async function createCefrAttempt(userId: string, level: CefrLevel) {
   const attempt = await prisma.userExamAttempt.create({
     data: {
       userId,
@@ -34,10 +25,7 @@ export async function createCefrAttempt(
     },
   });
 
-  const bank = await selectQuestionsForAttempt(
-    level,
-    demo ? { perSection: DEMO_PER_SECTION } : undefined
-  );
+  const bank = await selectQuestionsForAttempt(level);
   let order = 0;
 
   const createFromBank = async (
@@ -76,8 +64,7 @@ export async function createCefrAttempt(
   let writingTasks: WritingTask[] = [];
   let speakingTasks: SpeakingTask[] = [];
   try {
-    // Demo'da har doim 1 ta writing task (arzon va tez).
-    const writingCount = demo ? 1 : (level === "A1" || level === "A2" ? 1 : 2);
+    const writingCount = level === "A1" || level === "A2" ? 1 : 2;
     const writingMaxPerTask = Math.round(MAX_SCORE_PER_SKILL / writingCount); // 30/1=30 yoki 30/2=15
     const writingRes = await generateWritingTasks(level, writingCount);
     writingTasks = writingRes.tasks;
@@ -101,11 +88,11 @@ export async function createCefrAttempt(
       });
     }
 
-    // Speaking – jami max 30 ball. Demo'da faqat 1 ta savol qoldiramiz.
+    // Speaking – jami max 30 ball
     const speakingRes = await generateSpeakingTasks(level);
-    speakingTasks = demo ? speakingRes.tasks.slice(0, 1) : speakingRes.tasks;
+    speakingTasks = speakingRes.tasks;
     const speakingMaxPerTask = Math.round(MAX_SCORE_PER_SKILL / Math.max(1, speakingTasks.length));
-    for (const t of speakingTasks) {
+    for (const t of speakingRes.tasks) {
       order++;
       await prisma.attemptQuestion.create({
         data: {

@@ -18,14 +18,11 @@ export const PRO_LIMITS = {
 } as const;
 
 export const FREE_LIMITS = {
-    mock: 0,     // to'liq mock yo'q — o'rniga umrbod 1 ta qisqartirilgan demo (pastda)
+    mock: 0,     // demo only (handled separately)
     writing: 1,  // 1 demo
     speaking: 1, // 1 demo (1 question)
     aiTutor: 0,  // Pro only
 } as const;
-
-/** FREE foydalanuvchi umrida bepul boshlashи mumkin bo'lgan demo mock imtihonlar soni. */
-export const FREE_DEMO_MOCK_LIMIT = 1;
 
 export type PlanType = "free" | "standard" | "pro";
 export type UsageType = "mock" | "writing" | "speaking" | "aiTutor";
@@ -170,65 +167,6 @@ export async function canStartMock(userId: string): Promise<AccessResult> {
     }
 
     return { allowed: true, planType };
-}
-
-/**
- * Can user start the free, shortened DEMO mock exam?
- *
- * Faqat FREE foydalanuvchilar uchun: umrida 1 marta (har bo'limdan bir necha
- * savol + 1 writing + 1 speaking, to'liq AI baholash bilan). Standard/Pro
- * foydalanuvchilarda allaqachon to'liq imtihon bor, ularга demo kerak emas.
- */
-export async function canStartDemoMock(userId: string): Promise<AccessResult> {
-    const planType = await getUserPlanType(userId);
-
-    if (planType !== "free") {
-        return {
-            allowed: false,
-            planType,
-            reason: "Sizda to'liq imtihon huquqi bor — demo shart emas.",
-        };
-    }
-
-    const totalUsed = await prisma.usageTracking.aggregate({
-        where: { userId, type: "mock" },
-        _sum: { usedCount: true },
-    });
-    if ((totalUsed._sum.usedCount ?? 0) >= FREE_DEMO_MOCK_LIMIT) {
-        return {
-            allowed: false,
-            planType,
-            reason: "Bepul demo imtihondan foydalangansiz. To'liq imtihon uchun Pro rejaga o'ting yoki mock imtihon sotib oling.",
-        };
-    }
-    return { allowed: true, planType };
-}
-
-/** Demo mock ishlatilganini umrbod belgilaydi (writing/speaking demosi bilan bir xil uslub). */
-export async function recordDemoMockUsage(userId: string): Promise<void> {
-    const planType = await getUserPlanType(userId);
-    if (planType !== "free") return; // faqat FREE demosini hisoblaymiz
-
-    const farFuture = new Date("2099-12-31");
-    await prisma.usageTracking.upsert({
-        where: {
-            userId_type_periodStart: {
-                userId,
-                type: "mock",
-                periodStart: new Date("2000-01-01"),
-            },
-        },
-        create: {
-            userId,
-            type: "mock",
-            usedCount: 1,
-            periodStart: new Date("2000-01-01"),
-            periodEnd: farFuture,
-        },
-        update: {
-            usedCount: { increment: 1 },
-        },
-    });
 }
 
 /**
@@ -503,7 +441,6 @@ export type AccessStatus = {
     access: {
         fullSarf: boolean;
         mockExam: boolean;
-        demoMock: boolean;   // FREE foydalanuvchi bepul demo imtihonni boshlashi mumkinmi
         writingAI: boolean;
         speakingAI: boolean;
         aiTutor: boolean;
@@ -535,24 +472,24 @@ export async function getAccessStatus(userId: string): Promise<AccessStatus> {
         speakingLimit = PRO_LIMITS.speaking;
         aiTutorLimit = PRO_LIMITS.aiTutor;
     } else if (planType === "free") {
-        const [totalMock, totalWriting, totalSpeaking] = await Promise.all([
-            prisma.usageTracking.aggregate({ where: { userId, type: "mock" }, _sum: { usedCount: true } }),
-            prisma.usageTracking.aggregate({ where: { userId, type: "writing" }, _sum: { usedCount: true } }),
-            prisma.usageTracking.aggregate({ where: { userId, type: "speaking" }, _sum: { usedCount: true } }),
-        ]);
-        mockUsed = totalMock._sum.usedCount ?? 0;
+        const totalWriting = await prisma.usageTracking.aggregate({
+            where: { userId, type: "writing" },
+            _sum: { usedCount: true },
+        });
+        const totalSpeaking = await prisma.usageTracking.aggregate({
+            where: { userId, type: "speaking" },
+            _sum: { usedCount: true },
+        });
         writingUsed = totalWriting._sum.usedCount ?? 0;
         speakingUsed = totalSpeaking._sum.usedCount ?? 0;
-        mockLimit = FREE_DEMO_MOCK_LIMIT;
         writingLimit = FREE_LIMITS.writing;
         speakingLimit = FREE_LIMITS.speaking;
     }
 
     // Run access checks
-    const [sarf, mock, demoMock, writing, speaking, aiTutor] = await Promise.all([
+    const [sarf, mock, writing, speaking, aiTutor] = await Promise.all([
         canAccessFullSarf(userId),
         canStartMock(userId),
-        canStartDemoMock(userId),
         canUseWritingAI(userId),
         canUseSpeakingAI(userId),
         canUseAITutor(userId),
@@ -581,7 +518,6 @@ export async function getAccessStatus(userId: string): Promise<AccessStatus> {
         access: {
             fullSarf: sarf.allowed,
             mockExam: mock.allowed,
-            demoMock: demoMock.allowed,
             writingAI: writing.allowed,
             speakingAI: speaking.allowed,
             aiTutor: aiTutor.allowed,

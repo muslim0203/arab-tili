@@ -1,8 +1,8 @@
 import { Router, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
-import { requireMockAccess, requireDemoMockAccess } from "../middleware/access-control.js";
-import { recordMockUsage, recordDemoMockUsage } from "../services/access-control.js";
+import { requireMockAccess } from "../middleware/access-control.js";
+import { recordMockUsage } from "../services/access-control.js";
 import { generateMcqQuestions } from "../services/openai-exam.js";
 import { isValidCefrLevel, type CefrLevel } from "../services/openai-cefr-exam.js";
 import { createCefrAttempt } from "../services/cefr-attempt.js";
@@ -214,60 +214,6 @@ router.get("/:id", authenticateToken, async (req: AuthRequest, res: Response) =>
     useAiGeneration: exam.useAiGeneration,
     questionCount: exam.useAiGeneration ? (exam.numberOfQuestions ?? 10) : exam._count.questions,
   });
-});
-
-// POST /api/exams/cefr/demo – Bepul qisqartirilgan demo imtihon (FREE, umrida 1 marta).
-// Har bo'limdan 3 ta savol + 1 writing + 1 speaking, to'liq AI baholash bilan.
-router.post("/cefr/demo", authenticateToken, requireDemoMockAccess, async (req: AuthRequest, res: Response) => {
-  const userId = req.userId!;
-  const level = (req.body?.level ?? req.query?.level) as string;
-  if (!level || !isValidCefrLevel(level)) {
-    res.status(400).json({ message: "level required: A1, A2, B1, B2, C1, C2" });
-    return;
-  }
-  try {
-    const { attempt } = await createCefrAttempt(userId, level as CefrLevel, { demo: true });
-    // Demo faqat umrbod 1 marta — attempt muvaffaqiyatli yaratilgachgina belgilaymiz.
-    try { await recordDemoMockUsage(userId); } catch (e) { console.error("[Exams] recordDemoMockUsage xatosi:", (e as Error).message); }
-    const questions = await prisma.attemptQuestion.findMany({
-      where: { attemptId: attempt.id },
-      orderBy: { order: "asc" },
-    });
-    const toPublic = (q: (typeof questions)[0]) => ({
-      id: q.id,
-      order: q.order,
-      section: q.section,
-      taskType: q.taskType,
-      questionText: q.questionText,
-      transcript: q.transcript,
-      passage: q.passage,
-      options: q.options,
-      rubric: q.rubric,
-      wordLimit: q.wordLimit,
-      maxScore: q.maxScore ?? q.points,
-    });
-    const listening = questions.filter((q) => q.section === "listening").map(toPublic);
-    const reading = questions.filter((q) => q.section === "reading").map(toPublic);
-    const language_use = questions.filter((q) => q.section === "language_use").map(toPublic);
-    const writing = questions.filter((q) => q.section === "writing").map(toPublic);
-    const speaking = questions.filter((q) => q.section === "speaking").map(toPublic);
-    res.status(201).json({
-      attemptId: attempt.id,
-      level: attempt.level,
-      demo: true,
-      sections: [
-        { section: "listening", questions: listening },
-        { section: "reading", questions: reading },
-        { section: "language_use", questions: language_use },
-        { section: "writing", tasks: writing },
-        { section: "speaking", tasks: speaking },
-      ],
-    });
-  } catch (e) {
-    res.status(503).json({
-      message: e instanceof Error ? e.message : "Demo attempt creation failed",
-    });
-  }
 });
 
 // POST /api/exams/cefr/start – Question Bank (L/R/LU) + AI (Writing/Speaking only). No correctAnswer in response.
