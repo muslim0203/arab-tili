@@ -152,14 +152,23 @@ router.get("/listening/stages", authenticateToken, async (_req: AuthRequest, res
         timeMode: stage.timingMode,
         perQuestionTimeSec: stage.perQuestionSeconds ?? 60,
         totalTimeSec: stage.totalSeconds ?? 420,
-        questions: shuffled.map((q) => ({
-          id: q.id,
-          prompt: q.prompt,
-          options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
-          correctIndex: q.correctIndex,
-          audioUrl: q.audioUrl,
-          maxPlays: q.maxPlays,
-        })),
+        questions: shuffled.map((q) => {
+          // Variantlarni aralashtirish — seedda javob deyarli doim A (index 0)
+          // pozitsiyasida turgani uchun listening bo'limi hech narsani o'lchamas edi.
+          // Endi grammar endpointi kabi variantlar aralashtiriladi va to'g'ri
+          // javob indeksi qayta hisoblanadi.
+          const options: string[] = typeof q.options === "string" ? JSON.parse(q.options) : q.options;
+          const correctOption = options[q.correctIndex];
+          const shuffledOptions = shuffle(options);
+          return {
+            id: q.id,
+            prompt: q.prompt,
+            options: shuffledOptions,
+            correctIndex: shuffledOptions.indexOf(correctOption),
+            audioUrl: q.audioUrl,
+            maxPlays: q.maxPlays,
+          };
+        }),
         // maxPlays from first question (all questions in a stage share same maxPlays)
         maxPlays: shuffled[0]?.maxPlays ?? 2,
       };
