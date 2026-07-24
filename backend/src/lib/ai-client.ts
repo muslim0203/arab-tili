@@ -12,8 +12,22 @@ const gemini = config.geminiApiKey
     ? new GoogleGenerativeAI(config.geminiApiKey)
     : null;
 
-function getGeminiModel(model: string = "gemini-2.0-flash"): GenerativeModel | null {
+function getGeminiModel(model: string = config.ai.geminiModel): GenerativeModel | null {
     return gemini?.getGenerativeModel({ model }) ?? null;
+}
+
+/**
+ * Va'dani (promise) timeout bilan o'rash — bitta AI chaqiruvi daqiqalab
+ * osilib qolmasligi uchun. Eslatma: bu tashqi so'rovni bekor qilmaydi,
+ * lekin chaqiruvchini bo'shatadi (so'rov sikli osilib qolmaydi).
+ */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+    return Promise.race([
+        p,
+        new Promise<T>((_, reject) =>
+            setTimeout(() => reject(new Error(`[AI] ${label} timeout ${ms}ms dan oshdi`)), ms)
+        ),
+    ]);
 }
 
 // ========== OpenAI (zaxira) ==========
@@ -61,7 +75,11 @@ export async function aiGenerate(opts: {
         const maxRetries = 3;
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
-                return await callGemini(model, messages, maxTokens, jsonMode, temperature);
+                return await withTimeout(
+                    callGemini(model, messages, maxTokens, jsonMode, temperature),
+                    config.ai.timeoutMs,
+                    "Gemini"
+                );
             } catch (e) {
                 const msg = (e as Error).message ?? "";
                 const is429 = msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("quota");
@@ -81,7 +99,11 @@ export async function aiGenerate(opts: {
     const openai = await getOpenAI();
     if (openai) {
         try {
-            return await callOpenAI(openai, messages, maxTokens, jsonMode, temperature);
+            return await withTimeout(
+                callOpenAI(openai, messages, maxTokens, jsonMode, temperature),
+                config.ai.timeoutMs,
+                "OpenAI"
+            );
         } catch (e) {
             console.error("[AI] OpenAI ham xato:", (e as Error).message);
         }
@@ -123,10 +145,11 @@ async function callGemini(
 
     // Model ni system instruction bilan qayta yaratish
     const modelWithSystem = gemini!.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: config.ai.geminiModel,
         ...(systemInstruction ? { systemInstruction } : {}),
         generationConfig: {
-            maxOutputTokens: maxTokens,
+            // Modelning chiqish chegarasidan oshmaslik (aks holda API xato qaytaradi).
+            maxOutputTokens: Math.min(maxTokens, config.ai.maxOutputTokens),
             temperature: temperature ?? (jsonMode ? 0.3 : 0.7),
             responseMimeType: jsonMode ? "application/json" : "text/plain",
         },
@@ -147,7 +170,7 @@ async function callOpenAI(
     temperature?: number
 ): Promise<AiResponse> {
     const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: config.ai.openaiModel,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         max_tokens: maxTokens,
         temperature: temperature ?? (jsonMode ? 0.3 : 0.7),
