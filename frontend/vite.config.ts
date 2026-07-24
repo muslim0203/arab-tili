@@ -63,6 +63,25 @@ function seoPrerender(): Plugin {
       description:
         "Arab Exam platformasidan foydalanish bo'yicha video darsliklar: ro'yxatdan o'tish, mock imtihon topshirish va AI Tutor bilan ishlash.",
     },
+    // Ochiq bilim bazasi — SEO o'quv kontenti
+    {
+      path: "/organ",
+      title: "Arab tili bilim bazasi — bepul darslar",
+      description:
+        "Arab tilini noldan o'rganish uchun bepul darslar: alifbo, harakatlar, grammatika va CEFR imtihoniga tayyorgarlik. O'zbek tilida, misollar bilan.",
+    },
+    {
+      path: "/organ/arab-alifbosi",
+      title: "Arab alifbosi — 28 harf, o'qilishi va yozilishi",
+      description:
+        "Arab alifbosidagi 28 harf, ularning o'qilishi, yozuv shakllari va o'ngdan chapga yozuv qoidalari. Boshlang'ich (A1) uchun to'liq qo'llanma va misollar.",
+    },
+    {
+      path: "/organ/arab-harakatlari",
+      title: "Arab harakatlari — fatha, kasra, damma, sukun",
+      description:
+        "Arab tilidagi harakatlar (fatha, kasra, damma, sukun, shadda, tanvin) nima va ular so'z o'qilishini qanday belgilaydi. A1 daraja uchun misollar bilan qo'llanma.",
+    },
   ];
 
   const esc = (s: string) =>

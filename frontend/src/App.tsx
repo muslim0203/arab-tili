@@ -33,6 +33,9 @@ const YordamIndex = lazy(() => import("@/pages/info/YordamIndex").then((m) => ({
 const Boglanish = lazy(() => import("@/pages/info/Boglanish").then((m) => ({ default: m.Boglanish })));
 const Qollanmalar = lazy(() => import("@/pages/info/Qollanmalar").then((m) => ({ default: m.Qollanmalar })));
 const VideoQollanmalar = lazy(() => import("@/pages/info/VideoQollanmalar").then((m) => ({ default: m.VideoQollanmalar })));
+// Ochiq bilim bazasi (SEO o'quv kontenti) — auth talab qilinmaydi
+const OrganIndex = lazy(() => import("@/pages/organ/OrganIndex").then((m) => ({ default: m.OrganIndex })));
+const LessonPage = lazy(() => import("@/pages/organ/LessonPage").then((m) => ({ default: m.LessonPage })));
 const Landing = lazy(() => import("@/pages/Landing").then((m) => ({ default: m.Landing })));
 const NotFound = lazy(() => import("@/pages/NotFound").then((m) => ({ default: m.NotFound })));
 const Settings = lazy(() => import("@/pages/Settings").then((m) => ({ default: m.Settings })));
@@ -82,6 +85,9 @@ export default function App() {
             <Route path="/yordam/boglanish" element={<Boglanish />} />
             <Route path="/yordam/qollanmalar" element={<Qollanmalar />} />
             <Route path="/yordam/video" element={<VideoQollanmalar />} />
+            {/* Ochiq bilim bazasi — indekslanadigan, auth talab qilinmaydi */}
+            <Route path="/organ" element={<OrganIndex />} />
+            <Route path="/organ/:slug" element={<LessonPage />} />
             <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
