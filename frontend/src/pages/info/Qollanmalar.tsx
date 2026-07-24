@@ -2,6 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { SiteHeader } from "@/components/SiteHeader";
 import { useTranslation } from "react-i18next";
 import { FileText } from "lucide-react";
+import { SEO } from "@/components/SEO";
+import { StructuredData, buildBreadcrumbSchema } from "@/components/StructuredData";
 
 export function Qollanmalar() {
   const { i18n } = useTranslation();
@@ -13,11 +15,24 @@ export function Qollanmalar() {
 
   return (
     <div className="min-h-screen bg-muted/30">
+      <SEO
+        title="Qo'llanmalar"
+        description="Arab Exam foydalanuvchi qo'llanmalari va mock imtihon qoidalari (PDF). Tizimdan foydalanish bo'yicha ko'rsatmalar."
+        canonicalPath="/yordam/qollanmalar"
+        lang={i18n.language}
+      />
+      <StructuredData
+        data={buildBreadcrumbSchema([
+          { name: "Bosh sahifa", url: "https://arabexam.uz/" },
+          { name: "Yordam", url: "https://arabexam.uz/yordam" },
+          { name: "Qo'llanmalar", url: "https://arabexam.uz/yordam/qollanmalar" },
+        ])}
+      />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Qo‘llanmalar (PDF)</CardTitle>
+            <CardTitle as="h1">Qo‘llanmalar (PDF)</CardTitle>
             <CardDescription>Yuklab olish uchun qo‘llanmalar ro‘yxati</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

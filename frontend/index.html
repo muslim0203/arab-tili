@@ -12,18 +12,26 @@
   <meta name="keywords"
     content="arab tili, CEFR, imtihon, mock exam, Arabic exam, A1, B1, C1, C2, test, sertifikat, arab tili testi, arabcha" />
   <meta name="author" content="Arab Exam" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <link rel="canonical" href="https://arabexam.uz/" />
 
-  <!-- Favicon -->
+  <!-- Favicon & PWA -->
   <link rel="icon" type="image/png" href="/favicon.png" />
   <link rel="apple-touch-icon" href="/favicon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
 
-  <!-- Open Graph -->
+  <!-- Open Graph (absolyut URL — Telegram/Facebook JS ishlatmaydi) -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Arab Exam" />
   <meta property="og:title" content="Arab Exam – Arab tili CEFR imtihon platformasi" />
   <meta property="og:description"
     content="A1 dan C2 gacha arab tili bilimini mock imtihon, AI baholash va CEFR sertifikat bilan tekshiring." />
-  <meta property="og:image" content="/og-image.png" />
+  <meta property="og:image" content="https://arabexam.uz/og-image.png" />
+  <meta property="og:image:secure_url" content="https://arabexam.uz/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Arab Exam – Arab tili CEFR imtihon platformasi" />
   <meta property="og:url" content="https://arabexam.uz/" />
   <meta property="og:locale" content="uz_UZ" />
   <meta property="og:locale:alternate" content="en_US" />
@@ -34,18 +42,57 @@
   <meta name="twitter:title" content="Arab Exam – Arab tili CEFR imtihon platformasi" />
   <meta name="twitter:description"
     content="A1 dan C2 gacha arab tili bilimini mock imtihon, AI baholash va CEFR sertifikat bilan tekshiring." />
-  <meta name="twitter:image" content="/og-image.png" />
+  <meta name="twitter:image" content="https://arabexam.uz/og-image.png" />
+  <meta name="twitter:image:alt" content="Arab Exam – Arab tili CEFR imtihon platformasi" />
 
-  <!-- Theme & PWA -->
+  <!-- Theme -->
   <meta name="theme-color" content="#0f172a" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
-  <!-- Performance -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <!-- Performance: API originiga oldindan ulanish (birinchi ma'lumot so'rovi tezroq) -->
+  <link rel="preconnect" href="https://arab-exam-api-production.up.railway.app" crossorigin />
+  <link rel="dns-prefetch" href="https://arab-exam-api-production.up.railway.app" />
+
+  <!-- Statik JSON-LD: crawlerlar JS render qilmasa ham Organization va WebSite'ni ko'radi -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "EducationalOrganization",
+        "@id": "https://arabexam.uz/#organization",
+        "name": "Arab Exam",
+        "url": "https://arabexam.uz/",
+        "logo": "https://arabexam.uz/logo.png",
+        "image": "https://arabexam.uz/og-image.png",
+        "description": "Arab tili CEFR imtihon platformasi. A1–C2 darajalar uchun mock imtihon, AI baholash va sertifikat.",
+        "email": "support@arabexam.uz",
+        "sameAs": [
+          "https://t.me/arabexam_uz",
+          "https://t.me/arabexam_kanal"
+        ],
+        "areaServed": "UZ",
+        "availableLanguage": ["uz", "en", "ar"],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "support@arabexam.uz",
+          "contactType": "customer support",
+          "availableLanguage": ["uz", "en", "ar"]
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://arabexam.uz/#website",
+        "url": "https://arabexam.uz/",
+        "name": "Arab Exam",
+        "inLanguage": "uz",
+        "publisher": { "@id": "https://arabexam.uz/#organization" }
+      }
+    ]
+  }
+  </script>
 </head>
 
 <body>

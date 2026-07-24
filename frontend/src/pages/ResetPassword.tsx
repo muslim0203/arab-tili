@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { SEO } from "@/components/SEO";
 
 const schema = z.object({
   token: z.string().min(1, "Token kerak"),
@@ -41,6 +42,7 @@ export function ResetPassword() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <SEO title="Yangi parol o'rnatish" canonicalPath="/reset-password" noindex />
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Yangi parol</CardTitle>

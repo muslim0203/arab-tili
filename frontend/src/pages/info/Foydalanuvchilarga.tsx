@@ -19,15 +19,15 @@ export function Foydalanuvchilarga() {
       />
       <StructuredData
         data={buildBreadcrumbSchema([
-          { name: "Bosh sahifa", url: "https://Arab Exam.uz/" },
-          { name: "Foydalanuvchilarga", url: "https://Arab Exam.uz/foydalanuvchilarga" },
+          { name: "Bosh sahifa", url: "https://arabexam.uz/" },
+          { name: "Foydalanuvchilarga", url: "https://arabexam.uz/foydalanuvchilarga" },
         ])}
       />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Foydalanuvchilarga</CardTitle>
+            <CardTitle as="h1">Foydalanuvchilarga</CardTitle>
             <CardDescription>Shaxsiy foydalanuvchilar uchun qo‘llanma va imkoniyatlar</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">

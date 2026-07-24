@@ -14,9 +14,9 @@ import { SarfComingSoon } from "@/components/landing/SarfComingSoon";
 import { SEO } from "@/components/SEO";
 import {
   StructuredData,
-  organizationSchema,
-  websiteSchema,
+  courseSchema,
   buildFAQSchema,
+  buildWebPageSchema,
 } from "@/components/StructuredData";
 
 const FAQ_SCHEMA_ITEMS = [
@@ -74,8 +74,17 @@ export function Landing() {
         canonicalPath="/"
         lang={i18n.language}
       />
-      <StructuredData data={organizationSchema} />
-      <StructuredData data={websiteSchema} />
+      {/* Organization + WebSite JSON-LD statik index.html'da (barcha sahifalar uchun). */}
+      <StructuredData
+        data={buildWebPageSchema({
+          name: "Arab Exam – Arab tili CEFR imtihon platformasi",
+          description:
+            "A1 dan C2 gacha arab tili bilimini mock imtihon, AI baholash va CEFR sertifikat bilan tekshiring.",
+          path: "/",
+          lang: i18n.language,
+        })}
+      />
+      <StructuredData data={courseSchema} />
       <StructuredData data={buildFAQSchema(FAQ_SCHEMA_ITEMS)} />
       <LandingNav />
       <main>

@@ -162,7 +162,7 @@ export function LandingNav() {
           className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md shrink-0 flex items-center gap-2"
           aria-label="Arab Exam home"
         >
-          <img src="/logo.png" alt="Arab Exam" className="h-10 w-auto object-contain" />
+          <img src="/logo.png" alt="Arab Exam — arab tili CEFR imtihon platformasi logotipi" className="h-10 w-auto object-contain" />
         </Link>
 
         {/* Asosiy navigatsiya */}
