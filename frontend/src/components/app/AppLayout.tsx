@@ -21,12 +21,14 @@ import {
   Menu,
   X,
   Settings,
+  BookOpenText,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const APP_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/exams", label: "Mock imtihonlar", icon: FileQuestion },
+  { to: "/sarf", label: "Sarf asoslari", icon: BookOpenText },
   { to: "/ai-tutor", label: "AI Tutor", icon: MessageCircle },
   { to: "/pricing", label: "Tariflar", icon: CreditCard },
   { to: "/attempts/history", label: "Imtihonlar tarixi", icon: History },

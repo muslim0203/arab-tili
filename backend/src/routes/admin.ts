@@ -698,6 +698,160 @@ router.delete("/speaking/:id", async (req: AuthRequest, res: Response) => {
 });
 
 // ══════════════════════════════════════════════════
+// SARF LESSONS CRUD
+// ══════════════════════════════════════════════════
+
+function toStringField(v: unknown): string {
+  return typeof v === "string" ? v : JSON.stringify(v);
+}
+
+function validateSarfQuestionInput(body: {
+  options?: unknown;
+  correctIndex?: unknown;
+}): string | null {
+  const { options, correctIndex } = body;
+  if (options !== undefined) {
+    const parsed = typeof options === "string" ? JSON.parse(options) : options;
+    if (!Array.isArray(parsed) || parsed.length !== 4) {
+      return "options 4 ta element bo'lishi shart";
+    }
+  }
+  if (correctIndex !== undefined) {
+    const idx = Number(correctIndex);
+    if (!Number.isInteger(idx) || idx < 0 || idx > 3) {
+      return "correctIndex 0 dan 3 gacha bo'lishi shart";
+    }
+  }
+  return null;
+}
+
+router.get("/sarf/lessons", async (_req: AuthRequest, res: Response) => {
+  const lessons = await prisma.sarfLesson.findMany({
+    orderBy: { order: "asc" },
+    include: { _count: { select: { questions: true } } },
+  });
+  res.json({ lessons });
+});
+
+router.get("/sarf/lessons/:id", async (req: AuthRequest, res: Response) => {
+  const lesson = await prisma.sarfLesson.findUnique({
+    where: { id: req.params.id },
+    include: { questions: { orderBy: { orderIndex: "asc" } } },
+  });
+  if (!lesson) { res.status(404).json({ message: "Topilmadi" }); return; }
+  res.json({
+    ...lesson,
+    theory: JSON.parse(lesson.theory),
+    conjugationTables: JSON.parse(lesson.conjugationTables),
+    questions: lesson.questions.map((q) => ({ ...q, options: JSON.parse(q.options) })),
+  });
+});
+
+router.post("/sarf/lessons", async (req: AuthRequest, res: Response) => {
+  const { slug, order, level, titleUz, titleAr, summary, estMinutes, isFree, theory, conjugationTables, isPublished } = req.body;
+  if (!slug || !level || !titleUz || !titleAr || !summary || estMinutes === undefined || !theory || !conjugationTables) {
+    res.status(400).json({ message: "slug, level, titleUz, titleAr, summary, estMinutes, theory, conjugationTables to'ldirilishi shart" });
+    return;
+  }
+  const created = await prisma.sarfLesson.create({
+    data: {
+      slug,
+      order: order !== undefined ? Number(order) : 0,
+      level,
+      titleUz,
+      titleAr,
+      summary,
+      estMinutes: Number(estMinutes),
+      isFree: Boolean(isFree),
+      theory: toStringField(theory),
+      conjugationTables: toStringField(conjugationTables),
+      isPublished: isPublished !== undefined ? Boolean(isPublished) : true,
+    },
+  });
+  res.status(201).json(created);
+});
+
+router.put("/sarf/lessons/:id", async (req: AuthRequest, res: Response) => {
+  const existing = await prisma.sarfLesson.findUnique({ where: { id: req.params.id } });
+  if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
+  const { slug, order, level, titleUz, titleAr, summary, estMinutes, isFree, theory, conjugationTables, isPublished } = req.body;
+
+  const data: Record<string, unknown> = {};
+  if (slug !== undefined) data.slug = slug;
+  if (order !== undefined) data.order = Number(order);
+  if (level !== undefined) data.level = level;
+  if (titleUz !== undefined) data.titleUz = titleUz;
+  if (titleAr !== undefined) data.titleAr = titleAr;
+  if (summary !== undefined) data.summary = summary;
+  if (estMinutes !== undefined) data.estMinutes = Number(estMinutes);
+  if (isFree !== undefined) data.isFree = Boolean(isFree);
+  if (theory !== undefined) data.theory = toStringField(theory);
+  if (conjugationTables !== undefined) data.conjugationTables = toStringField(conjugationTables);
+  if (isPublished !== undefined) data.isPublished = Boolean(isPublished);
+
+  const updated = await prisma.sarfLesson.update({ where: { id: req.params.id }, data });
+  res.json(updated);
+});
+
+router.delete("/sarf/lessons/:id", async (req: AuthRequest, res: Response) => {
+  const existing = await prisma.sarfLesson.findUnique({ where: { id: req.params.id } });
+  if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
+  await prisma.sarfLesson.delete({ where: { id: req.params.id } });
+  res.status(204).send();
+});
+
+router.post("/sarf/lessons/:id/questions", async (req: AuthRequest, res: Response) => {
+  const lesson = await prisma.sarfLesson.findUnique({ where: { id: req.params.id } });
+  if (!lesson) { res.status(404).json({ message: "Dars topilmadi" }); return; }
+
+  const { orderIndex, prompt, options, correctIndex, explanation } = req.body;
+  if (!prompt || options === undefined || correctIndex === undefined || !explanation) {
+    res.status(400).json({ message: "prompt, options, correctIndex, explanation to'ldirilishi shart" });
+    return;
+  }
+  const validationError = validateSarfQuestionInput({ options, correctIndex });
+  if (validationError) { res.status(400).json({ message: validationError }); return; }
+
+  const created = await prisma.sarfQuestion.create({
+    data: {
+      lessonId: lesson.id,
+      orderIndex: orderIndex !== undefined ? Number(orderIndex) : 0,
+      prompt,
+      options: toStringField(options),
+      correctIndex: Number(correctIndex),
+      explanation,
+    },
+  });
+  res.status(201).json(created);
+});
+
+router.put("/sarf/questions/:id", async (req: AuthRequest, res: Response) => {
+  const existing = await prisma.sarfQuestion.findUnique({ where: { id: req.params.id } });
+  if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
+
+  const { orderIndex, prompt, options, correctIndex, explanation } = req.body;
+  const validationError = validateSarfQuestionInput({ options, correctIndex });
+  if (validationError) { res.status(400).json({ message: validationError }); return; }
+
+  const data: Record<string, unknown> = {};
+  if (orderIndex !== undefined) data.orderIndex = Number(orderIndex);
+  if (prompt !== undefined) data.prompt = prompt;
+  if (options !== undefined) data.options = toStringField(options);
+  if (correctIndex !== undefined) data.correctIndex = Number(correctIndex);
+  if (explanation !== undefined) data.explanation = explanation;
+
+  const updated = await prisma.sarfQuestion.update({ where: { id: req.params.id }, data });
+  res.json(updated);
+});
+
+router.delete("/sarf/questions/:id", async (req: AuthRequest, res: Response) => {
+  const existing = await prisma.sarfQuestion.findUnique({ where: { id: req.params.id } });
+  if (!existing) { res.status(404).json({ message: "Topilmadi" }); return; }
+  await prisma.sarfQuestion.delete({ where: { id: req.params.id } });
+  res.status(204).send();
+});
+
+// ══════════════════════════════════════════════════
 // LEGACY QUESTION BANK (backward compat)
 // ══════════════════════════════════════════════════
 
