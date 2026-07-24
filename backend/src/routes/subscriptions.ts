@@ -1,5 +1,6 @@
 import express, { Router, Response } from "express";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { authenticateToken, type AuthRequest } from "../middleware/auth.js";
 import { getClickPayUrl, verifyPrepareSign, verifyCompleteSign } from "../lib/click.js";
@@ -464,22 +465,41 @@ async function handlePerformTransaction(id: unknown, params: any, res: Response)
     return res.status(200).json(paymeJsonRpcError(id, PaymeError.CantPerform));
   }
 
-  // Obunani faollashtirish
-  const plan = SUBSCRIPTION_PLANS.find((p) => p.id === payment.planId);
-  if (plan) {
-    await activateSubscription(payment.id, payment.userId, plan);
-  }
-
+  // Atomik idempotentlik: state 1 → 2 o'tishini FAQAT bitta so'rov qo'lga kiritadi.
+  // Ilgari ikki parallel PerformTransaction ham paymeState===1 ni o'qib,
+  // activateSubscription ni IKKI marta chaqirardi — obuna ikki marta faollashardi.
+  // Endi updateMany({ paymeState: 1 }) shartli da'vo qiladi; faqat g'olib (count===1)
+  // obunani faollashtiradi. Payment o'zgartirishi + faollashtirish bitta
+  // tranzaksiyada — biri xato bo'lsa, ikkalasi ham qaytariladi (Payme qayta uradi).
   const performTime = new Date();
-  await prisma.payment.update({
-    where: { id: payment.id },
-    data: {
-      paymeState: 2,
-      status: "COMPLETED",
-      paymePerformTime: performTime,
-      paidAt: performTime,
-    },
+  const plan = SUBSCRIPTION_PLANS.find((p) => p.id === payment.planId);
+  let won = false;
+  await prisma.$transaction(async (tx) => {
+    const claim = await tx.payment.updateMany({
+      where: { id: payment.id, paymeState: 1 },
+      data: {
+        paymeState: 2,
+        status: "COMPLETED",
+        paymePerformTime: performTime,
+        paidAt: performTime,
+      },
+    });
+    if (claim.count === 0) return; // boshqa so'rov allaqachon bajardi
+    won = true;
+    if (plan) {
+      await activateSubscription(payment.id, payment.userId, plan, tx);
+    }
   });
+
+  if (!won) {
+    // Poygada yutqazdik — boshqa so'rov bajardi. Payme uchun muvaffaqiyat javobi.
+    const fresh = await prisma.payment.findUnique({ where: { id: payment.id } });
+    return res.status(200).json(paymeJsonRpcResult(id, {
+      transaction: fresh?.paymeTransId ?? payment.paymeTransId,
+      perform_time: fresh?.paymePerformTime?.getTime() ?? performTime.getTime(),
+      state: fresh?.paymeState ?? 2,
+    }));
+  }
 
   return res.status(200).json(paymeJsonRpcResult(id, {
     transaction: payment.paymeTransId,
@@ -618,62 +638,76 @@ async function handleGetStatement(id: unknown, params: any, res: Response) {
 // Eksport qilingan, chunki admin panel ham (qo'lda faollashtirish) AYNAN shu
 // yo'ldan borishi kerak — aks holda to'lov orqali va qo'lda ochilgan obunalar
 // boshqa-boshqa holatda bo'lib qoladi (usageTracking, subscriptionTier va h.k.).
+/**
+ * Obunani/xaridni faollashtirish.
+ *
+ * Barcha yozuvlar bitta tranzaksiyada bajariladi — ilgari 5 ta alohida yozuv
+ * edi va o'rtada xato bo'lsa yarim-faol holat qolardi. `tx` berilsa, chaqiruvchi
+ * tranzaksiyasida ishlaydi (Payme perform atomik da'vosi bilan birga commit
+ * bo'lishi uchun); aks holda o'zining tranzaksiyasini ochadi.
+ */
 export async function activateSubscription(
   paymentId: string,
   userId: string,
   plan: (typeof SUBSCRIPTION_PLANS)[number],
+  tx?: Prisma.TransactionClient,
 ) {
-  if (plan.id === "mock_exam") {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
-    await prisma.purchase.create({
-      data: {
-        userId,
-        productType: "mock_exam",
-        quantity: 1,
-        remainingUses: 1,
-        expiresAt,
-      },
-    });
-  } else {
-    // Pro subscription
-    const startedAt = new Date();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
+  const run = async (db: Prisma.TransactionClient) => {
+    if (plan.id === "mock_exam") {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      await db.purchase.create({
+        data: {
+          userId,
+          productType: "mock_exam",
+          quantity: 1,
+          remainingUses: 1,
+          expiresAt,
+        },
+      });
+    } else {
+      // Pro subscription
+      const startedAt = new Date();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
 
-    // Cancel existing active subscription
-    await prisma.subscription.updateMany({
-      where: { userId, status: "active" },
-      data: { status: "cancelled" },
-    });
+      // Cancel existing active subscription
+      await db.subscription.updateMany({
+        where: { userId, status: "active" },
+        data: { status: "cancelled" },
+      });
 
-    await prisma.subscription.create({
-      data: {
-        userId,
-        planType: "pro",
-        startedAt,
-        expiresAt,
-        status: "active",
-      },
-    });
+      await db.subscription.create({
+        data: {
+          userId,
+          planType: "pro",
+          startedAt,
+          expiresAt,
+          status: "active",
+        },
+      });
 
-    await prisma.usageTracking.createMany({
-      data: [
-        { userId, type: "mock" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
-        { userId, type: "writing" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
-        { userId, type: "speaking" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
-        { userId, type: "aiTutor" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
-      ],
-    });
+      await db.usageTracking.createMany({
+        data: [
+          { userId, type: "mock" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
+          { userId, type: "writing" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
+          { userId, type: "speaking" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
+          { userId, type: "aiTutor" as const, usedCount: 0, periodStart: startedAt, periodEnd: expiresAt },
+        ],
+      });
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        subscriptionTier: "PRO",
-        subscriptionExpiresAt: expiresAt,
-      },
-    });
-  }
+      await db.user.update({
+        where: { id: userId },
+        data: {
+          subscriptionTier: "PRO",
+          subscriptionExpiresAt: expiresAt,
+        },
+      });
+    }
+  };
+
+  if (tx) return run(tx);
+  return prisma.$transaction(run);
 }
 
 export const subscriptionRoutes = router;
