@@ -145,3 +145,204 @@ export function buildBreadcrumbSchema(
         })),
     };
 }
+
+/* ── Ochiq bilim bazasi (o'quv kontenti) uchun sxemalar ───────────── */
+
+export const BASE_URL_EXPORT = BASE_URL;
+
+/**
+ * Bitta o'quv sahifasi (dars/mavzu) uchun LearningResource schema.
+ * Google va AI-qidiruvga sahifa ta'limiy resurs ekanini, darajasini va
+ * qaysi ko'nikmani o'rgatishini aniq ko'rsatadi.
+ */
+export function buildLearningResourceSchema(opts: {
+    name: string;
+    description: string;
+    path: string;
+    educationalLevel?: string;
+    teaches?: string | string[];
+    lang?: string;
+    datePublished?: string;
+    dateModified?: string;
+    authorName?: string;
+    timeRequiredMinutes?: number;
+}): Record<string, unknown> {
+    return {
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        "@id": `${BASE_URL}${opts.path}#lesson`,
+        url: `${BASE_URL}${opts.path}`,
+        name: opts.name,
+        description: opts.description,
+        inLanguage: opts.lang ?? "uz",
+        learningResourceType: "Lesson",
+        educationalLevel: opts.educationalLevel ?? "CEFR A1–C2",
+        teaches: opts.teaches ?? "Arab tili",
+        isAccessibleForFree: true,
+        ...(opts.timeRequiredMinutes
+            ? { timeRequired: `PT${opts.timeRequiredMinutes}M` }
+            : {}),
+        ...(opts.datePublished ? { datePublished: opts.datePublished } : {}),
+        ...(opts.dateModified ? { dateModified: opts.dateModified } : {}),
+        author: opts.authorName
+            ? { "@type": "Organization", name: opts.authorName }
+            : { "@id": ORG_ID },
+        publisher: { "@id": ORG_ID },
+        isPartOf: { "@id": `${BASE_URL}/#website` },
+    };
+}
+
+/** Blog / yangilik maqolasi (Discover, yangiliklar) uchun schema. */
+export function buildArticleSchema(opts: {
+    headline: string;
+    description: string;
+    path: string;
+    image?: string;
+    datePublished: string;
+    dateModified?: string;
+    authorName?: string;
+    lang?: string;
+}): Record<string, unknown> {
+    const img = opts.image
+        ? opts.image.startsWith("http")
+            ? opts.image
+            : `${BASE_URL}${opts.image}`
+        : `${BASE_URL}/og-image.png`;
+    return {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "@id": `${BASE_URL}${opts.path}#article`,
+        mainEntityOfPage: `${BASE_URL}${opts.path}`,
+        headline: opts.headline,
+        description: opts.description,
+        image: img,
+        inLanguage: opts.lang ?? "uz",
+        datePublished: opts.datePublished,
+        dateModified: opts.dateModified ?? opts.datePublished,
+        author: {
+            "@type": "Organization",
+            name: opts.authorName ?? "Arab Exam",
+            "@id": ORG_ID,
+        },
+        publisher: { "@id": ORG_ID },
+    };
+}
+
+/** "Qanday qilib ..." qo'llanmalar uchun HowTo schema. */
+export function buildHowToSchema(opts: {
+    name: string;
+    description: string;
+    steps: Array<{ name: string; text: string }>;
+    lang?: string;
+}): Record<string, unknown> {
+    return {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        name: opts.name,
+        description: opts.description,
+        inLanguage: opts.lang ?? "uz",
+        step: opts.steps.map((s, i) => ({
+            "@type": "HowToStep",
+            position: i + 1,
+            name: s.name,
+            text: s.text,
+        })),
+    };
+}
+
+/** Mashq/test to'plami uchun Quiz schema. */
+export function buildQuizSchema(opts: {
+    name: string;
+    path: string;
+    educationalLevel?: string;
+    numberOfQuestions?: number;
+    lang?: string;
+}): Record<string, unknown> {
+    return {
+        "@context": "https://schema.org",
+        "@type": "Quiz",
+        name: opts.name,
+        url: `${BASE_URL}${opts.path}`,
+        inLanguage: opts.lang ?? "uz",
+        educationalLevel: opts.educationalLevel ?? "CEFR A1–C2",
+        ...(opts.numberOfQuestions
+            ? { numberOfQuestions: opts.numberOfQuestions }
+            : {}),
+        about: { "@id": ORG_ID },
+        isAccessibleForFree: true,
+    };
+}
+
+/** Muallif/o'qituvchi profili uchun Person schema (E-E-A-T). */
+export function buildPersonSchema(opts: {
+    name: string;
+    jobTitle?: string;
+    description?: string;
+    path?: string;
+    sameAs?: string[];
+    knowsAbout?: string[];
+}): Record<string, unknown> {
+    return {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        ...(opts.path ? { "@id": `${BASE_URL}${opts.path}#person` } : {}),
+        name: opts.name,
+        ...(opts.jobTitle ? { jobTitle: opts.jobTitle } : {}),
+        ...(opts.description ? { description: opts.description } : {}),
+        ...(opts.sameAs ? { sameAs: opts.sameAs } : {}),
+        ...(opts.knowsAbout ? { knowsAbout: opts.knowsAbout } : {}),
+        worksFor: { "@id": ORG_ID },
+    };
+}
+
+/**
+ * Hub/ro'yxat sahifasi uchun CollectionPage + ItemList schema.
+ * Bilim bazasi indeks sahifasi kabi to'plam sahifalarida ishlatiladi.
+ */
+export function buildCollectionPageSchema(opts: {
+    name: string;
+    description: string;
+    path: string;
+    items: Array<{ name: string; path: string }>;
+    lang?: string;
+}): Record<string, unknown> {
+    return {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "@id": `${BASE_URL}${opts.path}#collection`,
+        url: `${BASE_URL}${opts.path}`,
+        name: opts.name,
+        description: opts.description,
+        inLanguage: opts.lang ?? "uz",
+        isPartOf: { "@id": `${BASE_URL}/#website` },
+        mainEntity: {
+            "@type": "ItemList",
+            numberOfItems: opts.items.length,
+            itemListElement: opts.items.map((it, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                name: it.name,
+                url: `${BASE_URL}${it.path}`,
+            })),
+        },
+    };
+}
+
+/**
+ * Bir nechta schema-obyektini bitta @graph ichiga birlashtiradi.
+ * Bir sahifada bir necha script o'rniga yagona, o'zaro @id bilan bog'langan
+ * graf uzatish — Google uchun eng toza usul.
+ */
+export function buildGraph(
+    nodes: Array<Record<string, unknown>>
+): Record<string, unknown> {
+    return {
+        "@context": "https://schema.org",
+        "@graph": nodes.map((n) => {
+            // Ichki tugunlarda takroriy @context kerak emas
+            const rest = { ...n };
+            delete rest["@context"];
+            return rest;
+        }),
+    };
+}

@@ -19,6 +19,7 @@ const navItems = [
       { label: "Tizim haqida", href: "/tizim-haqida" },
     ],
   },
+  { label: "DARSLAR", href: "/organ" },
   { label: "FOYDALANUVCHILARGA", href: "/foydalanuvchilarga" },
   { label: "TASHKILOTLARGA", href: "/tashkilotlarga" },
   {
