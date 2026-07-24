@@ -67,6 +67,22 @@ async function refreshAccess(): Promise<string | null> {
   return refreshInFlight;
 }
 
+/**
+ * HTTP xatosi — `Error` dan meros oladi (mavjud `e instanceof Error` / `e.message`
+ * chaqiruvlari o'zgarishsiz ishlaydi), qo'shimcha `status` maydoni bilan.
+ * Masalan 403 (upgradeRequired) ni aniqlash uchun.
+ */
+export class ApiError extends Error {
+  status: number;
+  body: unknown;
+  constructor(message: string, status: number, body?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+  }
+}
+
 export type RequestConfig = Omit<RequestInit, "body"> & { body?: BodyInit | object | null; skipAuth?: boolean };
 
 export async function api<T = unknown>(path: string, config: RequestConfig = {}): Promise<T> {
@@ -95,7 +111,7 @@ export async function api<T = unknown>(path: string, config: RequestConfig = {})
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || "Request failed");
+    throw new ApiError(err.message || "Request failed", res.status, err);
   }
 
   const contentType = res.headers.get("content-type");

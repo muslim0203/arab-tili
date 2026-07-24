@@ -45,6 +45,7 @@ const scripts = [
     "seed-speaking-easy.ts",
     "seed-speaking-medium.ts",
     "seed-speaking-hard.ts",
+    "seed-sarf.ts",           // "Sarf asoslari" darslari
 ];
 
 async function main() {

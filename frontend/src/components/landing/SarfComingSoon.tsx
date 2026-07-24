@@ -1,5 +1,7 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpenText, Sparkles, Brain, Layers, GraduationCap, Rocket } from "lucide-react";
+import { BookOpenText, Sparkles, Brain, Layers, GraduationCap, Rocket, ArrowRight } from "lucide-react";
+import { useAuthStore } from "@/store/auth";
 
 const FEATURES = [
     {
@@ -29,6 +31,7 @@ const FEATURES = [
 ];
 
 export function SarfComingSoon() {
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
     return (
         <section
             className="relative overflow-hidden py-20 sm:py-28"
@@ -197,6 +200,19 @@ export function SarfComingSoon() {
                             2026-yil bahor
                         </span>
                     </div>
+
+                    {isAuthenticated && (
+                        <div className="mt-6">
+                            <Link
+                                to="/sarf"
+                                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-transform hover:scale-[1.02]"
+                            >
+                                <BookOpenText className="h-4 w-4" />
+                                Sarf darslarini boshlash
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </div>
+                    )}
                 </motion.div>
             </div>
         </section>

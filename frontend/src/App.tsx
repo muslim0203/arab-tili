@@ -24,6 +24,7 @@ const AdminReading = lazy(() => import("@/pages/admin/AdminReading").then((m) =>
 const AdminListening = lazy(() => import("@/pages/admin/AdminListening").then((m) => ({ default: m.AdminListening })));
 const AdminWriting = lazy(() => import("@/pages/admin/AdminWriting").then((m) => ({ default: m.AdminWriting })));
 const AdminSpeaking = lazy(() => import("@/pages/admin/AdminSpeaking").then((m) => ({ default: m.AdminSpeaking })));
+const AdminSarf = lazy(() => import("@/pages/admin/AdminSarf").then((m) => ({ default: m.AdminSarf })));
 // Info / yordam sahifalari (suratdagi navigatsiya)
 const TizimHaqida = lazy(() => import("@/pages/info/TizimHaqida").then((m) => ({ default: m.TizimHaqida })));
 const Foydalanuvchilarga = lazy(() => import("@/pages/info/Foydalanuvchilarga").then((m) => ({ default: m.Foydalanuvchilarga })));
@@ -39,6 +40,8 @@ const AtTaanalExam = lazy(() => import("@/pages/AtTaanalExam").then((m) => ({ de
 const AttemptHistory = lazy(() => import("@/pages/AttemptHistory").then((m) => ({ default: m.AttemptHistory })));
 const AttemptResults = lazy(() => import("@/pages/AttemptResults").then((m) => ({ default: m.AttemptResults })));
 const ExamPage = lazy(() => import("@/pages/ExamPage").then((m) => ({ default: m.ExamPage })));
+const Sarf = lazy(() => import("@/pages/Sarf").then((m) => ({ default: m.Sarf })));
+const SarfLesson = lazy(() => import("@/pages/SarfLesson").then((m) => ({ default: m.SarfLesson })));
 
 function PageFallback() {
   return (
@@ -63,6 +66,8 @@ export default function App() {
             <Route path="/exams" element={<ProtectedRoute><AtTaanalExam /></ProtectedRoute>} />
             <Route path="/at-taanal" element={<ProtectedRoute><AtTaanalExam /></ProtectedRoute>} />
             <Route path="/ai-tutor" element={<ProtectedRoute><AITutor /></ProtectedRoute>} />
+            <Route path="/sarf" element={<ProtectedRoute><Sarf /></ProtectedRoute>} />
+            <Route path="/sarf/:slug" element={<ProtectedRoute><SarfLesson /></ProtectedRoute>} />
             <Route path="/pricing" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
             <Route path="/payment/return" element={<ProtectedRoute><PaymentReturn /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
@@ -87,6 +92,7 @@ export default function App() {
               <Route path="listening" element={<AdminListening />} />
               <Route path="writing" element={<AdminWriting />} />
               <Route path="speaking" element={<AdminSpeaking />} />
+              <Route path="sarf" element={<AdminSarf />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
