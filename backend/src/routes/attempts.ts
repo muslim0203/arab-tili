@@ -383,7 +383,11 @@ router.post("/:id/submit", authenticateToken, async (req: AuthRequest, res: Resp
       maxPossible += maxPts;
 
       if (q.section === "writing") {
-        const rubric = q.rubric ? (JSON.parse(q.rubric) as Record<string, unknown>) : {};
+        let rubric: Record<string, unknown> = {};
+        if (q.rubric) {
+          try { rubric = JSON.parse(q.rubric) as Record<string, unknown>; }
+          catch { rubric = {}; } // buzuq rubric butun submit'ni yiqitmasin
+        }
         const result = await gradeWriting(level, { prompt: q.questionText, rubric, maxScore: maxPts }, userText ?? "");
         totalScore += result.score;
         sectionScores[q.section] = (sectionScores[q.section] ?? { score: 0, max: 0 });
@@ -408,7 +412,11 @@ router.post("/:id/submit", authenticateToken, async (req: AuthRequest, res: Resp
           const transcribed = await transcribeAudio(source);
           if (transcribed) transcript = transcribed;
         }
-        const rubric = q.rubric ? (JSON.parse(q.rubric) as Record<string, unknown>) : {};
+        let rubric: Record<string, unknown> = {};
+        if (q.rubric) {
+          try { rubric = JSON.parse(q.rubric) as Record<string, unknown>; }
+          catch { rubric = {}; } // buzuq rubric butun submit'ni yiqitmasin
+        }
         const result = await gradeSpeaking(level, { prompt: q.questionText, rubric, maxScore: maxPts }, transcript);
         totalScore += result.score;
         sectionScores[q.section] = (sectionScores[q.section] ?? { score: 0, max: 0 });
@@ -480,7 +488,11 @@ router.post("/:id/submit", authenticateToken, async (req: AuthRequest, res: Resp
       percentage,
       cefrLevelAchieved: cefrLevel,
       cefrFeedback: feedback,
-      sectionScores,
+      // sectionScores DB'da String ustun — obyekt emas, JSON string yoziladi.
+      // (O'qishda JSON.parse qilinadi, ~satr 78.) Ilgari bu yerda obyekt
+      // to'g'ridan-to'g'ri yozilib, har submit Prisma validatsiya xatosi bilan
+      // 500 qaytarardi — AI baholash puli to'langandan keyin.
+      sectionScores: JSON.stringify(sectionScores),
     },
   });
 
