@@ -19,15 +19,15 @@ export function Tashkilotlarga() {
       />
       <StructuredData
         data={buildBreadcrumbSchema([
-          { name: "Bosh sahifa", url: "https://Arab Exam.uz/" },
-          { name: "Tashkilotlarga", url: "https://Arab Exam.uz/tashkilotlarga" },
+          { name: "Bosh sahifa", url: "https://arabexam.uz/" },
+          { name: "Tashkilotlarga", url: "https://arabexam.uz/tashkilotlarga" },
         ])}
       />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Tashkilotlarga</CardTitle>
+            <CardTitle as="h1">Tashkilotlarga</CardTitle>
             <CardDescription>Maktablar, universitetlar va tashkilotlar uchun</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-muted-foreground">

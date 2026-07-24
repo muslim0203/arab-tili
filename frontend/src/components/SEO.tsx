@@ -53,7 +53,14 @@ export function SEO({
             <link rel="canonical" href={canonicalUrl} />
 
             {/* Robots */}
-            {noindex && <meta name="robots" content="noindex,nofollow" />}
+            {noindex ? (
+                <meta name="robots" content="noindex,nofollow" />
+            ) : (
+                <meta
+                    name="robots"
+                    content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+                />
+            )}
 
             {/* Open Graph */}
             <meta property="og:type" content={ogType} />
@@ -62,6 +69,9 @@ export function SEO({
             <meta property="og:description" content={description} />
             <meta property="og:url" content={canonicalUrl} />
             <meta property="og:image" content={ogImageUrl} />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
+            <meta property="og:image:alt" content={fullTitle} />
             <meta property="og:locale" content={lang === "ar" ? "ar_SA" : lang === "en" ? "en_US" : "uz_UZ"} />
 
             {/* Twitter */}
@@ -69,12 +79,14 @@ export function SEO({
             <meta name="twitter:title" content={fullTitle} />
             <meta name="twitter:description" content={description} />
             <meta name="twitter:image" content={ogImageUrl} />
+            <meta name="twitter:image:alt" content={fullTitle} />
 
-            {/* Hreflang */}
-            <link rel="alternate" hrefLang="uz" href={`${BASE_URL}${canonicalPath}`} />
-            <link rel="alternate" hrefLang="en" href={`${BASE_URL}${canonicalPath}?lang=en`} />
-            <link rel="alternate" hrefLang="ar" href={`${BASE_URL}${canonicalPath}?lang=ar`} />
-            <link rel="alternate" hrefLang="x-default" href={`${BASE_URL}${canonicalPath}`} />
+            {/*
+              Hreflang ATAYLAB olib tashlandi: `?lang=` variantlari server tomonda
+              alohida kontent bermaydi (i18n faqat klient tomonda). Yolg'on hreflang
+              Google tomonidan e'tiborsiz qoldiriladi yoki xato sifatida belgilanadi.
+              To'g'ri yechim — /en/… va /ar/… lokalizatsiyalangan yo'llar (yo'l xaritasida).
+            */}
         </Helmet>
     );
 }

@@ -26,15 +26,15 @@ export function YordamIndex() {
       />
       <StructuredData
         data={buildBreadcrumbSchema([
-          { name: "Bosh sahifa", url: "https://Arab Exam.uz/" },
-          { name: "Yordam", url: "https://Arab Exam.uz/yordam" },
+          { name: "Bosh sahifa", url: "https://arabexam.uz/" },
+          { name: "Yordam", url: "https://arabexam.uz/yordam" },
         ])}
       />
       <SiteHeader lang={i18n.language} onLangChange={(code) => i18n.changeLanguage(code)} />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Yordam</CardTitle>
+            <CardTitle as="h1">Yordam</CardTitle>
             <CardDescription>Qo‘llanmalar va bog‘lanish</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-1">

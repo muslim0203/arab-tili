@@ -1,12 +1,24 @@
+# robots.txt — https://arabexam.uz
+# Arab Exam — Arab tili CEFR imtihon platformasi
+
 User-agent: *
 Allow: /
+
+# Foydalanuvchi kabineti va himoyalangan (auth) sahifalar — indekslash shart emas
 Disallow: /dashboard
 Disallow: /exams
+Disallow: /at-taanal
 Disallow: /exam/
 Disallow: /attempts/
 Disallow: /ai-tutor
 Disallow: /pricing
 Disallow: /payment/
+Disallow: /settings
+Disallow: /admin
 Disallow: /admin/
+Disallow: /api/
 
-Sitemap: https://attanalpro.uz/sitemap.xml
+# Eslatma: /login va /register sahifalari `noindex` meta-tegi orqali indeksdan
+# chiqariladi. Ularni bu yerda bloklamaymiz — aks holda Google `noindex` ni o'qiy olmaydi.
+
+Sitemap: https://arabexam.uz/sitemap.xml

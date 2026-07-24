@@ -65,10 +65,15 @@ export function SiteHeader({
     <header className="sticky top-0 z-40 w-full border-b bg-card">
       <div className="container mx-auto flex h-14 items-center px-4 gap-4">
         <Link
-          to="/dashboard"
+          to="/"
+          aria-label="Arab Exam — bosh sahifa"
           className="shrink-0 mr-4 flex items-center gap-2"
         >
-          <img src="/logo.png" alt="Arab Exam" className="h-10 w-auto object-contain" />
+          <img
+            src="/logo.png"
+            alt="Arab Exam — arab tili CEFR imtihon platformasi logotipi"
+            className="h-10 w-auto object-contain"
+          />
         </Link>
 
         <nav className="flex flex-1 items-center gap-1 overflow-x-auto">
@@ -130,6 +135,7 @@ export function SiteHeader({
               <Button
                 variant="ghost"
                 size="sm"
+                aria-label="Tilni tanlash"
                 className="flex items-center gap-1.5 text-sm font-medium"
               >
                 <span className="text-lg" role="img" aria-hidden>
